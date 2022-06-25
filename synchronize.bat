@@ -1,17 +1,21 @@
 @echo off
+setlocal EnableDelayedExpansion
 
-echo pulling changes from web repository
+echo Pulling changes from web repository
 git pull
 
-echo checking for local changes
+echo Checking for local changes
 git add .
 git update-index --refresh
 set /a changes=0
 git diff-index --quiet HEAD -- || set /a changes=1
 
-if %changes% geq 1 (
-	echo found local changes
+if %changes% == 1 (
+	echo Found local changes
+	set "message=[no commit message]"
 	set /p message="Enter a commit message: "
-	git commit -a -m "%message%"
+	echo !message!
+	git commit -a -m "!message!"
 	git push
+	pause
 )
