@@ -62,7 +62,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <TreatSpecificWarningsAsErrors>4473;4474;4477;</TreatSpecificWarningsAsErrors>
+      <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -80,7 +80,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <TreatSpecificWarningsAsErrors>4473;4474;4477;</TreatSpecificWarningsAsErrors>
+      <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
