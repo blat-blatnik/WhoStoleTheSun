@@ -22,5 +22,38 @@
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="README.md" />
+    <None Include="build_web.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="run_web.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="webshell.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lib\raylib_windows.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\lib\easings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\raylib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\raymath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\rcamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\rgestures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\rlgl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\rmem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
