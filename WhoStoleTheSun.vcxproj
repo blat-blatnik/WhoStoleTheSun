@@ -101,6 +101,7 @@
     <None Include="build_web.bat" />
     <None Include="README.md" />
     <None Include="run_web.bat" />
+    <None Include="synchronize.bat" />
     <None Include="webshell.html" />
   </ItemGroup>
   <ItemGroup>
@@ -114,6 +115,9 @@
     <ClInclude Include="src\lib\rgestures.h" />
     <ClInclude Include="src\lib\rlgl.h" />
     <ClInclude Include="src\lib\rmem.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="debug.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
