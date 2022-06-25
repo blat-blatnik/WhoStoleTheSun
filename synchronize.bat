@@ -13,9 +13,7 @@ git diff-index --quiet HEAD -- || set /a changes=1
 if %changes% == 1 (
 	echo Found local changes
 	set "message=[no commit message]"
-	set /p message="Enter a commit message: "
-	echo !message!
+	set /p "message=Enter a commit message: "
 	git commit -a -m "!message!"
 	git push
-	pause
 )
