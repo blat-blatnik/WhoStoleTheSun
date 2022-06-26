@@ -58,7 +58,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -76,7 +76,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
@@ -91,6 +91,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\runtime.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\main.c">
       <SubType>
       </SubType>
@@ -108,11 +112,10 @@
     <Library Include="lib\raylib_windows.lib" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\lib\easings.h" />
+    <ClInclude Include="src\core.h" />
+    <ClInclude Include="src\lib\raygui.h" />
     <ClInclude Include="src\lib\raylib.h" />
     <ClInclude Include="src\lib\raymath.h" />
-    <ClInclude Include="src\lib\rcamera.h" />
-    <ClInclude Include="src\lib\rgestures.h" />
     <ClInclude Include="src\lib\rlgl.h" />
     <ClInclude Include="src\lib\rmem.h" />
   </ItemGroup>

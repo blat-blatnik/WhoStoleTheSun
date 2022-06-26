@@ -18,6 +18,9 @@
     <ClCompile Include="src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\runtime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
@@ -37,25 +40,22 @@
     <Library Include="lib\raylib_windows.lib" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\lib\easings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\lib\raylib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\raymath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\rcamera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\rgestures.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\lib\rlgl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\rmem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\raygui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
