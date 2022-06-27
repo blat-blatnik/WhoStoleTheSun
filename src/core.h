@@ -24,5 +24,9 @@
 // Silence compiler warnings about unused variables or parameters.
 #define UNUSED(x) ((void)(x))
 
+//
+// Runtime (these functions are called from runtime.c, but are defined in main.c).
+//
+
 void GameInit(void);
 void GameLoopOneIteration(void);
