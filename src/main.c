@@ -1,4 +1,5 @@
-#include "lib/raylib.h"
+#include "core.h"
+#include <stdio.h>
 
 void GameInit(void)
 {
@@ -7,8 +8,6 @@ void GameInit(void)
 
 void GameLoopOneIteration(void)
 {
-	// some nice comment
-	// yeeees, very nice :)
 	BeginDrawing();
 	ClearBackground(RAYWHITE);
 	DrawText("Hello, world! :)", 500, 300, 40, GRAY);

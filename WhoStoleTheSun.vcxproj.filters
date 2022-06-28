@@ -18,7 +18,37 @@
     <ClCompile Include="src\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\runtime.c">
+    <ClCompile Include="src\core\char_utilities.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\logging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\math.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\memory_utilities.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\noise.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\random.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\runtime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\string_builder.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\string_utilities.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\temporary_allocator.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\allocators\slab_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -56,6 +86,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\raygui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\allocators.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

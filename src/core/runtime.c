@@ -1,15 +1,21 @@
 #define RAYGUI_IMPLEMENTATION
 #pragma warning(push)
 #pragma warning(disable: 4244 4189 4100 4456) // rayhui.h warnings...
-#include "core.h"
+#include "../core.h"
 #pragma warning(pop)
 
 // Run on a dedicated GPU if both a dedicated and integrated one are avaliable.
 // See: https://stackoverflow.com/a/39047129
-#if defined _MSC_VER
+#ifdef _MSC_VER
 __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
 __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
+
+void DoOneGameLoop(void)
+{
+	TempReset(0);
+	GameLoopOneIteration();
+}
 
 int main(void)
 {
@@ -20,12 +26,12 @@ int main(void)
 	#ifdef __EMSCRIPTEN__
 	{
 		void emscripten_set_main_loop(void(*callback)(void), int fps, int simulate_infinite_loop);
-		emscripten_set_main_loop(GameLoopOneIteration, 0, 1);
+		emscripten_set_main_loop(DoOneGameLoop, 0, 1);
 	}
 	#else
 	{
 		while (!WindowShouldClose())
-			GameLoopOneIteration();
+			DoOneGameLoop();
 	}
 	#endif
 }

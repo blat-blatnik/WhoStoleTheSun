@@ -91,10 +91,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\runtime.c">
-      <SubType>
-      </SubType>
-    </ClCompile>
+    <ClCompile Include="src\allocators\slab_allocator.c" />
+    <ClCompile Include="src\core\char_utilities.c" />
+    <ClCompile Include="src\core\logging.c" />
+    <ClCompile Include="src\core\math.c" />
+    <ClCompile Include="src\core\memory_utilities.c" />
+    <ClCompile Include="src\core\noise.c" />
+    <ClCompile Include="src\core\random.c" />
+    <ClCompile Include="src\core\runtime.c" />
+    <ClCompile Include="src\core\string_builder.c" />
+    <ClCompile Include="src\core\string_utilities.c" />
+    <ClCompile Include="src\core\temporary_allocator.c" />
     <ClCompile Include="src\main.c">
       <SubType>
       </SubType>
@@ -112,6 +119,7 @@
     <Library Include="lib\raylib_windows.lib" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\allocators.h" />
     <ClInclude Include="src\core.h" />
     <ClInclude Include="src\lib\raygui.h" />
     <ClInclude Include="src\lib\raylib.h" />
