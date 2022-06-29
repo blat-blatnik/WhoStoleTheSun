@@ -60,9 +60,6 @@
     <ClCompile Include="src\containers\slab_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TEST.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />

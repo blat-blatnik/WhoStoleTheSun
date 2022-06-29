@@ -60,7 +60,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
     </ClCompile>
@@ -78,7 +78,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
     </ClCompile>
@@ -108,7 +108,6 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\TEST.cpp" />
     <ClCompile Include="src\text.c" />
   </ItemGroup>
   <ItemGroup>
