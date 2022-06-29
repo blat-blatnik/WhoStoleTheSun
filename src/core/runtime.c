@@ -11,14 +11,28 @@ __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
 __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
-void DoOneGameLoop(void)
-{
-	TempReset(0);
-	GameLoopOneIteration();
-}
-
 int main(void)
 {
+	// We need the 'res' folder to be accessible from the working directory before we do anything. 
+	// But, on desktop we have no clue where the working directory or the app will be when we run. 
+	// I mean, we do actually know, but it's different on mac/windows/linux, and I don't want to
+	// hardcode it because it might change. So we just programmatically find it at runtime.
+	// On web builds, we know for sure that 'res' is in the working directory, so we don't have
+	// to do this dance and we can save a few instructions and startup time.
+	#ifndef __EMSCRIPTEN__
+	{
+		ChangeDirectory(GetApplicationDirectory());
+		while (not DirectoryExists("res"))
+		{
+			char *newDir = TempFormat("%s/..", GetWorkingDirectory());
+			ReplaceChar(newDir, '\\', '/'); // This isn't necessary - but on windows it makes the log message look nicer :)
+			LogWarning("Couldn't find 'res' in the working directory. Switching working directory to '%s'.", newDir);
+			ChangeDirectory(newDir);
+			TempFree(newDir);
+		}
+	}
+	#endif
+
 	GameInit();
 
 	// On the web, the browser wants to drive the main loop. On other platforms, we drive it.
@@ -26,12 +40,12 @@ int main(void)
 	#ifdef __EMSCRIPTEN__
 	{
 		void emscripten_set_main_loop(void(*callback)(void), int fps, int simulate_infinite_loop);
-		emscripten_set_main_loop(DoOneGameLoop, 0, 1);
+		emscripten_set_main_loop(GameLoopOneIteration, 0, 1);
 	}
 	#else
 	{
-		while (!WindowShouldClose())
-			DoOneGameLoop();
+		while (not WindowShouldClose())
+			GameLoopOneIteration();
 	}
 	#endif
 }

@@ -91,8 +91,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\allocators\slab_allocator.c" />
+    <ClCompile Include="src\containers\list.c" />
+    <ClCompile Include="src\containers\slab_allocator.c" />
     <ClCompile Include="src\core\char_utilities.c" />
+    <ClCompile Include="src\core\hot_reload.c" />
     <ClCompile Include="src\core\logging.c" />
     <ClCompile Include="src\core\math.c" />
     <ClCompile Include="src\core\memory_utilities.c" />
@@ -106,6 +108,7 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\text.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
@@ -119,13 +122,14 @@
     <Library Include="lib\raylib_windows.lib" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\allocators.h" />
+    <ClInclude Include="src\containers.h" />
     <ClInclude Include="src\core.h" />
     <ClInclude Include="src\lib\raygui.h" />
     <ClInclude Include="src\lib\raylib.h" />
     <ClInclude Include="src\lib\raymath.h" />
     <ClInclude Include="src\lib\rlgl.h" />
     <ClInclude Include="src\lib\rmem.h" />
+    <ClInclude Include="src\text.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debug.natvis" />

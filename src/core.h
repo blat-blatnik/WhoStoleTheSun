@@ -127,6 +127,9 @@ bool StringsEqual(const char *a, const char *b);
 // Checks whether the strings are equal - ignores the case of the characters, so 'A' and 'a' are considered equal.
 bool StringsEqualNocase(const char *a, const char *b);
 
+// Replace every occurence of the target character in the string.
+void ReplaceChar(char *string, char target, char replacement);
+
 //
 // Temporary allocator
 //
@@ -193,6 +196,31 @@ void AppendFormatVa(StringBuilder *builder, FORMAT_STRING format, va_list args);
 
 // Creates a string builder from a stack buffer with the given capacity. THIS ONLY WORKS IN C, NOT IN C++.
 #define STRING_BUILDER_ON_STACK(capacity) CreateStringBuilder((char[capacity]){0}, (capacity))
+
+//
+// Hot-reload
+//
+
+STRUCT(FileData)
+{
+	void *bytes; // Note that this is NOT 0 terminated. So you can't use it as a string.
+	int size;
+};
+
+// Load the entire file as bytes. The returned data will be automatically updated whenever the file changes.
+FileData *LoadFileAndTrackChanges(const char *path);
+
+// Loads the texture from a file. The returned texture will be automatically updated whenever the file changes.
+Texture *LoadTextureAndTrackChanges(const char *path);
+
+// Unloads a tracked file, and stops tracking it's changes.
+void UnloadTrackedFile(FileData **data);
+
+// Unloads a tracked texture, and stops tracking it's changes.
+void UnloadTrackedTexture(Texture **texture);
+
+// Checks all tracked items and hot-reloads any that changed. Automatically called at the start of each frame.
+void HotReloadAllTrackedItems(void);
 
 //
 // Random

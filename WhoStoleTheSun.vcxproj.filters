@@ -48,7 +48,16 @@
     <ClCompile Include="src\core\temporary_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\allocators\slab_allocator.c">
+    <ClCompile Include="src\text.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\hot_reload.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\containers\list.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\containers\slab_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -88,7 +97,10 @@
     <ClInclude Include="src\lib\raygui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\allocators.h">
+    <ClInclude Include="src\containers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\text.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -66,3 +66,13 @@ bool StringsEqualNocase(const char *a, const char *b)
 			return true;
 	}
 }
+
+void ReplaceChar(char *string, char target, char replacement)
+{
+	if (!string)
+		return;
+
+	for (int i = 0; string[i]; ++i)
+		if (string[i] == target)
+			string[i] = replacement;
+}
