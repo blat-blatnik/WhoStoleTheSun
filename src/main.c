@@ -11,5 +11,5 @@ void GameLoopOneIteration(void)
 	BeginDrawing();
 	ClearBackground(RAYWHITE);
 	DrawText("Hello, world! :)", 500, 300, 40, GRAY);
-	EndDrawing();
+	EndDrawing();;
 }
