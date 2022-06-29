@@ -5,6 +5,7 @@
 #include "lib/rlgl.h"
 #include "lib/raygui.h"
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <limits.h>
 #include <float.h>

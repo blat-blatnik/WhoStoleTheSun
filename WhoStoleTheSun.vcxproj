@@ -108,6 +108,7 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\TEST.cpp" />
     <ClCompile Include="src\text.c" />
   </ItemGroup>
   <ItemGroup>

@@ -14,6 +14,7 @@ void GameInit(void)
 		ascii[i] = i;
 	roboto = LoadFontEx("res/Roboto.ttf", 32, ascii, COUNTOF(ascii));
 
+	LogInfo("C++ test says: %d\n", TestCpp());
 	test = LoadTextureAndTrackChanges("res/test.png");
 }
 
