@@ -2,6 +2,10 @@
 
 #include "core.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // List
 //
@@ -88,3 +92,7 @@ void FreeFromSlabAllocator(SlabAllocator *allocator, void *block);
 
 // Frees all memory allocated from the allocator after the given cursor.
 void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
+
+#ifdef __cplusplus
+}
+#endif

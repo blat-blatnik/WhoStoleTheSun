@@ -11,6 +11,10 @@
 #include <iso646.h>
 #include <math.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // _Printf_format_string_ is only defined on MSVC.
 #ifndef _Printf_format_string_
 #	define _Printf_format_string_
@@ -326,3 +330,7 @@ float Smootherstep01(float t);
 
 void GameInit(void);
 void GameLoopOneIteration(void);
+
+#ifdef __cplusplus
+}
+#endif
