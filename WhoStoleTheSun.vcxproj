@@ -67,7 +67,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>raylib_windows.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>raylib_windows_x64.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -87,7 +87,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>raylib_windows.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>raylib_windows_x64.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -114,12 +114,14 @@
     <None Include=".gitignore" />
     <None Include="build_web.bat" />
     <None Include="README.md" />
+    <None Include="run_mac.sh" />
     <None Include="run_web.bat" />
     <None Include="synchronize.bat" />
+    <None Include="synchronize.sh" />
     <None Include="webshell.html" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="lib\raylib_windows.lib" />
+    <Library Include="lib\raylib_windows_x64.lib" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\containers.h" />

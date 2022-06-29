@@ -74,9 +74,11 @@
     <None Include="synchronize.bat">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="run_mac.sh" />
+    <None Include="synchronize.sh" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="lib\raylib_windows.lib" />
+    <Library Include="lib\raylib_windows_x64.lib" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\raylib.h">
