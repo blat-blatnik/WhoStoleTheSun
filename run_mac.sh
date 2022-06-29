@@ -13,13 +13,14 @@ fi
 
 if [ "$recompile" = true ]; then
 	echo "Looking for files to compile..."
-	files=$(find . -name '*.c' | tr '\n' ' ')
+	cfiles=$(find . -name '*.c' | tr '\n' ' ')
+	cppfiles=$(find . -name '*.cpp' | tr '\n' ' ')
 
 	echo "Compiling..."
 	frameworks="-framework CoreVideo -framework IOKit -framework Cocoa -framework GLUT -framework OpenGL"
 	mkdir -p bin/mac/temp
-	clang $frameworks $files -L./lib -lraylib_mac_arm64 -o bin/mac/temp/WhoStoleTheSun_arm64 -target arm64-apple-macos11
-	clang $frameworks $files -L./lib -lraylib_mac_x64 -o bin/mac/temp/WhoStoleTheSun_x64 -target x86_64-apple-macos10.12
+	clang $frameworks $cfiles $cppfiles -L./lib -lc++ -lraylib_mac_arm64 -o bin/mac/temp/WhoStoleTheSun_arm64 -target arm64-apple-macos11
+	clang $frameworks $cfiles $cppfiles -L./lib -lc++ -lraylib_mac_x64 -o bin/mac/temp/WhoStoleTheSun_x64 -target x86_64-apple-macos10.12
 	lipo -create -output bin/mac/WhoStoleTheSun bin/mac/temp/WhoStoleTheSun_arm64 bin/mac/temp/WhoStoleTheSun_x64
 	echo "Done."
 fi
