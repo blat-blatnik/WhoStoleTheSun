@@ -3,3 +3,4 @@ temp
 *.vcxproj.user
 bin/**/*.lib
 *.exp
+.DS_Store
