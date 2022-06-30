@@ -93,7 +93,7 @@ void HotReloadAllTrackedItems(void)
 			continue;
 
 		long modTime = GetFileModTime(item->path);
-		if (modTime <= item->lastModTime)
+		if (modTime == item->lastModTime)
 			continue;
 
 		// Sometimes it takes while before the file being updated is completely written.
