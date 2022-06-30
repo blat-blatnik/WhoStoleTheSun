@@ -335,25 +335,32 @@ float Clamp01(float x);
 // Color
 //
 
+// Returns a brighter version of the color. E.g. Brighten(color, 2) will return a roughly 2x brighter color.
 Color Brighten(Color color, float amount);
 
+// Returns a darker version of the color. E.g. Darken(color, 2) will return a roughly 2x darker color.
 Color Darken(Color color, float amount);
 
+// Brightens the color by a default amount.
 Color Brighter(Color color);
 
+// Darkens the color by a default amount.
 Color Darker(Color color);
 
-Color ColorToGrayscale(Color color);
-
+// Returns the color with the oposite hue, and same saturation, value, and alpha as the input.
 Color GetColorOfOpositeHue(Color color);
 
-Color ColorFromGrayscale(unsigned char intensity);
+// Returns a grayscale color with the given [0=black, 1=white] intensity, and an alpha of 1.
+Color Grayscale(float intensity);
 
-Color ColorFromFloatGrayscale(float intensity);
+// Returns a grayscale color with the given intensity and alpha value.
+Color GrayscaleAlpha(float intensity, float alpha);
 
-Color ColorFromFloatRGB(float red, float green, float blue);
+// Returns a color with the given RGB components in [0, 1].
+Color FloatRGB(float red, float green, float blue);
 
-Color ColorFromFloatRGBA(float red, float green, float blue, float alpha);
+// Returns a color with the given RGBA components in [0, 1].
+Color FloatRGBA(float red, float green, float blue, float alpha);
 
 //
 // Runtime (these are used in runtime.c, but they're actually defined in main.c and tests.c)

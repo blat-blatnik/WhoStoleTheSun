@@ -1,28 +1,64 @@
 #include "../core.h"
 
-Color Brighten(Color color, float amount);
-
-Color Darken(Color color, float amount);
-
-Color Brighter(Color color);
-
-Color Darker(Color color);
-
-Color ColorToGrayscale(Color color);
-
-Color GetColorOfOpositeHue(Color color)
+Color Brighten(Color color, float amount)
 {
 	Vector3 hsv = ColorToHSV(color);
-	hsv.x = Wrap01(hsv.x + 0.5f);
+	hsv.z = Clamp01(hsv.z * amount);
 	Color result = ColorFromHSV(hsv.x, hsv.y, hsv.z);
 	result.a = color.a;
 	return result;
 }
 
-Color ColorFromGrayscale(unsigned char intensity);
+Color Darken(Color color, float amount)
+{
+	return Brighten(color, 1 / amount);
+}
 
-Color ColorFromFloatGrayscale(float intensity);
+Color Brighter(Color color)
+{
+	return Brighten(color, 1.6f);
+}
 
-Color ColorFromFloatRgb(float red, float green, float blue);
+Color Darker(Color color)
+{
+	return Darken(color, 1.6f);
+}
 
-Color ColorFromFloatRgba(float red, float green, float blue, float alpha);
+Color GetColorOfOpositeHue(Color color)
+{
+	Vector3 hsv = ColorToHSV(color);
+	hsv.x = Wrap(hsv.x + 180, 0, 360);
+	Color result = ColorFromHSV(hsv.x, hsv.y, hsv.z);
+	result.a = color.a;
+	return result;
+}
+
+Color Grayscale(float intensity)
+{
+	return FloatRGBA(intensity, intensity, intensity, 1);
+}
+
+Color GrayscaleAlpha(float intensity, float alpha)
+{
+	return FloatRGBA(intensity, intensity, intensity, alpha);
+}
+
+Color FloatRGB(float red, float green, float blue)
+{
+	return FloatRGBA(red, green, blue, 1);
+}
+
+Color FloatRGBA(float red, float green, float blue, float alpha)
+{
+	float r = Clamp01(red);
+	float g = Clamp01(green);
+	float b = Clamp01(blue);
+	float a = Clamp01(alpha);
+	return (Color)
+	{
+		.r = (uint8_t)(r * 255.5f),
+		.g = (uint8_t)(g * 255.5f),
+		.b = (uint8_t)(b * 255.5f),
+		.a = (uint8_t)(a * 255.5f),
+	};
+}
