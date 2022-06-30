@@ -325,6 +325,36 @@ float Smoothstep01(float t);
 // Equivalent to Smootherstep(0, 1, t).
 float Smootherstep01(float t);
 
+// Wraps a number in [0, 1).
+float Wrap01(float x);
+
+// Clamps a number to [0, 1].
+float Clamp01(float x);
+
+//
+// Color
+//
+
+Color Brighten(Color color, float amount);
+
+Color Darken(Color color, float amount);
+
+Color Brighter(Color color);
+
+Color Darker(Color color);
+
+Color ColorToGrayscale(Color color);
+
+Color GetColorOfOpositeHue(Color color);
+
+Color ColorFromGrayscale(unsigned char intensity);
+
+Color ColorFromFloatGrayscale(float intensity);
+
+Color ColorFromFloatRGB(float red, float green, float blue);
+
+Color ColorFromFloatRGBA(float red, float green, float blue, float alpha);
+
 //
 // Runtime (these are used in runtime.c, but they're actually defined in main.c and tests.c)
 //

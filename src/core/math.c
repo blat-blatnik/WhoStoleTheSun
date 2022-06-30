@@ -31,3 +31,17 @@ float Smootherstep01(float t)
 {
 	return t * t * t * (t * (t * 6 - 15) + 10);
 }
+
+float Wrap01(float x)
+{
+	return x - floorf(x);
+}
+
+float Clamp01(float x)
+{
+	if (x < 0)
+		x = 0;
+	if (x > 1)
+		x = 1;
+	return x;
+}

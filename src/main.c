@@ -17,6 +17,12 @@ void GameInit(void)
 	test = LoadTextureAndTrackChanges("res/test.png");
 }
 
+void DrawAnimatedTextBox(Font font, Rectangle textBox, float fontSize, Color color, const char *string)
+{
+	//DrawRectangleRec(textBox, MAGENTA);
+	
+}
+
 void GameLoopOneIteration(void)
 {
 	HotReloadAllTrackedItems();
@@ -24,9 +30,12 @@ void GameLoopOneIteration(void)
 
 	BeginDrawing();
 	{
-		ClearBackground(RAYWHITE);
+		ClearBackground(BLACK);
 		DrawTexture(*test, 50, 50, WHITE);
-		DrawFormat(roboto, 500, 300, 32, BLACK, "Hello, sailor!\nWho killed captain Alex?");
+		DrawFormat(roboto, 500, 300, 32, WHITE, "Hello, sailor!\nWho killed captain Alex?");
+
+		Rectangle textBox = { 500, 100, 400, 600 };
+		DrawAnimatedTextBox(roboto, textBox, 32, BLACK, "I have no clue what the hell is going on...");
 	}
 	EndDrawing();
 }

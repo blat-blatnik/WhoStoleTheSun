@@ -63,6 +63,7 @@
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -81,6 +82,7 @@
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,6 +96,10 @@
     <ClCompile Include="src\containers\list.c" />
     <ClCompile Include="src\containers\slab_allocator.c" />
     <ClCompile Include="src\core\char_utilities.c" />
+    <ClCompile Include="src\core\color.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\core\hot_reload.c" />
     <ClCompile Include="src\core\logging.c" />
     <ClCompile Include="src\core\math.c" />
@@ -121,9 +127,6 @@
     <None Include="webshell.html" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="lib\raylib_windows_x64.lib" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="src\containers.h" />
     <ClInclude Include="src\core.h" />
     <ClInclude Include="src\lib\raygui.h" />
@@ -135,6 +138,9 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debug.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lib\raylib_windows_x64.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

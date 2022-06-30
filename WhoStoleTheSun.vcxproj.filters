@@ -60,6 +60,9 @@
     <ClCompile Include="src\containers\slab_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\color.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
@@ -76,9 +79,6 @@
     </None>
     <None Include="run_mac.sh" />
     <None Include="synchronize.sh" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="lib\raylib_windows_x64.lib" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\raylib.h">
@@ -108,5 +108,8 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debug.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lib\raylib_windows_x64.lib" />
   </ItemGroup>
 </Project>
