@@ -1,5 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+	<Type Name="FileData">
+		<DisplayString>{size/1024} kB {bytes, [size] s}</DisplayString>
+		<Expand HideRawView="1">
+			<Item Name="bytes">bytes, [size] s</Item>
+			<Item Name="size">size</Item>
+		</Expand>
+	</Type>
+	
+	<Type Name="StringBuilder">
+		<DisplayString>{buffer,s8}</DisplayString>
+		<Expand HideRawView="1">
+			<Item Name="buffer">buffer,[cursor] s8</Item>
+			<Item Name="cursor">cursor</Item>
+			<Item Name="capacity">capacity</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="FilePathList">
+		<DisplayString>{count} files</DisplayString>
+		<Expand HideRawView="1">
+			<Item Name="count">count</Item>
+			<Item Name="capacity">capacity</Item>
+			<ArrayItems>
+				<Size>count</Size>
+				<ValuePointer>paths,s8</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<Type Name="Texture">
+		<DisplayString>Texture {id} [{width} x {height}]</DisplayString>
+	</Type>
+
+	<Type Name="Font">
+		<DisplayString>{glyphCount} glyphs</DisplayString>
+		<Expand HideRawView="1">
+			<Item Name="baseSize">baseSize</Item>
+			<Item Name="glyphCount">glyphCount</Item>
+			<Item Name="glyphPadding">glyphPadding</Item>
+			<Item Name="texture">texture</Item>
+			<Item Name="recs">recs, [glyphCount]</Item>
+			<Item Name="glyphs">glyphs, [glyphCount]</Item>
+		</Expand>
+	</Type>
+	
 	<Type Name="Vector2">
 		<DisplayString>[{x,g} {y,g}]</DisplayString>
 		<Expand HideRawView="1">
