@@ -103,6 +103,9 @@ bool BytesEqual(const void *a, const void *b, int numBytes);
 // Char utilities
 //
 
+// Returns true if the character is whitespace: ' ', '\t', '\n', '\r', '\v'.
+bool CharIsWhitespace(char c);
+
 // If the char is uppercase, returns it's lowercase counterpart, otherwise returns the char unchanged.
 char CharToLowercase(char c);
 

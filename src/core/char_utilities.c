@@ -1,5 +1,10 @@
 #include "../core.h"
 
+bool CharIsWhitespace(char c)
+{
+	return c == ' ' or c == '\t' or c == '\n' or c == '\r' or c == '\v';
+}
+
 char CharToLowercase(char c)
 {
 	if (c >= 'A' and c <= 'Z')

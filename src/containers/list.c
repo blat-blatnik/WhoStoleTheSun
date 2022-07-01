@@ -10,12 +10,12 @@ STRUCT(Header)
 
 void ListSetAllocator(List(void) *listPointer, void *(*realloc)(void *block, int newSize), void(*free)(void *block))
 {
-	ASSERT(*listPointer); // You can only call ListSetAllocator on a completely empty (NULL) list!
+	ASSERT(not *listPointer); // You can only call ListSetAllocator on a completely empty (NULL) list!
 
 	if (not *listPointer)
 		*listPointer = (Header *)realloc(NULL, sizeof(Header)) + 1;
 
-	Header *header = (Header *)(listPointer) - 1;
+	Header *header = (Header *)(*listPointer) - 1;
 	header->realloc = realloc;
 	header->free = free;
 	header->capacity = 0;
@@ -56,7 +56,7 @@ void private_ListReserve(List(void) *listPointer, int neededCapacity, int sizeOf
 
 	if (not *listPointer)
 	{
-		Header *header = MemRealloc(NULL, sizeof(Header) + neededCapacity * sizeOfOneItem);
+		Header *header = MemRealloc(NULL, sizeof(Header) + capacity * sizeOfOneItem);
 		header->realloc = MemRealloc;
 		header->free = MemFree;
 		header->capacity = capacity;
@@ -66,7 +66,7 @@ void private_ListReserve(List(void) *listPointer, int neededCapacity, int sizeOf
 	else
 	{
 		Header *header = (Header *)(*listPointer) - 1;
-		header = header->realloc(header, sizeof(Header) + neededCapacity * sizeOfOneItem);
+		header = header->realloc(header, sizeof(Header) + capacity * sizeOfOneItem);
 		header->capacity = capacity;
 		*listPointer = header + 1;
 	}
