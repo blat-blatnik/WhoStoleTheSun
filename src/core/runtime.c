@@ -2,6 +2,8 @@
 #pragma warning(push)
 #pragma warning(disable: 4244 4189 4100 4456) // rayhui.h warnings...
 #include "../core.h"
+
+
 #pragma warning(pop)
 
 // Run on a dedicated GPU if both a dedicated and integrated one are avaliable.
@@ -49,6 +51,7 @@ int main(void)
 	}
 	#endif
 }
+
 
 // On Windows, when running without the command line, the program entry point is WinMain instead of main.
 #ifdef _WIN32
