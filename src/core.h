@@ -369,7 +369,7 @@ Color FloatRGBA(float red, float green, float blue, float alpha);
 // Runtime (these are used in runtime.c, but they're actually defined in main.c and tests.c)
 //
 
-void GameInit(void);
+void Game(void);
 void GameLoopOneIteration(void);
 
 #ifdef __cplusplus

@@ -96,6 +96,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Console\ChatHandler.cpp" />
+    <ClCompile Include="Console\ConsoleCommand.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
@@ -138,6 +140,8 @@
     <None Include="webshell.html" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Console\ChatHandler.h" />
+    <ClInclude Include="Console\ConsoleCommand.h" />
     <ClInclude Include="glfw\include\GLFW\glfw3.h" />
     <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
     <ClInclude Include="imgui\imconfig.h" />

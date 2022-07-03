@@ -11,7 +11,7 @@ Font roboto;
 
 
 bool show_demo_window = true;
-void GameInit(void)
+void Game(void)
 {
 	InitWindow(1280, 720, "Who Stole The Sun");
 	SetTargetFPS(60);
@@ -26,26 +26,17 @@ void GameInit(void)
 
 	const char* glsl_version = "#version 130";
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
 	GLFWwindow* window = glfwGetCurrentContext();
 	if (window == NULL)
 		return;
-	
-	//glfwMakeContextCurrent(window);
-	//glfwSwapInterval(1); // Enable vsync
-
 
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
-	//ImGui::StyleColorsClassic();
 
-	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(glsl_version);
 	
@@ -89,9 +80,12 @@ void GameInit(void)
 
 			DrawAnimatedTextBox(roboto, textBox, 32, BLACK, 20 * t, text);
 		}
-
-		if (show_demo_window)
+		if (IsKeyDown(KEY_A))
+		{
 			ImGui::ShowDemoWindow(&show_demo_window);
+
+		}
+			
 		rlDrawRenderBatchActive();
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -35,7 +35,7 @@ int main(void)
 	}
 	#endif
 
-	GameInit();
+	Game();
 
 	// On the web, the browser wants to drive the main loop. On other platforms, we drive it.
 	// See: https://emscripten.org/docs/porting/emscripten-runtime-environment.html#browser-main-loop
