@@ -107,6 +107,7 @@
     <None Include="run_mac.sh" />
     <None Include="synchronize.sh" />
     <None Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.ini" />
+    <None Include="imgui.ini" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\raylib.h">
@@ -166,7 +167,7 @@
     <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\glfw\glfw3native.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui_impl_raylib_config.h">
+    <ClInclude Include="src\imgui_impl_raylib_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Console\ConsoleCommand.h">
