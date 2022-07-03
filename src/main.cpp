@@ -2,9 +2,9 @@
 
 #include "core.h"
 #include "text.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
+#include "TEMPORARY_NEEDS_CLEANUP/imgui/imgui_impl_glfw.h"
+#include "TEMPORARY_NEEDS_CLEANUP/imgui/imgui_impl_opengl3.h"
+#include "TEMPORARY_NEEDS_CLEANUP/glfw/glfw3.h"
 #include <stdio.h>
 Texture *test;
 Font roboto;
@@ -23,31 +23,18 @@ void Game(void)
 
 	test = LoadTextureAndTrackChanges("res/test.png");
 
-
-	const char* glsl_version = "#version 130";
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-
-	GLFWwindow* window = glfwGetCurrentContext();
-	if (window == NULL)
-		return;
-
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-
 	ImGui::StyleColorsDark();
 
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init(glsl_version);
+	ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
+	ImGui_ImplOpenGL3_Init("#version 130");
 	
-
 	while (not WindowShouldClose())
 	{
-		
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
 
 		HotReloadAllTrackedItems();
 		TempReset(0);

@@ -63,31 +63,31 @@
     <ClCompile Include="src\core\color.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui.cpp">
+    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_demo.cpp">
+    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_demo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_draw.cpp">
+    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_draw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_impl_glfw.cpp">
+    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_glfw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_impl_opengl3.cpp">
+    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_opengl3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_tables.cpp">
+    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_tables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_widgets.cpp">
+    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Console\ConsoleCommand.cpp">
+    <ClCompile Include="src\Console\ConsoleCommand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Console\ChatHandler.cpp">
+    <ClCompile Include="src\Console\ChatHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -106,7 +106,7 @@
     </None>
     <None Include="run_mac.sh" />
     <None Include="synchronize.sh" />
-    <None Include="imgui\imgui.ini" />
+    <None Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.ini" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\raylib.h">
@@ -133,46 +133,46 @@
     <ClInclude Include="src\text.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imconfig.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imconfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_glfw.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_glfw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_opengl3.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_opengl3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_opengl3_loader.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_opengl3_loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui_internal.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imstb_rectpack.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imstb_rectpack.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imstb_textedit.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imstb_textedit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imstb_truetype.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imstb_truetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="glfw\include\GLFW\glfw3.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\glfw\glfw3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="glfw\include\GLFW\glfw3native.h">
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\glfw\glfw3native.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="imgui_impl_raylib_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Console\ConsoleCommand.h">
+    <ClInclude Include="src\Console\ConsoleCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Console\ChatHandler.h">
+    <ClInclude Include="src\Console\ChatHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
