@@ -2,17 +2,22 @@
 cd "$(dirname "$0")" # Set working directory to the directory of the script.
 
 echo "Checking if recompile is needed..."
-recompile=true
-if [ -f bin/mac/WhoStoleTheSun ]; then
-	mostrecent=$(ls -At src | head -n1)
-	if [ bin/mac/WhoStoleTheSun -nt src/$mostrecent ]; then
-		recompile=false
-		echo "Recompile not needed."
-	fi
+recompile=false
+if [ -f bin/mac/WhoStoleTheSun ];
+then
+	for file in $(find src -name '*.c'; find src -name '*.cpp'; find src -name '*.h'; find src -name '*.hpp')
+	do
+		if [ $file -nt bin/mac/WhoStoleTheSun ];
+		then
+			recompile=true
+		fi
+	done
 fi
 
-if [ "$recompile" = true ]; then
-	echo $mostrecent
+if [ "$recompile" = false ];
+then
+	echo "Recompile not needed."
+else
 	for file in $(find . -name '*.c')
 	do
 		echo "Compiling C file $file..."
