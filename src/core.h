@@ -369,6 +369,9 @@ Color FloatRGBA(float red, float green, float blue, float alpha);
 // Text
 //
 
+// Loads all ASCII glyphs from the given .ttf file.
+Font LoadFontAscii(const char *path, int fontSize);
+
 // Draws a formatted string starting at (x, y) and going right and down.
 void DrawFormat(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, ...);
 

@@ -69,6 +69,14 @@ static List(int) TextToCodepoints(const char *text)
 	return codepoints;
 }
 
+Font LoadFontAscii(const char *path, int fontSize)
+{
+	int ascii[128];
+	for (int i = 0; i < COUNTOF(ascii); ++i)
+		ascii[i] = i;
+	return LoadFontEx(path, 32, ascii, COUNTOF(ascii));
+}
+
 void DrawFormat(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, ...)
 {
 	va_list args;
