@@ -316,6 +316,9 @@ Vector2 UnitVector2WithAngle(float angle);
 // Returns a vector with the given polar coordinates.
 Vector2 Vector2FromPolar(float length, float angle);
 
+// Returns the angle between the vector and the x-axis. I.e. atan2f(y, x).
+float Vector2Atan(Vector2 v);
+
 // Smoothly interpolates between 0 and 1 based on t. https://en.wikipedia.org/wiki/Smoothstep.
 float Smoothstep(float edge0, float edge1, float t);
 

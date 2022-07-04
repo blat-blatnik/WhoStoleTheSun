@@ -12,6 +12,11 @@ Vector2 Vector2FromPolar(float length, float angle)
 	return (Vector2) { c * length, s * length };
 }
 
+float Vector2Atan(Vector2 v)
+{
+	return atan2f(v.y, v.x);
+}
+
 float Smoothstep(float edge0, float edge1, float t)
 {
 	return Smoothstep01((t - edge0) / (edge1 - edge0));
