@@ -98,6 +98,10 @@
   <ItemGroup>
     <ClCompile Include="src\Console\ChatHandler.cpp" />
     <ClCompile Include="src\Console\ConsoleCommand.cpp" />
+    <ClCompile Include="src\core\drawing.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.cpp" />
     <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_demo.cpp" />
     <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_draw.cpp" />

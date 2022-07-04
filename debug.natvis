@@ -34,6 +34,17 @@
 		<DisplayString>Texture {id} [{width} x {height}]</DisplayString>
 	</Type>
 
+	<Type Name="Image">
+		<DisplayString>Image [{width} x {height}]</DisplayString>
+		<Expand HideRawView="1">
+			<Item Name="data">(char *)data, [width*height] s</Item>
+			<Item Name="width">width</Item>
+			<Item Name="height">height</Item>
+			<Item Name="mipmaps">mipmaps</Item>
+			<Item Name="format">format</Item>
+		</Expand>
+	</Type>
+
 	<Type Name="Font">
 		<DisplayString>{glyphCount} glyphs</DisplayString>
 		<Expand HideRawView="1">

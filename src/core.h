@@ -215,17 +215,23 @@ STRUCT(FileData)
 	int size;
 };
 
-// Load the entire file as bytes. The returned data will be automatically updated whenever the file changes.
+// Load the entire file as bytes. The returned image will automatically update whenever the file changes.
 FileData *LoadFileAndTrackChanges(const char *path);
 
-// Loads the texture from a file. The returned texture will be automatically updated whenever the file changes.
+// Loads a texture from a file. The returned image will automatically update whenever the file changes.
 Texture *LoadTextureAndTrackChanges(const char *path);
 
-// Unloads a tracked file, and stops tracking it's changes.
+// Loads an image from a file. The returned image will automatically update whenever the file changes.
+Image *LoadImageAndTrackChanges(const char *path);
+
+// Unloads a tracked file, and stops tracking its changes.
 void UnloadTrackedFile(FileData **data);
 
-// Unloads a tracked texture, and stops tracking it's changes.
+// Unloads a tracked texture, and stops tracking its changes.
 void UnloadTrackedTexture(Texture **texture);
+
+// Unloads a tracked image, and stops tracking its changes.
+void UnloadTrackedImage(Image **image);
 
 // Checks all tracked items and hot-reloads any that changed. Automatically called at the start of each frame.
 void HotReloadAllTrackedItems(void);
@@ -337,6 +343,9 @@ float Wrap01(float x);
 // Clamps a number to [0, 1].
 float Clamp01(float x);
 
+// Clamps an integer to [min, max].
+int ClampInt(int x, int min, int max);
+
 //
 // Color
 //
@@ -367,6 +376,13 @@ Color FloatRGB(float red, float green, float blue);
 
 // Returns a color with the given RGBA components in [0, 1].
 Color FloatRGBA(float red, float green, float blue, float alpha);
+
+//
+// Drawing
+//
+
+// Draws a texture centered at the given point.
+void DrawTextureCentered(Texture texture, Vector2 position, Color tint);
 
 //
 // Text

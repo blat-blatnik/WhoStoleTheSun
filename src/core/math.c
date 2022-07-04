@@ -50,3 +50,12 @@ float Clamp01(float x)
 		x = 1;
 	return x;
 }
+
+int ClampInt(int x, int min, int max)
+{
+	if (x < min)
+		x = min;
+	if (x > max)
+		x = max;
+	return x;
+}

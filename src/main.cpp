@@ -24,6 +24,7 @@ STRUCT(Player)
 };
 
 Texture *background;
+Image *collisionMap;
 Font roboto;
 Player player;
 
@@ -47,9 +48,9 @@ void Game(void)
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
 	ImGui_ImplOpenGL3_Init("#version 130");
-
 	roboto = LoadFontAscii("res/Roboto.ttf", 32);
 	background = LoadTextureAndTrackChanges("res/background.png");
+	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
 	player.textures[DIRECTION_RIGHT]      = LoadTextureAndTrackChanges("res/player-right.png");
 	player.textures[DIRECTION_UP_RIGHT]   = LoadTextureAndTrackChanges("res/player-up-right.png");
 	player.textures[DIRECTION_UP]         = LoadTextureAndTrackChanges("res/player-up.png");
@@ -100,11 +101,23 @@ void Game(void)
 				player.direction = DirectionFromVector(dirVector);
 				Vector2 deltaPos = Vector2Scale(move, moveSpeed);
 				deltaPos.y *= ySquish;
-				player.pos = Vector2Add(player.pos, deltaPos);
+				Vector2 newPos = Vector2Add(player.pos, deltaPos);
+				Vector2 feetPos = newPos;
+				feetPos.y += 0.5f * player.textures[player.direction]->height;
+
+				int footX = (int)roundf(feetPos.x);
+				int footY = (int)roundf(feetPos.y);
+				footX = ClampInt(footX, 0, collisionMap->width - 1);
+				footY = ClampInt(footY, 0, collisionMap->height - 1);
+				Color collision = GetImageColor(*collisionMap, footX, footY);
+
+				LogInfo("%d", collision.r);
+				if (collision.r >= 128)
+					player.pos = newPos;
 			}
 
 			Vector2 playerSize = { 50, 90 };
-			DrawTextureEx(*player.textures[player.direction], player.pos, 0, 1, WHITE);
+			DrawTextureCentered(*player.textures[player.direction], player.pos, WHITE);
 
 			if (IsKeyDown(KEY_GRAVE))
 				ImGui::ShowDemoWindow();
