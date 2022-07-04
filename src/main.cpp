@@ -1,7 +1,4 @@
-
-
 #include "core.h"
-#include "text.h"
 #include "TEMPORARY_NEEDS_CLEANUP/imgui/imgui_impl_glfw.h"
 #include "TEMPORARY_NEEDS_CLEANUP/imgui/imgui_impl_opengl3.h"
 #include "TEMPORARY_NEEDS_CLEANUP/glfw/glfw3.h"

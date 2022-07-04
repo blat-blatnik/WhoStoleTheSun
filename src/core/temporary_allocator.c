@@ -1,5 +1,4 @@
 #include "../core.h"
-#include "../containers.h"
 #include <stdio.h>
 
 static char firstSlabMemory[MEGABYTES(1)];

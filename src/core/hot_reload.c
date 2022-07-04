@@ -1,5 +1,4 @@
 #include "../core.h"
-#include "../containers.h"
 #include <stdio.h>
 
 ENUM(ItemKind)

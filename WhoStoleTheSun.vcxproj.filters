@@ -48,16 +48,16 @@
     <ClCompile Include="src\core\temporary_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\text.c">
+    <ClCompile Include="src\core\text.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\hot_reload.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\containers\list.c">
+    <ClCompile Include="src\core\list.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\containers\slab_allocator.c">
+    <ClCompile Include="src\core\slab_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\color.c">
@@ -84,10 +84,10 @@
     <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Console\ConsoleCommand.cpp">
+    <ClCompile Include="src\Console\ChatHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Console\ChatHandler.cpp">
+    <ClCompile Include="src\Console\ConsoleCommand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -128,12 +128,6 @@
     <ClInclude Include="src\lib\raygui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\containers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\text.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imconfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -170,10 +164,10 @@
     <ClInclude Include="src\imgui_impl_raylib_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Console\ConsoleCommand.h">
+    <ClInclude Include="src\Console\ChatHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Console\ChatHandler.h">
+    <ClInclude Include="src\Console\ConsoleCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

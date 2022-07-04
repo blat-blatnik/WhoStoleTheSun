@@ -1,5 +1,4 @@
-#include "text.h"
-#include "containers.h"
+#include "../core.h"
 
 STRUCT(Word)
 {
@@ -13,7 +12,7 @@ static float GetAdvance(Font font, int glyphIndex)
 	if (font.glyphs[glyphIndex].advanceX == 0)
 		return font.recs[glyphIndex].width;
 	else
-		return font.glyphs[glyphIndex].advanceX;;
+		return (float)font.glyphs[glyphIndex].advanceX;
 }
 
 static List(Word) SplitIntoWords(Font font, List(int) codepoints)

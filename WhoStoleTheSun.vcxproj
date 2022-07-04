@@ -105,8 +105,8 @@
     <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="src\containers\list.c" />
-    <ClCompile Include="src\containers\slab_allocator.c" />
+    <ClCompile Include="src\core\list.c" />
+    <ClCompile Include="src\core\slab_allocator.c" />
     <ClCompile Include="src\core\char_utilities.c" />
     <ClCompile Include="src\core\color.c">
       <SubType>
@@ -126,7 +126,7 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\text.c" />
+    <ClCompile Include="src\core\text.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
@@ -155,14 +155,12 @@
     <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imstb_rectpack.h" />
     <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imstb_textedit.h" />
     <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imstb_truetype.h" />
-    <ClInclude Include="src\containers.h" />
     <ClInclude Include="src\core.h" />
     <ClInclude Include="src\lib\raygui.h" />
     <ClInclude Include="src\lib\raylib.h" />
     <ClInclude Include="src\lib\raymath.h" />
     <ClInclude Include="src\lib\rlgl.h" />
     <ClInclude Include="src\lib\rmem.h" />
-    <ClInclude Include="src\text.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debug.natvis" />

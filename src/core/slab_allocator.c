@@ -1,5 +1,4 @@
-#include "../containers.h"
-#include <string.h>
+#include "../core.h"
 
 #define ALIGNMENT 16
 #define MASK ((uintptr_t)(ALIGNMENT - 1))
