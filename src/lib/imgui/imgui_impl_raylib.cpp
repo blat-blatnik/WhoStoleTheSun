@@ -120,6 +120,8 @@ void ImGui_ImplRaylib_NewFrame()
     io.KeyAlt = IsKeyDown(KEY_RIGHT_ALT) || IsKeyDown(KEY_LEFT_ALT);
     io.KeySuper = IsKeyDown(KEY_RIGHT_SUPER) || IsKeyDown(KEY_LEFT_SUPER);
 
+    // io.Fonts->GetTexDataAsRGBA32() / GetTexDataAsAlpha8()
+
     ImGui_ImplRaylib_UpdateMousePosAndButtons();
     ImGui_ImplRaylib_UpdateMouseCursor();
 
@@ -269,13 +271,14 @@ void ImGui_ImplRaylib_LoadDefaultFontAtlas()
         Image image;
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bpp);
 
-        unsigned int size = GetPixelDataSize(width, height, 7);
+        unsigned int size = GetPixelDataSize(width, height, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
         image.data = malloc(size);
         memcpy(image.data, pixels, size);
         image.width = width;
         image.height = height;
         image.mipmaps = 1;
         image.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        //ImageFlipHorizontal(&image);
         Texture2D tex = LoadTextureFromImage(image);
 		g_AtlasTexID = tex.id;
 		io.Fonts->TexID = (void*)&g_AtlasTexID;
@@ -323,7 +326,8 @@ void ImGui_ImplRaylib_Render(ImDrawData* draw_data)
                     {
                         rlPushMatrix();
                         rlBegin(RL_TRIANGLES);
-                        rlEnableTexture(*ti);
+                        //rlEnableTexture(*ti);
+                        rlSetTexture(*ti);
 
                         ImDrawIdx index;
                         ImDrawVert vertex;
