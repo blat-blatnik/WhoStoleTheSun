@@ -1,9 +1,7 @@
 #include "core.h"
-#include "TEMPORARY_NEEDS_CLEANUP/imgui/imgui_impl_glfw.h"
-#include "TEMPORARY_NEEDS_CLEANUP/imgui/imgui_impl_opengl3.h"
-#include "TEMPORARY_NEEDS_CLEANUP/glfw/glfw3.h"
+#include "lib/imgui/imgui_impl_raylib.h"
 
-ENUM(Direction)
+enum Direction
 {
 	DIRECTION_RIGHT, // The order of these matters. Start at (1, 0) then rotate counter-clockwise (+y = up) by 45 degrees.
 	DIRECTION_UP_RIGHT,
@@ -40,14 +38,15 @@ Direction DirectionFromVector(Vector2 v)
 	return (Direction)index;
 }
 
-void Game(void)
+void GameInit(void)
 {
 	InitWindow(1280, 720, "Who Stole The Sun");
 	SetTargetFPS(60);
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
-	ImGui_ImplOpenGL3_Init("#version 130");
+	ImGui_ImplRaylib_Init();
+	ImGui_ImplRaylib_LoadDefaultFontAtlas();
+
 	roboto = LoadFontAscii("res/Roboto.ttf", 32);
 	background = LoadTextureAndTrackChanges("res/background.png");
 	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
@@ -63,73 +62,67 @@ void Game(void)
 	player.pos.x = 1280 / 2;
 	player.pos.y = 720 / 2;
 	player.direction = DIRECTION_DOWN;
-
-	// In the isometric perspective, the y direction is squished down a little bit.
-	float ySquish = sqrtf(2) * sinf(PI / 8);
-
-	while (not WindowShouldClose())
-	{
-		HotReloadAllTrackedItems();
-		TempReset(0);
-
-		BeginDrawing();
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		{
-			ClearBackground(BLACK); // @TODO: We might not need to clear if we always overwrite the whole screen.
-			DrawTexture(*background, 0, 0, WHITE);
-
-			float moveSpeed = 5;
-			if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
-				moveSpeed = 10;
-
-			Vector2 move = { 0 };
-			if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
-				move.x -= 1;
-			if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
-				move.x += 1;
-			if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
-				move.y -= 1;
-			if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
-				move.y += 1;
-			if (move.x != 0 || move.y != 0)
-			{
-				move = Vector2Normalize(move);
-				Vector2 dirVector = move;
-				dirVector.y *= -1;
-				player.direction = DirectionFromVector(dirVector);
-				Vector2 deltaPos = Vector2Scale(move, moveSpeed);
-				deltaPos.y *= ySquish;
-				Vector2 newPos = Vector2Add(player.pos, deltaPos);
-				Vector2 feetPos = newPos;
-				feetPos.y += 0.5f * player.textures[player.direction]->height;
-
-				int footX = (int)roundf(feetPos.x);
-				int footY = (int)roundf(feetPos.y);
-				footX = ClampInt(footX, 0, collisionMap->width - 1);
-				footY = ClampInt(footY, 0, collisionMap->height - 1);
-				Color collision = GetImageColor(*collisionMap, footX, footY);
-
-				LogInfo("%d", collision.r);
-				if (collision.r >= 128)
-					player.pos = newPos;
-			}
-
-			Vector2 playerSize = { 50, 90 };
-			DrawTextureCentered(*player.textures[player.direction], player.pos, WHITE);
-
-			if (IsKeyDown(KEY_GRAVE))
-				ImGui::ShowDemoWindow();
-		}			
-		rlDrawRenderBatchActive();
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		EndDrawing();
-	}
 }
 
 void GameLoopOneIteration(void)
 {
+	HotReloadAllTrackedItems();
+	TempReset(0);
 
+	BeginDrawing();
+	ImGui_ImplRaylib_NewFrame();
+	ImGui::NewFrame();
+	{
+		ClearBackground(BLACK); // @TODO: We might not need to clear if we always overwrite the whole screen.
+		DrawTexture(*background, 0, 0, WHITE);
+
+		float moveSpeed = 5;
+		if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+			moveSpeed = 10;
+
+		Vector2 move = { 0 };
+		if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
+			move.x -= 1;
+		if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
+			move.x += 1;
+		if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
+			move.y -= 1;
+		if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
+			move.y += 1;
+		if (move.x != 0 || move.y != 0)
+		{
+			move = Vector2Normalize(move);
+			Vector2 dirVector = move;
+			dirVector.y *= -1;
+			player.direction = DirectionFromVector(dirVector);
+			Vector2 deltaPos = Vector2Scale(move, moveSpeed);
+
+			// In the isometric perspective, the y direction is squished down a little bit.
+			float ySquish = sqrtf(2) * sinf(PI / 8);
+			deltaPos.y *= ySquish;
+			Vector2 newPos = Vector2Add(player.pos, deltaPos);
+			Vector2 feetPos = newPos;
+			feetPos.y += 0.5f * player.textures[player.direction]->height;
+
+			int footX = (int)roundf(feetPos.x);
+			int footY = (int)roundf(feetPos.y);
+			footX = ClampInt(footX, 0, collisionMap->width - 1);
+			footY = ClampInt(footY, 0, collisionMap->height - 1);
+			Color collision = GetImageColor(*collisionMap, footX, footY);
+
+			LogInfo("%d", collision.r);
+			if (collision.r >= 128)
+				player.pos = newPos;
+		}
+
+		Vector2 playerSize = { 50, 90 };
+		DrawTextureCentered(*player.textures[player.direction], player.pos, WHITE);
+
+		if (IsKeyDown(KEY_GRAVE))
+			ImGui::ShowDemoWindow();
+	}
+	rlDrawRenderBatchActive();
+	ImGui::Render();
+	ImGui_ImplRaylib_Render(ImGui::GetDrawData());
+	EndDrawing();
 }

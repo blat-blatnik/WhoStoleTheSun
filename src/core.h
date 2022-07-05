@@ -490,7 +490,7 @@ void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
 // Runtime (these are used in runtime.c, but they're actually defined in main.c and tests.c)
 //
 
-void Game(void);
+void GameInit(void);
 void GameLoopOneIteration(void);
 
 #ifdef __cplusplus

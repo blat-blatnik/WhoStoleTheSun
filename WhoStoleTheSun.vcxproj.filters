@@ -36,7 +36,7 @@
     <ClCompile Include="src\core\random.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\runtime.c">
+    <ClCompile Include="src\core\runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\string_builder.c">
@@ -72,12 +72,6 @@
     <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_draw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_glfw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_opengl3.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_tables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -91,6 +85,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\drawing.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_raylib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\imgui\imgui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\imgui\imgui_demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\imgui\imgui_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\imgui\imgui_impl_raylib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\imgui\imgui_tables.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\imgui\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -110,7 +125,6 @@
     <None Include="run_mac.sh" />
     <None Include="synchronize.sh" />
     <None Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.ini" />
-    <None Include="imgui.ini" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\raylib.h">
@@ -135,15 +149,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_glfw.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_opengl3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_opengl3_loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_internal.h">
@@ -171,6 +176,36 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Console\ConsoleCommand.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_raylib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_raylib_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\imgui\imconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\imgui\imgui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\imgui\imgui_impl_raylib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\imgui\imgui_impl_raylib_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\imgui\imgui_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\imgui\imstb_rectpack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\imgui\imstb_textedit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\imgui\imstb_truetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
