@@ -63,21 +63,6 @@
     <ClCompile Include="src\core\color.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_demo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_draw.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_tables.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_widgets.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Console\ChatHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -85,9 +70,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\drawing.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_raylib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\imgui\imgui.cpp">
@@ -124,7 +106,6 @@
     </None>
     <None Include="run_mac.sh" />
     <None Include="synchronize.sh" />
-    <None Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.ini" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\raylib.h">
@@ -145,30 +126,6 @@
     <ClInclude Include="src\lib\raygui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imconfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_internal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imstb_rectpack.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imstb_textedit.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imstb_truetype.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\glfw\glfw3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\glfw\glfw3native.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\imgui_impl_raylib_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -178,12 +135,6 @@
     <ClInclude Include="src\Console\ConsoleCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_raylib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\TEMPORARY_NEEDS_CLEANUP\imgui\imgui_impl_raylib_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\lib\imgui\imconfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -191,9 +142,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\imgui\imgui_impl_raylib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\imgui\imgui_impl_raylib_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\imgui\imgui_internal.h">

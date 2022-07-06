@@ -45,10 +45,8 @@ void GameInit(void)
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 	ImGui_ImplRaylib_Init();
-
 	auto &io = ImGui::GetIO();
-	io.Fonts->AddFontFromFileTTF("res/Roboto.ttf", 24);
-	//io.Fonts->Build();
+	io.Fonts->AddFontFromFileTTF("res/Roboto.ttf", 18);
 	ImGui_ImplRaylib_LoadDefaultFontAtlas();
 	
 	roboto = LoadFontAscii("res/Roboto.ttf", 32);
@@ -72,7 +70,6 @@ void GameLoopOneIteration(void)
 {
 	HotReloadAllTrackedItems();
 	TempReset(0);
-
 	BeginDrawing();
 	ImGui_ImplRaylib_NewFrame();
 	ImGui::NewFrame();
@@ -114,20 +111,12 @@ void GameLoopOneIteration(void)
 			footY = ClampInt(footY, 0, collisionMap->height - 1);
 			Color collision = GetImageColor(*collisionMap, footX, footY);
 
-			LogInfo("%d", collision.r);
 			if (collision.r >= 128)
 				player.pos = newPos;
 		}
 
 		Vector2 playerSize = { 50, 90 };
 
-		//Texture t;
-		//t.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-		//t.width = 512;
-		//t.height = 512;
-		//t.mipmaps = 1;
-		//t.id= 
-		//DrawTextureCentered(3, player.pos, WHITE);
 		DrawTextureCentered(*player.textures[player.direction], player.pos, WHITE);
 
 		ImGui::ShowDemoWindow();

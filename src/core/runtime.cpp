@@ -1,18 +1,15 @@
-#define RAYGUI_IMPLEMENTATION
-#pragma warning(push)
-#pragma warning(disable: 4244 4189 4100 4456) // rayhui.h warnings...
 #include "../core.h"
-#pragma warning(pop)
+#include "../lib/imgui/imgui_impl_raylib.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
 
 // Run on a dedicated GPU if both a dedicated and integrated one are avaliable.
 // See: https://stackoverflow.com/a/39047129
 #ifdef _MSC_VER
 extern "C" __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-#endif
-
-#ifdef __EMSCRIPTEN__
-extern "C" void emscripten_set_main_loop(void(*callback)(void), int fps, int simulate_infinite_loop);
 #endif
 
 int main()

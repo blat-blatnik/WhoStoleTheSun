@@ -11,22 +11,15 @@
 //	The compiler whines about IMGUI_IMPL_API not being defined, so I'm leaving this here.
 #include "imgui.h"
 
-//	Config macros
-#include "imgui_impl_raylib_config.h"
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-	IMGUI_IMPL_API bool     ImGui_ImplRaylib_Init();
-	IMGUI_IMPL_API void     ImGui_ImplRaylib_Shutdown();
-	IMGUI_IMPL_API void     ImGui_ImplRaylib_NewFrame();
-	IMGUI_IMPL_API bool     ImGui_ImplRaylib_ProcessEvent();
-
-#ifdef COMPATIBILITY_MODE
-	IMGUI_IMPL_API void     ImGui_ImplRaylib_LoadDefaultFontAtlas();
-	IMGUI_IMPL_API void     ImGui_ImplRaylib_Render(ImDrawData* draw_data);
-#endif
+	IMGUI_IMPL_API bool ImGui_ImplRaylib_Init();
+	IMGUI_IMPL_API void ImGui_ImplRaylib_Shutdown();
+	IMGUI_IMPL_API void ImGui_ImplRaylib_NewFrame();
+	IMGUI_IMPL_API void ImGui_ImplRaylib_LoadDefaultFontAtlas();
+	IMGUI_IMPL_API void ImGui_ImplRaylib_Render(ImDrawData* draw_data);
 
 #if defined(__cplusplus)
 }

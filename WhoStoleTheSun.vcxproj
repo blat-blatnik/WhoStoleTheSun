@@ -147,7 +147,6 @@
     <ClInclude Include="src\lib\imgui\imconfig.h" />
     <ClInclude Include="src\lib\imgui\imgui.h" />
     <ClInclude Include="src\lib\imgui\imgui_impl_raylib.h" />
-    <ClInclude Include="src\lib\imgui\imgui_impl_raylib_config.h" />
     <ClInclude Include="src\lib\imgui\imgui_internal.h" />
     <ClInclude Include="src\lib\imgui\imstb_rectpack.h" />
     <ClInclude Include="src\lib\imgui\imstb_textedit.h" />

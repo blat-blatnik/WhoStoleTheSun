@@ -1,7 +1,6 @@
 #include "imgui_impl_raylib.h"
 #include "../../lib/raylib.h"
 #include "../../lib/rlgl.h"
-#include <memory>
 
 static double g_Time = 0.0;
 static bool g_UnloadAtlas = false;
@@ -52,10 +51,6 @@ bool ImGui_ImplRaylib_Init()
     io.GetClipboardTextFn = ImGui_ImplRaylib_GetClipboardText;
     io.ClipboardUserData = NULL;
 
-#ifdef AUTO_FONTATLAS
-    ImGui_ImplRaylib_LoadDefaultFontAtlas();
-#endif
-
     return true;
 }
 
@@ -74,7 +69,7 @@ static void ImGui_ImplRaylib_UpdateMousePosAndButtons()
 
     // Set OS mouse position if requested (rarely used, only when ImGuiConfigFlags_NavEnableSetMousePos is enabled by user)
     if (io.WantSetMousePos)
-        SetMousePosition(io.MousePos.x, io.MousePos.y);
+        SetMousePosition((int)io.MousePos.x, (int)io.MousePos.y);
     else
         io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
 
@@ -83,7 +78,7 @@ static void ImGui_ImplRaylib_UpdateMousePosAndButtons()
     io.MouseDown[2] = IsMouseButtonDown(MOUSE_MIDDLE_BUTTON);
 
     if (!IsWindowMinimized())
-        io.MousePos = ImVec2(GetMouseX(), GetMouseY());
+        io.MousePos = ImVec2((float)GetMouseX(), (float)GetMouseY());
 }
 
 static void ImGui_ImplRaylib_UpdateMouseCursor()
@@ -94,41 +89,9 @@ static void ImGui_ImplRaylib_UpdateMouseCursor()
 
     ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
     if (io.MouseDrawCursor || imgui_cursor == ImGuiMouseCursor_None)
-    {
-        // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
-        HideCursor();
-    }
+        HideCursor(); // Hide OS mouse cursor if imgui is drawing it or if it wants no cursor
     else
-    {
-        // Show OS mouse cursor
-        ShowCursor();
-    }
-}
-
-void ImGui_ImplRaylib_NewFrame()
-{
-    ImGuiIO& io = ImGui::GetIO();
-
-    io.DisplaySize = ImVec2((float)GetScreenWidth(), (float)GetScreenHeight());
-
-    double current_time = GetTime();
-    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f / 60.0f);
-    g_Time = current_time;
-
-    io.KeyCtrl = IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown(KEY_LEFT_CONTROL);
-    io.KeyShift = IsKeyDown(KEY_RIGHT_SHIFT) || IsKeyDown(KEY_LEFT_SHIFT);
-    io.KeyAlt = IsKeyDown(KEY_RIGHT_ALT) || IsKeyDown(KEY_LEFT_ALT);
-    io.KeySuper = IsKeyDown(KEY_RIGHT_SUPER) || IsKeyDown(KEY_LEFT_SUPER);
-
-    // io.Fonts->GetTexDataAsRGBA32() / GetTexDataAsAlpha8()
-
-    ImGui_ImplRaylib_UpdateMousePosAndButtons();
-    ImGui_ImplRaylib_UpdateMouseCursor();
-
-    if (GetMouseWheelMove() > 0)
-        io.MouseWheel += 1;
-    else if (GetMouseWheelMove() < 0)
-        io.MouseWheel -= 1;
+        ShowCursor(); // Show OS mouse cursor
 }
 
 #define FOR_ALL_KEYS(X) \
@@ -240,28 +203,33 @@ void ImGui_ImplRaylib_NewFrame()
 
 #define SET_KEY_DOWN(KEY) io.KeysDown[KEY] = IsKeyDown(KEY)
 
-bool ImGui_ImplRaylib_ProcessEvent()
+void ImGui_ImplRaylib_NewFrame()
 {
     ImGuiIO& io = ImGui::GetIO();
 
+    io.DisplaySize = ImVec2((float)GetScreenWidth(), (float)GetScreenHeight());
+
+    double current_time = GetTime();
+    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f / 60.0f);
+    g_Time = current_time;
+
+    io.KeyCtrl = IsKeyDown(KEY_RIGHT_CONTROL) || IsKeyDown(KEY_LEFT_CONTROL);
+    io.KeyShift = IsKeyDown(KEY_RIGHT_SHIFT) || IsKeyDown(KEY_LEFT_SHIFT);
+    io.KeyAlt = IsKeyDown(KEY_RIGHT_ALT) || IsKeyDown(KEY_LEFT_ALT);
+    io.KeySuper = IsKeyDown(KEY_RIGHT_SUPER) || IsKeyDown(KEY_LEFT_SUPER);
+
     FOR_ALL_KEYS(SET_KEY_DOWN);
+    io.AddInputCharacter(GetCharPressed());
 
-    // Uncomment the three lines below if using raylib earlier than version 3.
-    //if (GetKeyPressed() != -1)
-    //{
-#ifdef ENABLE_SCODETOUTF8
-    int length;     //  Length was only ever created to be passed to CodepointToUtf8(), since it doesn't check for nullptrs.
-    io.AddInputCharactersUTF8(CodepointToUTF8(GetCharPressed(), &length));
-    (void)length;   //  Silencing the compiler warnings.
-#else
-    io.AddInputCharacter(GetKeyPressed());
-#endif
-    //}
+    ImGui_ImplRaylib_UpdateMousePosAndButtons();
+    ImGui_ImplRaylib_UpdateMouseCursor();
 
-    return true;
+    if (GetMouseWheelMove() > 0)
+        io.MouseWheel += 1;
+    else if (GetMouseWheelMove() < 0)
+        io.MouseWheel -= 1;
 }
 
-#ifdef COMPATIBILITY_MODE
 void ImGui_ImplRaylib_LoadDefaultFontAtlas()
 {
     if (!g_UnloadAtlas) {
@@ -272,18 +240,17 @@ void ImGui_ImplRaylib_LoadDefaultFontAtlas()
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bpp);
 
         unsigned int size = GetPixelDataSize(width, height, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-        image.data = malloc(size);
+        image.data = MemAlloc(size);
         memcpy(image.data, pixels, size);
         image.width = width;
         image.height = height;
         image.mipmaps = 1;
         image.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-        //ImageFlipHorizontal(&image);
         Texture2D tex = LoadTextureFromImage(image);
 		g_AtlasTexID = tex.id;
 		io.Fonts->TexID = (void*)&g_AtlasTexID;
-        free(pixels);
-        free(image.data);
+        MemFree(pixels);
+        MemFree(image.data);
         g_UnloadAtlas = true;
     }
 };
@@ -326,7 +293,6 @@ void ImGui_ImplRaylib_Render(ImDrawData* draw_data)
                     {
                         rlPushMatrix();
                         rlBegin(RL_TRIANGLES);
-                        //rlEnableTexture(*ti);
                         rlSetTexture(*ti);
 
                         ImDrawIdx index;
@@ -343,6 +309,7 @@ void ImGui_ImplRaylib_Render(ImDrawData* draw_data)
                         index = idx_buffer[i + 1];
                         vertex = vtx_buffer[index];
                         DrawTriangleVertex(vertex);
+
                         rlDisableTexture();
                         rlEnd();
                         rlPopMatrix();
@@ -355,4 +322,3 @@ void ImGui_ImplRaylib_Render(ImDrawData* draw_data)
     EndScissorMode();
     rlEnableBackfaceCulling();
 }
-#endif
