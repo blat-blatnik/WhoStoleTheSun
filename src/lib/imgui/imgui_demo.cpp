@@ -956,9 +956,9 @@ static void ShowDemoWindowWidgets()
             for (int n = 0; n < 2; n++)
             {
                 ImGui::Text("Test paragraph %d:", n);
-                ImVec2 pos = ImGui::GetCursorScreenPos();
-                ImVec2 marker_min = ImVec2(pos.x + wrap_width, pos.y);
-                ImVec2 marker_max = ImVec2(pos.x + wrap_width + 10, pos.y + ImGui::GetTextLineHeight());
+                ImVec2 position = ImGui::GetCursorScreenPos();
+                ImVec2 marker_min = ImVec2(position.x + wrap_width, position.y);
+                ImVec2 marker_max = ImVec2(position.x + wrap_width + 10, position.y + ImGui::GetTextLineHeight());
                 ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + wrap_width);
                 if (n == 0)
                     ImGui::Text("The lazy dog is a good dog. This paragraph should fit within %.0f pixels. Testing a 1 character word. The quick brown fox jumps over the lazy dog.", wrap_width);
@@ -1030,7 +1030,7 @@ static void ShowDemoWindowWidgets()
         float my_tex_h = (float)io.Fonts->TexHeight;
         {
             ImGui::Text("%.0fx%.0f", my_tex_w, my_tex_h);
-            ImVec2 pos = ImGui::GetCursorScreenPos();
+            ImVec2 position = ImGui::GetCursorScreenPos();
             ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
             ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Lower-right
             ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);   // No tint
@@ -1040,8 +1040,8 @@ static void ShowDemoWindowWidgets()
             {
                 ImGui::BeginTooltip();
                 float region_sz = 32.0f;
-                float region_x = io.MousePos.x - pos.x - region_sz * 0.5f;
-                float region_y = io.MousePos.y - pos.y - region_sz * 0.5f;
+                float region_x = io.MousePos.x - position.x - region_sz * 0.5f;
+                float region_y = io.MousePos.y - position.y - region_sz * 0.5f;
                 float zoom = 4.0f;
                 if (region_x < 0.0f) { region_x = 0.0f; }
                 else if (region_x > my_tex_w - region_sz) { region_x = my_tex_w - region_sz; }

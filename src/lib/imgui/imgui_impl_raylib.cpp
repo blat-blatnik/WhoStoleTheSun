@@ -263,7 +263,7 @@ void ImGui_ImplRaylib_Render(ImDrawData* draw_data)
         Color* c = (Color*)&idx_vert.col;
         rlColor4ub(c->r, c->g, c->b, c->a);
         rlTexCoord2f(idx_vert.uv.x, idx_vert.uv.y);
-        rlVertex2f(idx_vert.pos.x, idx_vert.pos.y);
+        rlVertex2f(idx_vert.position.x, idx_vert.position.y);
     };
 
     rlDisableBackfaceCulling();
@@ -281,9 +281,9 @@ void ImGui_ImplRaylib_Render(ImDrawData* draw_data)
             }
             else
             {
-                ImVec2 pos = draw_data->DisplayPos;
-                int rectX = (int)(pcmd->ClipRect.x - pos.x);
-                int rectY = (int)(pcmd->ClipRect.y - pos.y);
+                ImVec2 position = draw_data->DisplayPos;
+                int rectX = (int)(pcmd->ClipRect.x - position.x);
+                int rectY = (int)(pcmd->ClipRect.y - position.y);
                 int rectW = (int)(pcmd->ClipRect.z - rectX);
                 int rectH = (int)(pcmd->ClipRect.w - rectY);
                 BeginScissorMode(rectX, rectY, rectW, rectH);

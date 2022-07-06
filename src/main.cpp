@@ -17,17 +17,35 @@ ENUM(GameState)
 
 STRUCT(Player)
 {
-	Vector2 pos;
+	Vector2 position;
 	Direction direction; // Determines which sprite to use.
 	Texture *textures[DIRECTION_ENUM_COUNT];
 };
 
+STRUCT(Npc)
+{
+	Vector2 position;
+	Texture *texture;
+};
+
+int frameNumber;
 GameState gameState = GAMESTATE_PLAYING;
 Texture *background;
 Image *collisionMap;
 Font roboto;
 Player player;
-int frameNumber;
+Npc pinkGuy;
+
+//float PlayerDistanceToNpc(Npc npc)
+//{
+//	Vector2 playerFeet = player.position;
+//	playerFeet.y += player.textures[player.direction]->height * 0.5f;
+//
+//	Vector2 npcFeet = npc.position;
+//	npcFeet.y += npc.texture->height * 0.5f;
+//
+//
+//}
 
 void Playing_Init(GameState oldState)
 {
@@ -69,7 +87,7 @@ void Playing_Update()
 
 		// In the isometric perspective, the y direction is squished down a little bit.
 		deltaPos.y *= Y_SQUISH;
-		Vector2 newPos = Vector2Add(player.pos, deltaPos);
+		Vector2 newPos = Vector2Add(player.position, deltaPos);
 		Vector2 feetPos = newPos;
 		feetPos.y += 0.5f * player.textures[player.direction]->height;
 
@@ -80,14 +98,15 @@ void Playing_Update()
 		Color collision = GetImageColor(*collisionMap, footX, footY);
 
 		if (collision.r >= 128)
-			player.pos = newPos;
+			player.position = newPos;
 	}
 }
 void Playing_Render()
 {
 	ClearBackground(BLACK);
 	DrawTexture(*background, 0, 0, WHITE);
-	DrawTextureCentered(*player.textures[player.direction], player.pos, WHITE);
+	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
+	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
 }
 
 void Editor_Update()
@@ -128,6 +147,10 @@ void GameInit(void)
 	roboto = LoadFontAscii("res/Roboto.ttf", 32);
 	background = LoadTextureAndTrackChanges("res/background.png");
 	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
+	
+	player.position.x = 1280 / 2;
+	player.position.y = 720 / 2;
+	player.direction = DIRECTION_DOWN;
 	player.textures[DIRECTION_RIGHT]      = LoadTextureAndTrackChanges("res/player-right.png");
 	player.textures[DIRECTION_UP_RIGHT]   = LoadTextureAndTrackChanges("res/player-up-right.png");
 	player.textures[DIRECTION_UP]         = LoadTextureAndTrackChanges("res/player-up.png");
@@ -136,10 +159,10 @@ void GameInit(void)
 	player.textures[DIRECTION_DOWN_LEFT]  = LoadTextureAndTrackChanges("res/player-down-left.png");
 	player.textures[DIRECTION_DOWN]       = LoadTextureAndTrackChanges("res/player-down.png");
 	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
-
-	player.pos.x = 1280 / 2;
-	player.pos.y = 720 / 2;
-	player.direction = DIRECTION_DOWN;
+	
+	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
+	pinkGuy.position.x = 400;
+	pinkGuy.position.y = 250;
 }
 void GameLoopOneIteration(void)
 {

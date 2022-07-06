@@ -302,15 +302,15 @@ float FloatNoise3(unsigned seed, int x, int y, int z);
 float ValueNoise1(unsigned seed, float x);
 float ValueNoise2(unsigned seed, float x, float y);
 float ValueNoise3(unsigned seed, float x, float y, float z);
-float ValueNoise2V(unsigned seed, Vector2 pos);
-float ValueNoise3V(unsigned seed, Vector3 pos);
+float ValueNoise2V(unsigned seed, Vector2 position);
+float ValueNoise3V(unsigned seed, Vector3 position);
 
 // Determinsically produces a uniform [-1, +1] float based on the inputs. The returned values, and their derivatives, are continuous.
 float PerlinNoise1(unsigned seed, float x);
 float PerlinNoise2(unsigned seed, float x, float y);
 float PerlinNoise3(unsigned seed, float x, float y, float z);
-float PerlinNoise2V(unsigned seed, Vector2 pos);
-float PerlinNoise3V(unsigned seed, Vector3 pos);
+float PerlinNoise2V(unsigned seed, Vector2 position);
+float PerlinNoise3V(unsigned seed, Vector3 position);
 
 //
 // Math
