@@ -1,20 +1,18 @@
 #include "core.h"
 #include "lib/imgui/imgui.h"
 
-#define FPS 60.0f
-#define DELTA_TIME (1/FPS)
+#define FPS 60
+#define DELTA_TIME (1.0f/FPS)
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
+#define Y_SQUISH 0.541196100146197f // sqrt(2) * sin(PI / 8)
 
-enum Direction
+ENUM(GameState)
 {
-	DIRECTION_RIGHT, // The order of these matters. Start at (1, 0) then rotate counter-clockwise (+y = up) by 45 degrees.
-	DIRECTION_UP_RIGHT,
-	DIRECTION_UP,
-	DIRECTION_UP_LEFT,
-	DIRECTION_LEFT,
-	DIRECTION_DOWN_LEFT,
-	DIRECTION_DOWN,
-	DIRECTION_DOWN_RIGHT,
-	DIRECTION_ENUM_COUNT
+	GAMESTATE_PLAYING,
+	GAMESTATE_PAUSED,
+	GAMESTATE_EDITOR,
+	GAMESTATE_ENUM_COUNT
 };
 
 STRUCT(Player)
@@ -24,49 +22,29 @@ STRUCT(Player)
 	Texture *textures[DIRECTION_ENUM_COUNT];
 };
 
+GameState gameState = GAMESTATE_PLAYING;
 Texture *background;
 Image *collisionMap;
 Font roboto;
 Player player;
+int frameNumber;
 
-Direction DirectionFromVector(Vector2 v)
+void Playing_Init(GameState oldState)
 {
-	float angleTaus = Wrap(Vector2Atan(v), 0, 2 * PI) / (2 * PI);
-	float floatIndex = roundf(angleTaus * DIRECTION_ENUM_COUNT);
-	int index = (int)floatIndex;
-	if (index >= DIRECTION_ENUM_COUNT)
-		index = 0;
-	if (index < 0)
-		index = DIRECTION_ENUM_COUNT - 1;
-	return (Direction)index;
+
 }
-
-void GameInit(void)
+void Playing_Update()
 {
-	InitWindow(1280, 720, "Who Stole The Sun");
-	SetTargetFPS(FPS);
-	
-	roboto = LoadFontAscii("res/Roboto.ttf", 32);
-	background = LoadTextureAndTrackChanges("res/background.png");
-	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
-	player.textures[DIRECTION_RIGHT]      = LoadTextureAndTrackChanges("res/player-right.png");
-	player.textures[DIRECTION_UP_RIGHT]   = LoadTextureAndTrackChanges("res/player-up-right.png");
-	player.textures[DIRECTION_UP]         = LoadTextureAndTrackChanges("res/player-up.png");
-	player.textures[DIRECTION_UP_LEFT]    = LoadTextureAndTrackChanges("res/player-up-left.png");
-	player.textures[DIRECTION_LEFT]       = LoadTextureAndTrackChanges("res/player-left.png");
-	player.textures[DIRECTION_DOWN_LEFT]  = LoadTextureAndTrackChanges("res/player-down-left.png");
-	player.textures[DIRECTION_DOWN]       = LoadTextureAndTrackChanges("res/player-down.png");
-	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
-
-	player.pos.x = 1280 / 2;
-	player.pos.y = 720 / 2;
-	player.direction = DIRECTION_DOWN;
-}
-
-void GameLoopOneIteration(void)
-{
-	ClearBackground(BLACK); // @TODO: We might not need to clear if we always overwrite the whole screen.
-	DrawTexture(*background, 0, 0, WHITE);
+	if (IsKeyPressed(KEY_GRAVE))
+	{
+		gameState = GAMESTATE_EDITOR;
+		return;
+	}
+	if (IsKeyPressed(KEY_ESCAPE))
+	{
+		gameState = GAMESTATE_PAUSED;
+		return;
+	}
 
 	float moveSpeed = 5;
 	if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
@@ -90,8 +68,7 @@ void GameLoopOneIteration(void)
 		Vector2 deltaPos = Vector2Scale(move, moveSpeed);
 
 		// In the isometric perspective, the y direction is squished down a little bit.
-		float ySquish = sqrtf(2) * sinf(PI / 8);
-		deltaPos.y *= ySquish;
+		deltaPos.y *= Y_SQUISH;
 		Vector2 newPos = Vector2Add(player.pos, deltaPos);
 		Vector2 feetPos = newPos;
 		feetPos.y += 0.5f * player.textures[player.direction]->height;
@@ -105,8 +82,97 @@ void GameLoopOneIteration(void)
 		if (collision.r >= 128)
 			player.pos = newPos;
 	}
-
+}
+void Playing_Render()
+{
+	ClearBackground(BLACK);
+	DrawTexture(*background, 0, 0, WHITE);
 	DrawTextureCentered(*player.textures[player.direction], player.pos, WHITE);
+}
+
+void Editor_Update()
+{
+	if (IsKeyPressed(KEY_GRAVE))
+	{
+		gameState = GAMESTATE_PLAYING;
+		return;
+	}
 
 	ImGui::ShowDemoWindow();
+}
+void Editor_Render()
+{
+	Playing_Render();
+}
+
+void Paused_Update(void)
+{
+	if (IsKeyPressed(KEY_ESCAPE))
+	{
+		gameState = GAMESTATE_PLAYING;
+		return;
+	}
+}
+void Paused_Render(void)
+{
+	Playing_Render();
+	DrawRectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GrayscaleAlpha(0, 0.4f));
+	DrawFormatCentered(roboto, 0.5f * WINDOW_WIDTH, 0.5f * WINDOW_HEIGHT, 64, BLACK, "Paused");
+}
+
+void GameInit(void)
+{
+	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
+	SetTargetFPS(FPS);
+	
+	roboto = LoadFontAscii("res/Roboto.ttf", 32);
+	background = LoadTextureAndTrackChanges("res/background.png");
+	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
+	player.textures[DIRECTION_RIGHT]      = LoadTextureAndTrackChanges("res/player-right.png");
+	player.textures[DIRECTION_UP_RIGHT]   = LoadTextureAndTrackChanges("res/player-up-right.png");
+	player.textures[DIRECTION_UP]         = LoadTextureAndTrackChanges("res/player-up.png");
+	player.textures[DIRECTION_UP_LEFT]    = LoadTextureAndTrackChanges("res/player-up-left.png");
+	player.textures[DIRECTION_LEFT]       = LoadTextureAndTrackChanges("res/player-left.png");
+	player.textures[DIRECTION_DOWN_LEFT]  = LoadTextureAndTrackChanges("res/player-down-left.png");
+	player.textures[DIRECTION_DOWN]       = LoadTextureAndTrackChanges("res/player-down.png");
+	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
+
+	player.pos.x = 1280 / 2;
+	player.pos.y = 720 / 2;
+	player.direction = DIRECTION_DOWN;
+}
+void GameLoopOneIteration(void)
+{
+	STRUCT(GameStateFuncs)
+	{
+		// init and deinit can be NULL, in which case they just won't be called.
+		void(*init)(GameState oldState);
+		void(*deinit)();
+		void(*update)();
+		void(*render)();
+	};
+
+	static GameStateFuncs funcs[GAMESTATE_ENUM_COUNT];
+
+	if (frameNumber == 0)
+	{
+		funcs[GAMESTATE_PLAYING] = { Playing_Init, NULL, Playing_Update, Playing_Render };
+		funcs[GAMESTATE_EDITOR] = { NULL, NULL, Editor_Update, Editor_Render };
+		funcs[GAMESTATE_PAUSED] = { NULL, NULL, Paused_Update, Paused_Render };
+
+		if (funcs[gameState].init)
+			funcs[gameState].init(gameState);
+	}
+
+	GameState stateBeforeUpdate = gameState;
+	funcs[gameState].update();
+	if (gameState != stateBeforeUpdate)
+	{
+		if (funcs[stateBeforeUpdate].deinit)
+			funcs[stateBeforeUpdate].deinit();
+		if (funcs[gameState].init)
+			funcs[gameState].init(stateBeforeUpdate);
+	}
+	funcs[gameState].render();
+	++frameNumber;
 }

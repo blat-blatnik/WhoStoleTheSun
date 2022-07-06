@@ -51,6 +51,7 @@ int main()
 	#endif
 
 	GameInit();
+	SetExitKey(0);
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 	ImGui_ImplRaylib_Init();

@@ -124,9 +124,6 @@
     <ClInclude Include="src\core.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\raygui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\imgui_impl_raylib_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>

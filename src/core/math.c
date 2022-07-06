@@ -1,5 +1,17 @@
 #include "../core.h"
 
+Direction DirectionFromVector(Vector2 v)
+{
+	float angle01 = Wrap(Vector2Atan(v), 0, 2 * PI) / (2 * PI);
+	float floatIndex = roundf(angle01 * DIRECTION_ENUM_COUNT);
+	int index = (int)floatIndex;
+	if (index >= DIRECTION_ENUM_COUNT)
+		index = 0;
+	if (index < 0)
+		index = DIRECTION_ENUM_COUNT - 1;
+	return (Direction)index;
+}
+
 Vector2 UnitVector2WithAngle(float angle)
 {
 	return Vector2FromPolar(1, angle);

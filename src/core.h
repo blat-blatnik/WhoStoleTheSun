@@ -25,17 +25,18 @@ extern "C" {
 #	define __debugbreak()
 #endif
 
+#ifdef __cplusplus
+#	define ENUM(name) enum name
+#	define UNION(name) union name
+#	define STRUCT(name) struct name
+#else
+#	define ENUM(name) typedef enum name name; enum name
+#	define UNION(name) typedef union name name; union name
+#	define STRUCT(name) typedef struct name name; struct name
+#endif
+
 // Return number of items in a static array (DOESN'T WORK FOR POINTERS!).
 #define COUNTOF(array) (sizeof(array) / sizeof(array[0]))
-
-// Utility macro to define an enum without having to type all this stuff out every time.
-#define ENUM(name) typedef enum name name; enum name
-
-// Utility macro to define a union without having to type all this stuff out every time.
-#define UNION(name) typedef union name name; union name
-
-// Utility macro to define a struct without having to type all this stuff out every time.
-#define STRUCT(name) typedef struct name name; struct name
 
 // Silence compiler warnings about unused variables or parameters.
 #define UNUSED(x) ((void)(x))
@@ -315,6 +316,22 @@ float PerlinNoise3V(unsigned seed, Vector3 pos);
 // Math
 //
 
+ENUM(Direction)
+{
+	DIRECTION_RIGHT,
+	DIRECTION_UP_RIGHT,
+	DIRECTION_UP,
+	DIRECTION_UP_LEFT,
+	DIRECTION_LEFT,
+	DIRECTION_DOWN_LEFT,
+	DIRECTION_DOWN,
+	DIRECTION_DOWN_RIGHT,
+	DIRECTION_ENUM_COUNT
+};
+
+// Returns the 8-sided direction that the vector matches most closely.
+Direction DirectionFromVector(Vector2 v);
+
 // Returns a unit length vector pointing in the given angle (in radians).
 Vector2 UnitVector2WithAngle(float angle);
 
@@ -395,6 +412,12 @@ void DrawFormat(Font font, float x, float y, float fontSize, Color color, FORMAT
 
 // Same as DrawFormat but takes an explicit varargs pack.
 void DrawFormatVa(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, va_list args);
+
+// Draws a formatted string centered at (x, y).
+void DrawFormatCentered(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, ...);
+
+// Same as DrawFormatCentered but takes an explicit varargs pack.
+void DrawFormatCenteredVa(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, va_list args);
 
 void DrawAnimatedTextBox(Font font, Rectangle textBox, float fontSize, Color color, float t, const char *string);
 
@@ -494,4 +517,21 @@ void GameLoopOneIteration(void);
 
 #ifdef __cplusplus
 }
+inline Vector2 operator +(Vector2 v) { return v; }
+inline Vector2 operator -(Vector2 v) { return { -v.x, -v.y }; }
+inline Vector2 operator +(Vector2 left, Vector2 right) { return { left.x + right.x, left.y + right.y }; }
+inline Vector2 operator -(Vector2 left, Vector2 right) { return { left.x - right.x, left.y - right.y }; }
+inline Vector2 operator *(Vector2 left, Vector2 right) { return { left.x * right.x, left.y * right.y }; }
+inline Vector2 operator /(Vector2 left, Vector2 right) { return { left.x / right.x, left.y / right.y }; }
+inline Vector2 operator %(Vector2 left, Vector2 right) { return { fmodf(left.x, right.x), fmodf(left.y, right.y) }; }
+inline Vector2 operator +(Vector2 left, float right) { return { left.x + right, left.y + right}; }
+inline Vector2 operator -(Vector2 left, float right) { return { left.x - right, left.y - right}; }
+inline Vector2 operator *(Vector2 left, float right) { return { left.x * right, left.y * right}; }
+inline Vector2 operator /(Vector2 left, float right) { return { left.x / right, left.y / right }; }
+inline Vector2 operator %(Vector2 left, float right) { return { fmodf(left.x, right), fmodf(left.y, right) }; }
+inline Vector2 operator +(float left, Vector2 right) { return { left + right.x, left + right.y }; }
+inline Vector2 operator -(float left, Vector2 right) { return { left - right.x, left - right.y }; }
+inline Vector2 operator *(float left, Vector2 right) { return { left * right.x, left * right.y }; }
+inline Vector2 operator /(float left, Vector2 right) { return { left / right.x, left / right.y }; }
+inline Vector2 operator %(float left, Vector2 right) { return { fmodf(left, right.x), fmodf(left, right.y) }; }
 #endif
