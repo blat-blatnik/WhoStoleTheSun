@@ -1,5 +1,8 @@
 #include "core.h"
-#include "lib/imgui/imgui_impl_raylib.h"
+#include "lib/imgui/imgui.h"
+
+#define FPS 60.0f
+#define DELTA_TIME (1/FPS)
 
 enum Direction
 {
@@ -41,13 +44,7 @@ Direction DirectionFromVector(Vector2 v)
 void GameInit(void)
 {
 	InitWindow(1280, 720, "Who Stole The Sun");
-	SetTargetFPS(60);
-	ImGui::CreateContext();
-	ImGui::StyleColorsDark();
-	ImGui_ImplRaylib_Init();
-	auto &io = ImGui::GetIO();
-	io.Fonts->AddFontFromFileTTF("res/Roboto.ttf", 18);
-	ImGui_ImplRaylib_LoadDefaultFontAtlas();
+	SetTargetFPS(FPS);
 	
 	roboto = LoadFontAscii("res/Roboto.ttf", 32);
 	background = LoadTextureAndTrackChanges("res/background.png");
@@ -68,61 +65,48 @@ void GameInit(void)
 
 void GameLoopOneIteration(void)
 {
-	HotReloadAllTrackedItems();
-	TempReset(0);
-	BeginDrawing();
-	ImGui_ImplRaylib_NewFrame();
-	ImGui::NewFrame();
+	ClearBackground(BLACK); // @TODO: We might not need to clear if we always overwrite the whole screen.
+	DrawTexture(*background, 0, 0, WHITE);
+
+	float moveSpeed = 5;
+	if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+		moveSpeed = 10;
+
+	Vector2 move = { 0 };
+	if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
+		move.x -= 1;
+	if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
+		move.x += 1;
+	if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
+		move.y -= 1;
+	if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
+		move.y += 1;
+	if (move.x != 0 || move.y != 0)
 	{
-		ClearBackground(BLACK); // @TODO: We might not need to clear if we always overwrite the whole screen.
-		DrawTexture(*background, 0, 0, WHITE);
+		move = Vector2Normalize(move);
+		Vector2 dirVector = move;
+		dirVector.y *= -1;
+		player.direction = DirectionFromVector(dirVector);
+		Vector2 deltaPos = Vector2Scale(move, moveSpeed);
 
-		float moveSpeed = 5;
-		if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
-			moveSpeed = 10;
+		// In the isometric perspective, the y direction is squished down a little bit.
+		float ySquish = sqrtf(2) * sinf(PI / 8);
+		deltaPos.y *= ySquish;
+		Vector2 newPos = Vector2Add(player.pos, deltaPos);
+		Vector2 feetPos = newPos;
+		feetPos.y += 0.5f * player.textures[player.direction]->height;
 
-		Vector2 move = { 0 };
-		if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
-			move.x -= 1;
-		if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
-			move.x += 1;
-		if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
-			move.y -= 1;
-		if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
-			move.y += 1;
-		if (move.x != 0 || move.y != 0)
-		{
-			move = Vector2Normalize(move);
-			Vector2 dirVector = move;
-			dirVector.y *= -1;
-			player.direction = DirectionFromVector(dirVector);
-			Vector2 deltaPos = Vector2Scale(move, moveSpeed);
+		int footX = (int)roundf(feetPos.x);
+		int footY = (int)roundf(feetPos.y);
+		footX = ClampInt(footX, 0, collisionMap->width - 1);
+		footY = ClampInt(footY, 0, collisionMap->height - 1);
+		Color collision = GetImageColor(*collisionMap, footX, footY);
 
-			// In the isometric perspective, the y direction is squished down a little bit.
-			float ySquish = sqrtf(2) * sinf(PI / 8);
-			deltaPos.y *= ySquish;
-			Vector2 newPos = Vector2Add(player.pos, deltaPos);
-			Vector2 feetPos = newPos;
-			feetPos.y += 0.5f * player.textures[player.direction]->height;
-
-			int footX = (int)roundf(feetPos.x);
-			int footY = (int)roundf(feetPos.y);
-			footX = ClampInt(footX, 0, collisionMap->width - 1);
-			footY = ClampInt(footY, 0, collisionMap->height - 1);
-			Color collision = GetImageColor(*collisionMap, footX, footY);
-
-			if (collision.r >= 128)
-				player.pos = newPos;
-		}
-
-		Vector2 playerSize = { 50, 90 };
-
-		DrawTextureCentered(*player.textures[player.direction], player.pos, WHITE);
-
-		ImGui::ShowDemoWindow();
+		if (collision.r >= 128)
+			player.pos = newPos;
 	}
-	rlDrawRenderBatchActive();
-	ImGui::Render();
-	ImGui_ImplRaylib_Render(ImGui::GetDrawData());
-	EndDrawing();
+
+	DrawTextureCentered(*player.textures[player.direction], player.pos, WHITE);
+
+	ImGui::ShowDemoWindow();
 }

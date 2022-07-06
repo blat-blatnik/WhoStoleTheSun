@@ -106,6 +106,7 @@
     </None>
     <None Include="run_mac.sh" />
     <None Include="synchronize.sh" />
+    <None Include="imgui.ini" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\raylib.h">

@@ -134,6 +134,7 @@
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="build_web.bat" />
+    <None Include="imgui.ini" />
     <None Include="README.md" />
     <None Include="run_mac.sh" />
     <None Include="run_web.bat" />
