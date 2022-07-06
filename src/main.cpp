@@ -35,17 +35,20 @@ Image *collisionMap;
 Font roboto;
 Player player;
 Npc pinkGuy;
+Sound shatter;
 
-//float PlayerDistanceToNpc(Npc npc)
-//{
-//	Vector2 playerFeet = player.position;
-//	playerFeet.y += player.textures[player.direction]->height * 0.5f;
-//
-//	Vector2 npcFeet = npc.position;
-//	npcFeet.y += npc.texture->height * 0.5f;
-//
-//
-//}
+float PlayerDistanceToNpc(Npc npc)
+{
+	Vector2 playerFeet = player.position;
+	playerFeet.y += player.textures[player.direction]->height * 0.5f;
+	playerFeet.y *= Y_SQUISH;
+
+	Vector2 npcFeet = npc.position;
+	npcFeet.y += npc.texture->height * 0.5f;
+	npcFeet.y *= Y_SQUISH;
+
+	return Vector2Distance(playerFeet, npcFeet);
+}
 
 void Playing_Init(GameState oldState)
 {
@@ -62,6 +65,14 @@ void Playing_Update()
 	{
 		gameState = GAMESTATE_PAUSED;
 		return;
+	}
+
+	if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_E))
+	{
+		float distance = PlayerDistanceToNpc(pinkGuy);
+		LogInfo("Distance to pink guy: %g", distance);
+		if (distance < 50)
+			PlaySound(shatter);
 	}
 
 	float moveSpeed = 5;
@@ -142,11 +153,13 @@ void Paused_Render(void)
 void GameInit(void)
 {
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
+	InitAudioDevice();
 	SetTargetFPS(FPS);
 	
 	roboto = LoadFontAscii("res/Roboto.ttf", 32);
 	background = LoadTextureAndTrackChanges("res/background.png");
 	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
+	shatter = LoadSound("res/shatter.wav");
 	
 	player.position.x = 1280 / 2;
 	player.position.y = 720 / 2;

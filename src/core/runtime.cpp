@@ -51,6 +51,8 @@ int main()
 	#endif
 
 	GameInit();
+	rlDisableBackfaceCulling(); // It's a 2D game we don't need this..
+	rlDisableDepthTest();
 	SetExitKey(0);
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
