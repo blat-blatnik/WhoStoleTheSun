@@ -15,7 +15,7 @@ for /f %%a in ('forfiles /s /m *.c /c "cmd /c echo @relpath"') do set input=!inp
 for /f %%a in ('forfiles /s /m *.cpp /c "cmd /c echo @relpath"') do set input=!input! "%%~a"
 
 rem # Compile and link
-call emcc -o bin/web/index.html -Os -flto -Wall -L./lib -lraylib_web -s USE_GLFW=3 -s TOTAL_MEMORY=268435456 --shell-file webshell.html --preload-file res %input%
+call emcc -o bin/web/index.html -Os -flto --closure 1 -Wall -L./lib -lraylib_web -s USE_GLFW=3 -s TOTAL_MEMORY=268435456 --shell-file webshell.html --preload-file res %input%
 
 rem # Copy the favicon
 rem copy /y "Pictomage.ico" "bin/web/favicon.ico"
