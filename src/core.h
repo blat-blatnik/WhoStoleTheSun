@@ -50,6 +50,12 @@ extern "C" {
 // Use this on printf format string-like function parameters. The compiler will then issue errors if the arguments don't match the format string.
 #define FORMAT_STRING _Printf_format_string_ const char *
 
+// Concatenates two tokens without expanding macro arguments. E.g. PASTE_NOEXPAND(a, __LINE__) -> a__LINE__
+#define PASTE_NOEXPAND(a, b) a##b
+
+// Concatenates two tokens while expanding macro arguments. E.g. PASTE(a, __LINE__) -> a42
+#define PASTE(a, b) PASTE_NOEXPAND(a, b)
+
 //
 // Logging
 //
@@ -509,11 +515,42 @@ void FreeFromSlabAllocator(SlabAllocator *allocator, void *block);
 void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
 
 //
-// Runtime (these are used in runtime.c, but they're actually defined in main.c and tests.c)
+// Runtime (this is used in runtime.c, but it's actually defined in main.c)
 //
 
+// Associates callback functions to a game state ID.
+// - init is called once, when the associated game state becomes current.
+// - deinit is called once, when the associated game state is no longer current, or on the stack.
+// - update and render are called once per frame while the associated game state is current.
+void RegisterGameState(int state, void(*init)(void *parameter), void(*deinit)(void), void(*update)(void), void(*render)(void));
+
+// Pushes the current game state onto the game state stack, and then initializes a new current game state with the given parameter.
+void PushGameState(int state, void *parameter);
+
+// Calls deinit on the current game state, and then replaces it with the game state popped off of the game state stack.
+void PopGameState(void);
+
+// Pops game states off of the stack until a particular game state becomes current.
+void PopGameStateUntil(int state);
+
+// Replaces the current game state without affecting the stack. Equivalent to a pop, followed by a push.
+void SetCurrentGameState(int state, void *parameter);
+
+// Calls the render function of the game state on top of the game state stack. The call is performed as if that game state was current.
+void CallPreviousGameStateRender(void);
+
+// Returns the integer ID of the current game state.
+int GetCurrentGameState(void);
+
+// Returns the integer ID of the game state on top of the game state stack.
+int GetPreviousGameState(void);
+
+// Really stupid looking conveniance macro to allow defining a game state in once place.
+#define REGISTER_GAME_STATE(name, init, deinit, update, render)\
+	static int PASTE(dummy__, __LINE__) = [](){ RegisterGameState(name, init, deinit, update, render); return 0; }();
+
+// Initialize the game. This is used in runtime.cpp, but should actually be defined by the game.
 void GameInit(void);
-void GameLoopOneIteration(void);
 
 #ifdef __cplusplus
 }

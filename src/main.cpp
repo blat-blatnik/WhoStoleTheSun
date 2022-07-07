@@ -12,7 +12,6 @@ ENUM(GameState)
 	GAMESTATE_PLAYING,
 	GAMESTATE_PAUSED,
 	GAMESTATE_EDITOR,
-	GAMESTATE_ENUM_COUNT
 };
 
 STRUCT(Player)
@@ -28,8 +27,6 @@ STRUCT(Npc)
 	Texture *texture;
 };
 
-int frameNumber;
-GameState gameState = GAMESTATE_PLAYING;
 Texture *background;
 Image *collisionMap;
 Font roboto;
@@ -50,20 +47,16 @@ float PlayerDistanceToNpc(Npc npc)
 	return Vector2Distance(playerFeet, npcFeet);
 }
 
-void Playing_Init(GameState oldState)
-{
-
-}
 void Playing_Update()
 {
 	if (IsKeyPressed(KEY_GRAVE))
 	{
-		gameState = GAMESTATE_EDITOR;
+		PushGameState(GAMESTATE_EDITOR, NULL);
 		return;
 	}
 	if (IsKeyPressed(KEY_ESCAPE))
 	{
-		gameState = GAMESTATE_PAUSED;
+		PushGameState(GAMESTATE_PAUSED, NULL);
 		return;
 	}
 
@@ -119,12 +112,13 @@ void Playing_Render()
 	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
 }
+REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
 
 void Editor_Update()
 {
 	if (IsKeyPressed(KEY_GRAVE))
 	{
-		gameState = GAMESTATE_PLAYING;
+		PopGameState();
 		return;
 	}
 
@@ -132,23 +126,25 @@ void Editor_Update()
 }
 void Editor_Render()
 {
-	Playing_Render();
+	CallPreviousGameStateRender();
 }
+REGISTER_GAME_STATE(GAMESTATE_EDITOR, NULL, NULL, Editor_Update, Editor_Render);
 
 void Paused_Update(void)
 {
 	if (IsKeyPressed(KEY_ESCAPE))
 	{
-		gameState = GAMESTATE_PLAYING;
+		PopGameState();
 		return;
 	}
 }
 void Paused_Render(void)
 {
-	Playing_Render();
+	CallPreviousGameStateRender();
 	DrawRectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GrayscaleAlpha(0, 0.4f));
 	DrawFormatCentered(roboto, 0.5f * WINDOW_WIDTH, 0.5f * WINDOW_HEIGHT, 64, BLACK, "Paused");
 }
+REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 
 void GameInit(void)
 {
@@ -176,39 +172,6 @@ void GameInit(void)
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
-}
-void GameLoopOneIteration(void)
-{
-	STRUCT(GameStateFuncs)
-	{
-		// init and deinit can be NULL, in which case they just won't be called.
-		void(*init)(GameState oldState);
-		void(*deinit)();
-		void(*update)();
-		void(*render)();
-	};
 
-	static GameStateFuncs funcs[GAMESTATE_ENUM_COUNT];
-
-	if (frameNumber == 0)
-	{
-		funcs[GAMESTATE_PLAYING] = { Playing_Init, NULL, Playing_Update, Playing_Render };
-		funcs[GAMESTATE_EDITOR] = { NULL, NULL, Editor_Update, Editor_Render };
-		funcs[GAMESTATE_PAUSED] = { NULL, NULL, Paused_Update, Paused_Render };
-
-		if (funcs[gameState].init)
-			funcs[gameState].init(gameState);
-	}
-
-	GameState stateBeforeUpdate = gameState;
-	funcs[gameState].update();
-	if (gameState != stateBeforeUpdate)
-	{
-		if (funcs[stateBeforeUpdate].deinit)
-			funcs[stateBeforeUpdate].deinit();
-		if (funcs[gameState].init)
-			funcs[gameState].init(stateBeforeUpdate);
-	}
-	funcs[gameState].render();
-	++frameNumber;
+	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

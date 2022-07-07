@@ -12,6 +12,19 @@ extern "C" __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
+STRUCT(Functions)
+{
+	void(*init)(void *parameter);
+	void(*deinit)(void);
+	void(*update)(void);
+	void(*render)(void);
+};
+
+static Functions registry[100];
+static int stack[100];
+static int cursor;
+static int currentState;
+
 static void DoOneFrame()
 {
 	HotReloadAllTrackedItems();
@@ -20,12 +33,97 @@ static void DoOneFrame()
 	ImGui_ImplRaylib_NewFrame();
 	ImGui::NewFrame();
 	{
-		GameLoopOneIteration();
+		if (registry[currentState].update)
+			registry[currentState].update();
+		if (registry[currentState].render)
+			registry[currentState].render();
 	}
 	rlDrawRenderBatchActive();
 	ImGui::Render();
 	ImGui_ImplRaylib_Render(ImGui::GetDrawData());
 	EndDrawing();
+}
+
+extern "C" void RegisterGameState(int state, void(*init)(void *parameter), void(*deinit)(void), void(*update)(void), void(*render)(void))
+{
+	ASSERT(state >= 0 && state < COUNTOF(registry));
+	registry[state].init = init;
+	registry[state].deinit = deinit;
+	registry[state].update = update;
+	registry[state].render = render;
+}
+
+extern "C" void PushGameState(int state, void *parameter)
+{
+	ASSERT(cursor < COUNTOF(stack)); // Stack overflow.
+	ASSERT(state >= 0 && state < COUNTOF(registry));
+
+	stack[cursor++] = currentState;
+	currentState = state;
+	if (registry[state].init)
+		registry[state].init(parameter);
+}
+
+extern "C" void PopGameState(void)
+{
+	ASSERT(cursor > 0);
+
+	if (registry[currentState].deinit)
+		registry[currentState].deinit();
+	currentState = stack[--cursor];
+}
+
+extern "C" void PopGameStateUntil(int state)
+{
+	ASSERT(state >= 0 && state < COUNTOF(registry));
+
+	while (currentState != state && cursor > 0)
+		PopGameState();
+
+	ASSERT(currentState == state); // The target game state was not found in the stack.
+}
+
+extern "C" void SetCurrentGameState(int state, void *parameter)
+{
+	ASSERT(state >= 0 && state < COUNTOF(registry));
+
+	if (registry[currentState].deinit)
+		registry[currentState].deinit();
+	currentState = state;
+	if (registry[currentState].init)
+		registry[currentState].init(parameter);
+}
+
+extern "C" void CallPreviousGameStateRender(void)
+{
+	int previous = GetPreviousGameState();
+	if (previous == -1)
+		return;
+
+	if (registry[previous].render)
+	{
+		// Set up the conditions as if the previous game state was current.
+		--cursor;
+		int backup = currentState;
+		currentState = previous;
+		{
+			registry[previous].render();
+		}
+		currentState = backup;
+		++cursor;
+	}
+}
+
+extern "C" int GetCurrentGameState(void)
+{
+	return currentState;
+}
+
+extern "C" int GetPreviousGameState(void)
+{
+	if (cursor == 0)
+		return -1;
+	return stack[cursor - 1];
 }
 
 int main()
