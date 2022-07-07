@@ -1,15 +1,16 @@
 #include "core.h"
 #include "lib/imgui/imgui.h"
 
-#define FPS 60
-#define DELTA_TIME (1.0f/FPS)
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
+#define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
+#define WINDOW_CENTER_Y (0.5f*WINDOW_HEIGHT)
 #define Y_SQUISH 0.541196100146197f // sqrt(2) * sin(PI / 8)
 
 ENUM(GameState)
 {
 	GAMESTATE_PLAYING,
+	GAMESTATE_TALKING,
 	GAMESTATE_PAUSED,
 	GAMESTATE_EDITOR,
 };
@@ -47,6 +48,10 @@ float PlayerDistanceToNpc(Npc npc)
 	return Vector2Distance(playerFeet, npcFeet);
 }
 
+//
+// Playing
+//
+
 void Playing_Update()
 {
 	if (IsKeyPressed(KEY_GRAVE))
@@ -65,7 +70,11 @@ void Playing_Update()
 		float distance = PlayerDistanceToNpc(pinkGuy);
 		LogInfo("Distance to pink guy: %g", distance);
 		if (distance < 50)
-			PlaySound(shatter);
+		{
+			PlaySound(shatter); // @TODO Remove
+			PushGameState(GAMESTATE_TALKING, NULL);
+			return;
+		}
 	}
 
 	float moveSpeed = 5;
@@ -114,6 +123,55 @@ void Playing_Render()
 }
 REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
 
+//
+// Talking
+//
+
+void Talking_Update()
+{
+	if (IsKeyPressed(KEY_E) || IsKeyPressed(KEY_SPACE))
+	{
+		PopGameState();
+		return;
+	}
+	if (IsKeyPressed(KEY_ESCAPE))
+	{
+		PushGameState(GAMESTATE_PAUSED, NULL);
+		return;
+	}
+}
+void Talking_Render()
+{
+	CallPreviousGameStateRender();
+
+	Rectangle textbox = {
+		WINDOW_CENTER_X - 300,
+		WINDOW_HEIGHT - 340,
+		600,
+		320
+	};
+	Rectangle indented = ExpandRectangle(textbox, -5);
+	Rectangle textArea = ExpandRectangle(textbox, -15);
+	Rectangle dropShadow = { textbox.x + 10, textbox.y + 10, textbox.width, textbox.height };
+
+	DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
+	DrawRectangleRounded(textbox, 0.1f, 5, WHITE);
+	DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
+
+	float t = (float)GetTimeInCurrentGameState();
+	DrawAnimatedTextBox(roboto, textArea, 32, PINK, 25 * t, 
+		"Hello, sailor!\n\n"
+		"This is the story of a man named Stanley.\n\n"
+		"Seven salty sailors sail the seven salty sees.\n\n"
+		"Several boxing wizards jump quickly.\n\n"
+		"Would you like to know more?");
+}
+REGISTER_GAME_STATE(GAMESTATE_TALKING, NULL, NULL, Talking_Update, Talking_Render);
+
+//
+// Editor
+//
+
 void Editor_Update()
 {
 	if (IsKeyPressed(KEY_GRAVE))
@@ -130,6 +188,10 @@ void Editor_Render()
 }
 REGISTER_GAME_STATE(GAMESTATE_EDITOR, NULL, NULL, Editor_Update, Editor_Render);
 
+//
+// Paused
+//
+
 void Paused_Update(void)
 {
 	if (IsKeyPressed(KEY_ESCAPE))
@@ -142,7 +204,7 @@ void Paused_Render(void)
 {
 	CallPreviousGameStateRender();
 	DrawRectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GrayscaleAlpha(0, 0.4f));
-	DrawFormatCentered(roboto, 0.5f * WINDOW_WIDTH, 0.5f * WINDOW_HEIGHT, 64, BLACK, "Paused");
+	DrawFormatCentered(roboto, WINDOW_CENTER_X, WINDOW_CENTER_Y, 64, BLACK, "Paused");
 }
 REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 

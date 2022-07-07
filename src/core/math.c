@@ -71,3 +71,24 @@ int ClampInt(int x, int min, int max)
 		x = max;
 	return x;
 }
+
+Rectangle ExpandRectangle(Rectangle rect, float amount)
+{
+	return ExpandRectangleEx(rect, amount, amount, amount, amount);
+}
+
+Rectangle ExpandRectangleVh(Rectangle rect, float vertical, float horizontal)
+{
+	return ExpandRectangleEx(rect, vertical, vertical, horizontal, horizontal);
+}
+
+Rectangle ExpandRectangleEx(Rectangle rect, float top, float bottom, float left, float right)
+{
+	return (Rectangle)
+	{
+		.x      = rect.x - left,
+		.y      = rect.y - top,
+		.width  = rect.width + left + right,
+		.height = rect.height + top + bottom
+	};
+}

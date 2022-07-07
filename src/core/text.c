@@ -23,26 +23,23 @@ static List(Word) SplitIntoWords(Font font, List(int) codepoints)
 	int numCodepoints = ListCount(codepoints);
 	for (int i = 0; i < numCodepoints; ++i)
 	{
-		int codepoint = codepoints[i];
-		if (CharIsWhitespace((char)codepoint))
-			continue;
-
-		Word word = { i, 1 };
+		Word word = { i };
 		for (; i < numCodepoints; ++i)
 		{
-			codepoint = codepoints[i];
-			if (CharIsWhitespace((char)codepoint))
+			if (CharIsWhitespace((char)codepoints[i]))
 				break;
 			++word.length;
 		}
 
-		for (int j = 0; j < word.length; ++j)
+		if (word.length > 0)
 		{
-			int index = GetGlyphIndex(font, codepoints[word.start + j]);
-			word.width += GetAdvance(font, index);
+			for (int j = 0; j < word.length; ++j)
+			{
+				int index = GetGlyphIndex(font, codepoints[word.start + j]);
+				word.width += GetAdvance(font, index);
+			}
+			ListAdd(&words, word);
 		}
-
-		ListAdd(&words, word);
 	}
 
 	return words;
@@ -120,7 +117,7 @@ void DrawFormatCenteredVa(Font font, float x, float y, float fontSize, Color col
 
 void DrawAnimatedTextBox(Font font, Rectangle textBox, float fontSize, Color color, float t, const char *string)
 {
-	DrawRectangleRec(textBox, Darker(RED));
+	//DrawRectangleRec(textBox, Darker(RED));
 	if (not string)
 		return;
 
@@ -132,6 +129,7 @@ void DrawAnimatedTextBox(Font font, Rectangle textBox, float fontSize, Color col
 			return;
 
 		float scaleFactor = fontSize / font.baseSize;
+		float yAdvance = font.baseSize * scaleFactor;
 		float maxX = textBox.x + textBox.width;
 		float penX = textBox.x;
 		float penY = textBox.y;
@@ -151,15 +149,23 @@ void DrawAnimatedTextBox(Font font, Rectangle textBox, float fontSize, Color col
 				}
 
 				int codepoint = codepoints[i];
-				int index = GetGlyphIndex(font, codepoint);
-				DrawTextCodepoint(font, codepoint, (Vector2) { penX, penY }, fontSize, color);
-				penX += scaleFactor * GetAdvance(font, index);
+				if (codepoint == '\n')
+				{
+					penX = textBox.x;
+					penY += yAdvance;
+				}
+				else
+				{
+					int index = GetGlyphIndex(font, codepoint);
+					DrawTextCodepoint(font, codepoint, (Vector2) { penX, penY }, fontSize, color);
+					penX += scaleFactor * GetAdvance(font, index);
+				}
 			}
 
 			if (penX + word.width > maxX)
 			{
 				penX = textBox.x;
-				penY += font.baseSize;
+				penY += yAdvance;
 			}
 
 			for (; i < word.start + word.length; ++i)

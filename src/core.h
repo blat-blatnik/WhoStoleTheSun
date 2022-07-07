@@ -57,6 +57,16 @@ extern "C" {
 #define PASTE(a, b) PASTE_NOEXPAND(a, b)
 
 //
+// Constants
+//
+
+// (Fixed) frames per second the game runs at. You can assume that this never changes.
+#define FPS 60
+
+// (Fixed) amount of time that advanced between frames. The game must always hit this frame time, otherwise it will slow down.
+#define FRAME_TIME (1.0f / FPS)
+
+//
 // Logging
 //
 
@@ -368,6 +378,15 @@ float Clamp01(float x);
 // Clamps an integer to [min, max].
 int ClampInt(int x, int min, int max);
 
+// Expands a rectangle equally in all 4 directions.
+Rectangle ExpandRectangle(Rectangle rect, float amount);
+
+// Expands a rectangle horizontally and vertically.
+Rectangle ExpandRectangleVh(Rectangle rect, float vertical, float horizontal);
+
+// Expands a rectangle differently in all 4 directions.
+Rectangle ExpandRectangleEx(Rectangle rect, float top, float bottom, float left, float right);
+
 //
 // Color
 //
@@ -515,7 +534,7 @@ void FreeFromSlabAllocator(SlabAllocator *allocator, void *block);
 void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
 
 //
-// Runtime (this is used in runtime.c, but it's actually defined in main.c)
+// Game states
 //
 
 // Associates callback functions to a game state ID.
@@ -539,15 +558,31 @@ void SetCurrentGameState(int state, void *parameter);
 // Calls the render function of the game state on top of the game state stack. The call is performed as if that game state was current.
 void CallPreviousGameStateRender(void);
 
+// Calls the update function of the current game state.
+void UpdateCurrentGameState(void);
+
+// Calls the render function of the current game state.
+void RenderCurrentGameState(void);
+
 // Returns the integer ID of the current game state.
 int GetCurrentGameState(void);
 
 // Returns the integer ID of the game state on top of the game state stack.
 int GetPreviousGameState(void);
 
+// Returns the number of update frames that elapsed in the current game state since init was called.
+int GetFrameNumberInCurrentGameState(void);
+
+// Returns the number of seconds that elapsed in the current game state since init was called.
+double GetTimeInCurrentGameState(void);
+
 // Really stupid looking conveniance macro to allow defining a game state in once place.
 #define REGISTER_GAME_STATE(name, init, deinit, update, render)\
 	static int PASTE(dummy__, __LINE__) = [](){ RegisterGameState(name, init, deinit, update, render); return 0; }();
+
+//
+// Runtime
+//
 
 // Initialize the game. This is used in runtime.cpp, but should actually be defined by the game.
 void GameInit(void);
