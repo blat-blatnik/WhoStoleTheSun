@@ -52,7 +52,7 @@ static List(int) TextToCodepoints(const char *text)
 		return codepoints;
 
 	ListSetAllocator(&codepoints, TempRealloc, TempFree);
-	for (int i = 0;; ++i)
+	for (;;)
 	{
 		int advance;
 		int codepoint = GetCodepoint(text, &advance);

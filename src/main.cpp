@@ -65,32 +65,31 @@ void Playing_Update()
 		return;
 	}
 
-	if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_E))
+	if (IsKeyPressed(KEY_SPACE) or IsKeyPressed(KEY_E))
 	{
 		float distance = PlayerDistanceToNpc(pinkGuy);
-		LogInfo("Distance to pink guy: %g", distance);
 		if (distance < 50)
 		{
 			PlaySound(shatter); // @TODO Remove
-			PushGameState(GAMESTATE_TALKING, NULL);
+			PushGameState(GAMESTATE_TALKING, (void *)"res/exampledialog.txt");
 			return;
 		}
 	}
 
 	float moveSpeed = 5;
-	if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+	if (IsKeyDown(KEY_LEFT_SHIFT) or IsKeyDown(KEY_RIGHT_SHIFT))
 		moveSpeed = 10;
 
 	Vector2 move = { 0 };
-	if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
+	if (IsKeyDown(KEY_LEFT) or IsKeyDown(KEY_A))
 		move.x -= 1;
-	if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
+	if (IsKeyDown(KEY_RIGHT) or IsKeyDown(KEY_D))
 		move.x += 1;
-	if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
+	if (IsKeyDown(KEY_UP) or IsKeyDown(KEY_W))
 		move.y -= 1;
-	if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
+	if (IsKeyDown(KEY_DOWN) or IsKeyDown(KEY_S))
 		move.y += 1;
-	if (move.x != 0 || move.y != 0)
+	if (move.x != 0 or move.y != 0)
 	{
 		move = Vector2Normalize(move);
 		Vector2 dirVector = move;
@@ -127,9 +126,20 @@ REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Rende
 // Talking
 //
 
+Script script;
+
+void Talking_Init(void *param)
+{
+	const char *path = (char *)param;
+	script = LoadScript(path, roboto);
+}
+void Talking_Deinit()
+{
+	UnloadScript(&script);
+}
 void Talking_Update()
 {
-	if (IsKeyPressed(KEY_E) || IsKeyPressed(KEY_SPACE))
+	if (IsKeyPressed(KEY_E) or IsKeyPressed(KEY_SPACE))
 	{
 		PopGameState();
 		return;
@@ -159,14 +169,15 @@ void Talking_Render()
 	DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
 
 	float t = (float)GetTimeInCurrentGameState();
-	DrawAnimatedTextBox(roboto, textArea, 32, PINK, 25 * t, 
-		"Hello, sailor!\n\n"
-		"This is the story of a man named Stanley.\n\n"
-		"Seven salty sailors sail the seven salty sees.\n\n"
-		"Several boxing wizards jump quickly.\n\n"
-		"Would you like to know more?");
+	DrawParagraph(script.paragraphs[0], script.font, textArea, 32, PINK, 25 * t);
+	//DrawAnimatedTextBox(roboto, textArea, 32, PINK, 25 * t, 
+	//	"Hello, sailor!\n\n"
+	//	"This is the story of a man named Stanley.\n\n"
+	//	"Seven salty sailors sail the seven salty sees.\n\n"
+	//	"Several boxing wizards jump quickly.\n\n"
+	//	"Would you like to know more?");
 }
-REGISTER_GAME_STATE(GAMESTATE_TALKING, NULL, NULL, Talking_Update, Talking_Render);
+REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, Talking_Deinit, Talking_Update, Talking_Render);
 
 //
 // Editor
@@ -213,8 +224,10 @@ void GameInit(void)
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
 	InitAudioDevice();
 	SetTargetFPS(FPS);
-	
+
 	roboto = LoadFontAscii("res/Roboto.ttf", 32);
+	//Dialog d = LoadDialog("res/exampledialog.txt", roboto);
+
 	background = LoadTextureAndTrackChanges("res/background.png");
 	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
 	shatter = LoadSound("res/shatter.wav");

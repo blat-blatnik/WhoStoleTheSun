@@ -76,3 +76,13 @@ void ReplaceChar(char *string, char target, char replacement)
 		if (string[i] == target)
 			string[i] = replacement;
 }
+
+char *SkipLeadingWhitespace(const char *string)
+{
+	if (!string)
+		return NULL;
+
+	while (CharIsWhitespace(*string))
+		++string;
+	return (char *)string;
+}

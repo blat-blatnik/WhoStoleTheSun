@@ -93,6 +93,9 @@
     <ClCompile Include="src\core\game_state.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\script.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
