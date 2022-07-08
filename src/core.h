@@ -628,21 +628,21 @@ typedef bool(*pHandler)(std::vector<std::string> args);
 class Command
 {
 public:
-    Command(std::string pcmd, std::string pHelp, pHandler handle) : command(pcmd), help(pHelp), handler(handle)
+    Command(std::string pcmd, std::string pHelp, pHandler handle) : name(pcmd), help(pHelp), handler(handle)
     {
 
     }
     Command() {};
 
-
-
-
     bool Invoke(std::vector<std::string> args) { return handler(args); }
 
     void SetHelp(std::string pHelp) { help = pHelp; }
+
+    std::string GetName() { return name; }
+
 private:
 
-    std::string command;
+    std::string name;
     std::string help;
     pHandler handler;
     // maybe implement later, for now useless
@@ -654,7 +654,13 @@ enum CmdState
 {
     COMMAND_NOT_FOUND,
     COMMAND_FOUND_BAD_ARGS,
-    COMMAND_SUCCEEDED
+    COMMAND_SUCCEEDED,
+    COMMAND_RESULT_HELP
+};
+struct CmdResult
+{
+    Command cmd;
+    CmdState state;
 };
 
 class Console
@@ -669,7 +675,7 @@ public:
 
 
     void AddCommand(std::string command, pHandler handle, std::string pHelp = "");
-    CmdState ExecuteCommand(char* cmd);
+    CmdResult ExecuteCommand(char* cmd);
     std::map<std::string, Command> GetCommands() { return _commandContainer; }
 
     char                        InputBuf[256];
@@ -767,7 +773,7 @@ public:
             if ((s != NULL) && (s[0] == '\0'))
                 return;
 
-            auto state = ExecuteCommand(s);
+            CmdResult state = ExecuteCommand(s);
             strcpy(s, "");
             reclaim_focus = true;
 
@@ -787,9 +793,9 @@ public:
         return 1;
     }
 
-    void HandleState(CmdState state)
+    void HandleState(CmdResult &result)
     {
-        switch (state)
+        switch (result.state)
         {
         case CmdState::COMMAND_SUCCEEDED:
             AddLog("Worked :D");
@@ -801,7 +807,11 @@ public:
             break;
 
         case CmdState::COMMAND_FOUND_BAD_ARGS:
-            AddLog("Command found but wrong arguments, try <name> help!");
+            AddLog("Command found but wrong arguments, try <%s> help!", result.cmd.GetName().c_str());
+            break;
+
+        case CmdState::COMMAND_RESULT_HELP:
+
             break;
         }
     }

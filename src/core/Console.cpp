@@ -34,7 +34,7 @@ void Console::AddCommand(std::string cmd, pHandler phandle, std::string pHelp)
     _commandContainer.insert(std::pair<std::string, Command>(commandName, command));
 }
 
-CmdState Console::ExecuteCommand(char* cmd)
+CmdResult Console::ExecuteCommand(char* cmd)
 {
     char space_char = ' ';
     std::vector<std::string> words{};
@@ -48,12 +48,31 @@ CmdState Console::ExecuteCommand(char* cmd)
     auto command = words[0];
     words.erase(words.begin());
 
+    CmdResult result;
+
+    if (words.size() > 0 && words[0] == "help")
+    {
+        result.state = CmdState::COMMAND_RESULT_HELP;
+        return result;
+    }
+
     if (_commandContainer.find(command) == _commandContainer.end())
-        return CmdState::COMMAND_NOT_FOUND;
+    {
+        result.state = CmdState::COMMAND_NOT_FOUND;
+        return result;
+    }
 
     if (_commandContainer[command].Invoke(words))
-        return CmdState::COMMAND_SUCCEEDED;
+    {
+        result.state = CmdState::COMMAND_SUCCEEDED;
+        result.cmd = _commandContainer[command];
+    }
     else
-        return CmdState::COMMAND_FOUND_BAD_ARGS;
+    {
+        result.state = CmdState::COMMAND_FOUND_BAD_ARGS;
+        result.cmd = _commandContainer[command];
+    }
+
+    return result;
 
 }

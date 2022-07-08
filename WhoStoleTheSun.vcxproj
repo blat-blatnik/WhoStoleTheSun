@@ -96,7 +96,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\Commands.cpp" />
     <ClCompile Include="src\core\Console.cpp" />
     <ClCompile Include="src\core\drawing.c">
       <SubType>

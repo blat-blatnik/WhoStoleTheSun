@@ -35,7 +35,7 @@ Player player;
 Npc pinkGuy;
 Sound shatter;
 
-Console c;
+Console console;
 
 
 float PlayerDistanceToNpc(Npc npc)
@@ -187,7 +187,7 @@ void Editor_Update()
 	}
 
 	ImGui::ShowDemoWindow();
-	c.ShowConsoleWindow("Console", NULL);
+	console.ShowConsoleWindow("Console", NULL);
 }
 void Editor_Render()
 {
@@ -257,7 +257,8 @@ void GameInit(void)
 	pinkGuy.position.y = 250;
 
 
-	c.AddCommand("tp", &HandlePlayerTeleportCommand);
-
+	// teleport player
+	console.AddCommand("tp", &HandlePlayerTeleportCommand);
+	
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }
