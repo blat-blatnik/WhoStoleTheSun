@@ -46,14 +46,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\windows\</OutDir>
     <IntDir>bin\windows\temp\</IntDir>
-    <IncludePath>$(IncludePath);$(SolutionDir)/imgui/;$(SolutionDir)/glfw/include/</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)bin\windows\</OutDir>
     <IntDir>bin\windows\temp\</IntDir>
     <LibraryPath>$(ProjectDir)lib;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);;$(SolutionDir)/imgui/;$(SolutionDir)/glfw/include/</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -69,7 +69,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>raylib_windows_x64.lib;winmm.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>raylib_windows_x64.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)/glfw/lib-vc2010-64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -91,22 +91,29 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>raylib_windows_x64.lib;winmm.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>raylib_windows_x64.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)/glfw/lib-vc2010-64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Console\ChatHandler.cpp" />
-    <ClCompile Include="Console\ConsoleCommand.cpp" />
-    <ClCompile Include="imgui\imgui.cpp" />
-    <ClCompile Include="imgui\imgui_demo.cpp" />
-    <ClCompile Include="imgui\imgui_draw.cpp" />
-    <ClCompile Include="imgui\imgui_impl_glfw.cpp" />
-    <ClCompile Include="imgui\imgui_impl_opengl3.cpp" />
-    <ClCompile Include="imgui\imgui_tables.cpp" />
-    <ClCompile Include="imgui\imgui_widgets.cpp" />
-    <ClCompile Include="src\containers\list.c" />
-    <ClCompile Include="src\containers\slab_allocator.c" />
+    <ClCompile Include="src\Console\ChatHandler.cpp" />
+    <ClCompile Include="src\Console\ConsoleCommand.cpp" />
+    <ClCompile Include="src\core\drawing.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\core\game_state.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\lib\imgui\imgui.cpp" />
+    <ClCompile Include="src\lib\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\lib\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\lib\imgui\imgui_impl_raylib.cpp" />
+    <ClCompile Include="src\lib\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\lib\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\core\list.c" />
+    <ClCompile Include="src\core\slab_allocator.c" />
     <ClCompile Include="src\core\char_utilities.c" />
     <ClCompile Include="src\core\color.c">
       <SubType>
@@ -118,7 +125,7 @@
     <ClCompile Include="src\core\memory_utilities.c" />
     <ClCompile Include="src\core\noise.c" />
     <ClCompile Include="src\core\random.c" />
-    <ClCompile Include="src\core\runtime.c" />
+    <ClCompile Include="src\core\runtime.cpp" />
     <ClCompile Include="src\core\string_builder.c" />
     <ClCompile Include="src\core\string_utilities.c" />
     <ClCompile Include="src\core\temporary_allocator.c" />
@@ -126,12 +133,12 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\text.c" />
+    <ClCompile Include="src\core\text.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="build_web.bat" />
-    <None Include="imgui\imgui.ini" />
+    <None Include="imgui.ini" />
     <None Include="README.md" />
     <None Include="run_mac.sh" />
     <None Include="run_web.bat" />
@@ -140,28 +147,21 @@
     <None Include="webshell.html" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Console\ChatHandler.h" />
-    <ClInclude Include="Console\ConsoleCommand.h" />
-    <ClInclude Include="glfw\include\GLFW\glfw3.h" />
-    <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
-    <ClInclude Include="imgui\imconfig.h" />
-    <ClInclude Include="imgui\imgui.h" />
-    <ClInclude Include="imgui\imgui_impl_glfw.h" />
-    <ClInclude Include="imgui\imgui_impl_opengl3.h" />
-    <ClInclude Include="imgui\imgui_impl_opengl3_loader.h" />
-    <ClInclude Include="imgui_impl_raylib_config.h" />
-    <ClInclude Include="imgui\imgui_internal.h" />
-    <ClInclude Include="imgui\imstb_rectpack.h" />
-    <ClInclude Include="imgui\imstb_textedit.h" />
-    <ClInclude Include="imgui\imstb_truetype.h" />
-    <ClInclude Include="src\containers.h" />
+    <ClInclude Include="src\Console\ChatHandler.h" />
+    <ClInclude Include="src\Console\ConsoleCommand.h" />
+    <ClInclude Include="src\lib\imgui\imconfig.h" />
+    <ClInclude Include="src\lib\imgui\imgui.h" />
+    <ClInclude Include="src\lib\imgui\imgui_impl_raylib.h" />
+    <ClInclude Include="src\lib\imgui\imgui_internal.h" />
+    <ClInclude Include="src\lib\imgui\imstb_rectpack.h" />
+    <ClInclude Include="src\lib\imgui\imstb_textedit.h" />
+    <ClInclude Include="src\lib\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\imgui_impl_raylib_config.h" />
     <ClInclude Include="src\core.h" />
-    <ClInclude Include="src\lib\raygui.h" />
     <ClInclude Include="src\lib\raylib.h" />
     <ClInclude Include="src\lib\raymath.h" />
     <ClInclude Include="src\lib\rlgl.h" />
     <ClInclude Include="src\lib\rmem.h" />
-    <ClInclude Include="src\text.h" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="debug.natvis" />

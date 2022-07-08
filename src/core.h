@@ -3,7 +3,6 @@
 #include "lib/raylib.h"
 #include "lib/raymath.h"
 #include "lib/rlgl.h"
-#include "lib/raygui.h"
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -26,17 +25,18 @@ extern "C" {
 #	define __debugbreak()
 #endif
 
+#ifdef __cplusplus
+#	define ENUM(name) enum name
+#	define UNION(name) union name
+#	define STRUCT(name) struct name
+#else
+#	define ENUM(name) typedef enum name name; enum name
+#	define UNION(name) typedef union name name; union name
+#	define STRUCT(name) typedef struct name name; struct name
+#endif
+
 // Return number of items in a static array (DOESN'T WORK FOR POINTERS!).
 #define COUNTOF(array) (sizeof(array) / sizeof(array[0]))
-
-// Utility macro to define an enum without having to type all this stuff out every time.
-#define ENUM(name) typedef enum name name; enum name
-
-// Utility macro to define a union without having to type all this stuff out every time.
-#define UNION(name) typedef union name name; union name
-
-// Utility macro to define a struct without having to type all this stuff out every time.
-#define STRUCT(name) typedef struct name name; struct name
 
 // Silence compiler warnings about unused variables or parameters.
 #define UNUSED(x) ((void)(x))
@@ -49,6 +49,22 @@ extern "C" {
 
 // Use this on printf format string-like function parameters. The compiler will then issue errors if the arguments don't match the format string.
 #define FORMAT_STRING _Printf_format_string_ const char *
+
+// Concatenates two tokens without expanding macro arguments. E.g. PASTE_NOEXPAND(a, __LINE__) -> a__LINE__
+#define PASTE_NOEXPAND(a, b) a##b
+
+// Concatenates two tokens while expanding macro arguments. E.g. PASTE(a, __LINE__) -> a42
+#define PASTE(a, b) PASTE_NOEXPAND(a, b)
+
+//
+// Constants
+//
+
+// (Fixed) frames per second the game runs at. You can assume that this never changes.
+#define FPS 60
+
+// (Fixed) amount of time that advanced between frames. The game must always hit this frame time, otherwise it will slow down.
+#define FRAME_TIME (1.0f / FPS)
 
 //
 // Logging
@@ -215,17 +231,23 @@ STRUCT(FileData)
 	int size;
 };
 
-// Load the entire file as bytes. The returned data will be automatically updated whenever the file changes.
+// Load the entire file as bytes. The returned image will automatically update whenever the file changes.
 FileData *LoadFileAndTrackChanges(const char *path);
 
-// Loads the texture from a file. The returned texture will be automatically updated whenever the file changes.
+// Loads a texture from a file. The returned image will automatically update whenever the file changes.
 Texture *LoadTextureAndTrackChanges(const char *path);
 
-// Unloads a tracked file, and stops tracking it's changes.
+// Loads an image from a file. The returned image will automatically update whenever the file changes.
+Image *LoadImageAndTrackChanges(const char *path);
+
+// Unloads a tracked file, and stops tracking its changes.
 void UnloadTrackedFile(FileData **data);
 
-// Unloads a tracked texture, and stops tracking it's changes.
+// Unloads a tracked texture, and stops tracking its changes.
 void UnloadTrackedTexture(Texture **texture);
+
+// Unloads a tracked image, and stops tracking its changes.
+void UnloadTrackedImage(Image **image);
 
 // Checks all tracked items and hot-reloads any that changed. Automatically called at the start of each frame.
 void HotReloadAllTrackedItems(void);
@@ -296,25 +318,44 @@ float FloatNoise3(unsigned seed, int x, int y, int z);
 float ValueNoise1(unsigned seed, float x);
 float ValueNoise2(unsigned seed, float x, float y);
 float ValueNoise3(unsigned seed, float x, float y, float z);
-float ValueNoise2V(unsigned seed, Vector2 pos);
-float ValueNoise3V(unsigned seed, Vector3 pos);
+float ValueNoise2V(unsigned seed, Vector2 position);
+float ValueNoise3V(unsigned seed, Vector3 position);
 
 // Determinsically produces a uniform [-1, +1] float based on the inputs. The returned values, and their derivatives, are continuous.
 float PerlinNoise1(unsigned seed, float x);
 float PerlinNoise2(unsigned seed, float x, float y);
 float PerlinNoise3(unsigned seed, float x, float y, float z);
-float PerlinNoise2V(unsigned seed, Vector2 pos);
-float PerlinNoise3V(unsigned seed, Vector3 pos);
+float PerlinNoise2V(unsigned seed, Vector2 position);
+float PerlinNoise3V(unsigned seed, Vector3 position);
 
 //
 // Math
 //
+
+ENUM(Direction)
+{
+	DIRECTION_RIGHT,
+	DIRECTION_UP_RIGHT,
+	DIRECTION_UP,
+	DIRECTION_UP_LEFT,
+	DIRECTION_LEFT,
+	DIRECTION_DOWN_LEFT,
+	DIRECTION_DOWN,
+	DIRECTION_DOWN_RIGHT,
+	DIRECTION_ENUM_COUNT
+};
+
+// Returns the 8-sided direction that the vector matches most closely.
+Direction DirectionFromVector(Vector2 v);
 
 // Returns a unit length vector pointing in the given angle (in radians).
 Vector2 UnitVector2WithAngle(float angle);
 
 // Returns a vector with the given polar coordinates.
 Vector2 Vector2FromPolar(float length, float angle);
+
+// Returns the angle between the vector and the x-axis. I.e. atan2f(y, x).
+float Vector2Atan(Vector2 v);
 
 // Smoothly interpolates between 0 and 1 based on t. https://en.wikipedia.org/wiki/Smoothstep.
 float Smoothstep(float edge0, float edge1, float t);
@@ -333,6 +374,18 @@ float Wrap01(float x);
 
 // Clamps a number to [0, 1].
 float Clamp01(float x);
+
+// Clamps an integer to [min, max].
+int ClampInt(int x, int min, int max);
+
+// Expands a rectangle equally in all 4 directions.
+Rectangle ExpandRectangle(Rectangle rect, float amount);
+
+// Expands a rectangle horizontally and vertically.
+Rectangle ExpandRectangleVh(Rectangle rect, float vertical, float horizontal);
+
+// Expands a rectangle differently in all 4 directions.
+Rectangle ExpandRectangleEx(Rectangle rect, float top, float bottom, float left, float right);
 
 //
 // Color
@@ -366,12 +419,191 @@ Color FloatRGB(float red, float green, float blue);
 Color FloatRGBA(float red, float green, float blue, float alpha);
 
 //
-// Runtime (these are used in runtime.c, but they're actually defined in main.c and tests.c)
+// Drawing
 //
 
-void Game(void);
-void GameLoopOneIteration(void);
+// Draws a texture centered at the given point.
+void DrawTextureCentered(Texture texture, Vector2 position, Color tint);
+
+//
+// Text
+//
+
+// Loads all ASCII glyphs from the given .ttf file.
+Font LoadFontAscii(const char *path, int fontSize);
+
+// Draws a formatted string starting at (x, y) and going right and down.
+void DrawFormat(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, ...);
+
+// Same as DrawFormat but takes an explicit varargs pack.
+void DrawFormatVa(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, va_list args);
+
+// Draws a formatted string centered at (x, y).
+void DrawFormatCentered(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, ...);
+
+// Same as DrawFormatCentered but takes an explicit varargs pack.
+void DrawFormatCenteredVa(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, va_list args);
+
+void DrawAnimatedTextBox(Font font, Rectangle textBox, float fontSize, Color color, float t, const char *string);
+
+//
+// List
+//
+
+// Use this to declare lists, e.g. List(int) myList = NULL; You can also do int *myList = NULL, but this makes it more distinct.
+#define List(T) T*
+
+// Sets the allocator used by the list. By default, lists use MemRealloc and MemFree (heap allocation).
+void ListSetAllocator(List(void) *listPointer, void *(*realloc)(void *block, int newSize), void(*free)(void *block));
+
+// Returns the number of items in the list.
+int ListCount(const List(void) list);
+
+// Returns the capacity of the list, which is the number of items the list can hold before having to resize.
+int ListCapacity(const List(void) list);
+
+// Deallocates all memory held by the list.
+void ListDestroy(List(void) *listPointer);
+
+// Ensures that the list has space for at least the given number of elements.
+#define ListReserve(listPointer, neededCapacity)\
+	private_ListReserve((listPointer), (neededCapacity), sizeof (*listPointer)[0])
+
+// Adds an item to the list.
+#define ListAdd(listPointer, item) do{\
+	int private_index = ListCount(*(listPointer));\
+	ListReserve((listPointer), private_index + 1);\
+	(*(listPointer))[private_index] = (item);\
+	++((int *)(*(listPointer)))[-1];\
+}while(0)
+
+// Adds space for one more item in the list, and returns a pointer to the newly allocated item.
+// This can be more efficient and convenient than ListAdd for larger structures.
+#define ListReserveOneItem(listPointer)(\
+	ListReserve((listPointer), ListCount(*listPointer) + 1),\
+	++((int *)(*(listPointer)))[-1],\
+	(*listPointer) + ListCount(*listPointer) - 1)
+
+// Removes the last item in the list and returns it.
+#define ListPop(listPointer)\
+	(private_ListPop(listPointer), (*listPointer)[ListCount(*listPointer)])
+
+// Removes the item at the given index in the list by swapping it with the last item in the list.
+// This will destroy the order of the list, but if you don't care about the order, it's very fast.
+#define ListSwapRemove(listPointer, index) do{\
+	if ((index) < ListCount(*(listPointer)))\
+		(*listPointer)[index] = (*listPointer)[--((int *)(*listPointer))[-1]];\
+}while(0);\
+
+// Implementation details..
+void private_ListReserve(List(void) *listPointer, int neededCapacity, int sizeOfOneItem);
+void private_ListPop(List(void) *listPointer);
+
+//
+// Slab allocator
+//
+
+STRUCT(Slab)
+{
+	Slab *prev;
+	Slab *next;
+	void *memory;
+	int cursor;
+	int capacity;
+};
+
+STRUCT(SlabAllocator)
+{
+	char magic[4];
+	Slab *slab;
+	int cursor;
+};
+
+// Allocates memory from the allocator. The returned pointer will be aligned to a 16-byte boundary.
+// The returned memory will be zeroed. If the requested byte count is 0 or negative, a 0 sized valid pointer is returned.
+void *AllocateFromSlabAllocator(SlabAllocator *allocator, int numBytes);
+
+// Reallocates a previously allocated memory block with a new size. If the memory block grows, the new bytes will be zeroed.
+// If `block` is NULL, the call is equivalent to AllocateFromSlabAllocator(allocator, numBytes).
+void *ReallocateFromSlabAllocator(SlabAllocator *allocator, void *block, int numBytes);
+
+// Deallocates a previously allocated memory block. If `block` is NULL this function does nothing.
+void FreeFromSlabAllocator(SlabAllocator *allocator, void *block);
+
+// Frees all memory allocated from the allocator after the given cursor.
+void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
+
+//
+// Game states
+//
+
+// Associates callback functions to a game state ID.
+// - init is called once, when the associated game state becomes current.
+// - deinit is called once, when the associated game state is no longer current, or on the stack.
+// - update and render are called once per frame while the associated game state is current.
+void RegisterGameState(int state, void(*init)(void *parameter), void(*deinit)(void), void(*update)(void), void(*render)(void));
+
+// Pushes the current game state onto the game state stack, and then initializes a new current game state with the given parameter.
+void PushGameState(int state, void *parameter);
+
+// Calls deinit on the current game state, and then replaces it with the game state popped off of the game state stack.
+void PopGameState(void);
+
+// Pops game states off of the stack until a particular game state becomes current.
+void PopGameStateUntil(int state);
+
+// Replaces the current game state without affecting the stack. Equivalent to a pop, followed by a push.
+void SetCurrentGameState(int state, void *parameter);
+
+// Calls the render function of the game state on top of the game state stack. The call is performed as if that game state was current.
+void CallPreviousGameStateRender(void);
+
+// Calls the update function of the current game state.
+void UpdateCurrentGameState(void);
+
+// Calls the render function of the current game state.
+void RenderCurrentGameState(void);
+
+// Returns the integer ID of the current game state.
+int GetCurrentGameState(void);
+
+// Returns the integer ID of the game state on top of the game state stack.
+int GetPreviousGameState(void);
+
+// Returns the number of update frames that elapsed in the current game state since init was called.
+int GetFrameNumberInCurrentGameState(void);
+
+// Returns the number of seconds that elapsed in the current game state since init was called.
+double GetTimeInCurrentGameState(void);
+
+// Really stupid looking conveniance macro to allow defining a game state in once place.
+#define REGISTER_GAME_STATE(name, init, deinit, update, render)\
+	static int PASTE(dummy__, __LINE__) = [](){ RegisterGameState(name, init, deinit, update, render); return 0; }();
+
+//
+// Runtime
+//
+
+// Initialize the game. This is used in runtime.cpp, but should actually be defined by the game.
+void GameInit(void);
 
 #ifdef __cplusplus
 }
+inline Vector2 operator +(Vector2 v) { return v; }
+inline Vector2 operator -(Vector2 v) { return { -v.x, -v.y }; }
+inline Vector2 operator +(Vector2 left, Vector2 right) { return { left.x + right.x, left.y + right.y }; }
+inline Vector2 operator -(Vector2 left, Vector2 right) { return { left.x - right.x, left.y - right.y }; }
+inline Vector2 operator *(Vector2 left, Vector2 right) { return { left.x * right.x, left.y * right.y }; }
+inline Vector2 operator /(Vector2 left, Vector2 right) { return { left.x / right.x, left.y / right.y }; }
+inline Vector2 operator %(Vector2 left, Vector2 right) { return { fmodf(left.x, right.x), fmodf(left.y, right.y) }; }
+inline Vector2 operator +(Vector2 left, float right) { return { left.x + right, left.y + right}; }
+inline Vector2 operator -(Vector2 left, float right) { return { left.x - right, left.y - right}; }
+inline Vector2 operator *(Vector2 left, float right) { return { left.x * right, left.y * right}; }
+inline Vector2 operator /(Vector2 left, float right) { return { left.x / right, left.y / right }; }
+inline Vector2 operator %(Vector2 left, float right) { return { fmodf(left.x, right), fmodf(left.y, right) }; }
+inline Vector2 operator +(float left, Vector2 right) { return { left + right.x, left + right.y }; }
+inline Vector2 operator -(float left, Vector2 right) { return { left - right.x, left - right.y }; }
+inline Vector2 operator *(float left, Vector2 right) { return { left * right.x, left * right.y }; }
+inline Vector2 operator /(float left, Vector2 right) { return { left / right.x, left / right.y }; }
+inline Vector2 operator %(float left, Vector2 right) { return { fmodf(left, right.x), fmodf(left, right.y) }; }
 #endif

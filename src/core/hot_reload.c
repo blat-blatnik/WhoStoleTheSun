@@ -1,11 +1,11 @@
 #include "../core.h"
-#include "../containers.h"
 #include <stdio.h>
 
 ENUM(ItemKind)
 {
 	FILE_DATA,
 	TEXTURE,
+	IMAGE,
 };
 
 STRUCT(TrackedItem)
@@ -14,6 +14,7 @@ STRUCT(TrackedItem)
 	{
 		FileData file;
 		Texture texture;
+		Image image;
 	};
 	ItemKind kind;
 	long lastModTime;
@@ -56,6 +57,21 @@ Texture *LoadTextureAndTrackChanges(const char *path)
 	return &item->texture;
 }
 
+Image *LoadImageAndTrackChanges(const char *path)
+{
+	if (not FileExists(path))
+		return NULL;
+
+	TrackedItem *item = ListReserveOneItem(&items);
+	item->image = LoadImage(path);
+	item->kind = IMAGE;
+	item->lastModTime = GetFileModTime(path);
+	CopyString(item->path, path, sizeof item->path);
+	ASSERT(StringLength(path) < sizeof item->path);
+
+	return &item->image;
+}
+
 void UnloadTrackedFile(FileData **data)
 {
 	if (not *data)
@@ -82,6 +98,20 @@ void UnloadTrackedTexture(Texture **texture)
 	UnloadTexture(items[index].texture);
 	ListSwapRemove(&items, index);
 	*texture = NULL;
+}
+
+void UnloadTrackedImage(Image **image)
+{
+	if (not *image)
+		return;
+
+	intptr_t index = (TrackedItem *)(*image) - items;
+	ASSERT(index >= 0 and index < ListCount(items)); // Is this actually a tracked item?
+	ASSERT(items[index].kind == IMAGE);
+
+	UnloadImage(items[index].image);
+	ListSwapRemove(&items, index);
+	*image = NULL;
 }
 
 void HotReloadAllTrackedItems(void)

@@ -36,7 +36,7 @@
     <ClCompile Include="src\core\random.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\runtime.c">
+    <ClCompile Include="src\core\runtime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\string_builder.c">
@@ -48,46 +48,49 @@
     <ClCompile Include="src\core\temporary_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\text.c">
+    <ClCompile Include="src\core\text.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\hot_reload.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\containers\list.c">
+    <ClCompile Include="src\core\list.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\containers\slab_allocator.c">
+    <ClCompile Include="src\core\slab_allocator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\color.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui.cpp">
+    <ClCompile Include="src\Console\ChatHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_demo.cpp">
+    <ClCompile Include="src\Console\ConsoleCommand.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_draw.cpp">
+    <ClCompile Include="src\core\drawing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_impl_glfw.cpp">
+    <ClCompile Include="src\lib\imgui\imgui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_impl_opengl3.cpp">
+    <ClCompile Include="src\lib\imgui\imgui_demo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_tables.cpp">
+    <ClCompile Include="src\lib\imgui\imgui_draw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="imgui\imgui_widgets.cpp">
+    <ClCompile Include="src\lib\imgui\imgui_impl_raylib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Console\ConsoleCommand.cpp">
+    <ClCompile Include="src\lib\imgui\imgui_tables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Console\ChatHandler.cpp">
+    <ClCompile Include="src\lib\imgui\imgui_widgets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\game_state.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -106,7 +109,7 @@
     </None>
     <None Include="run_mac.sh" />
     <None Include="synchronize.sh" />
-    <None Include="imgui\imgui.ini" />
+    <None Include="imgui.ini" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\raylib.h">
@@ -124,55 +127,34 @@
     <ClInclude Include="src\core.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\raygui.h">
+    <ClInclude Include="src\imgui_impl_raylib_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\containers.h">
+    <ClInclude Include="src\Console\ChatHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\text.h">
+    <ClInclude Include="src\Console\ConsoleCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imconfig.h">
+    <ClInclude Include="src\lib\imgui\imconfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui.h">
+    <ClInclude Include="src\lib\imgui\imgui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_glfw.h">
+    <ClInclude Include="src\lib\imgui\imgui_impl_raylib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_opengl3.h">
+    <ClInclude Include="src\lib\imgui\imgui_internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui_impl_opengl3_loader.h">
+    <ClInclude Include="src\lib\imgui\imstb_rectpack.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imgui_internal.h">
+    <ClInclude Include="src\lib\imgui\imstb_textedit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="imgui\imstb_rectpack.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imstb_textedit.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui\imstb_truetype.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="glfw\include\GLFW\glfw3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="glfw\include\GLFW\glfw3native.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_impl_raylib_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Console\ConsoleCommand.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Console\ChatHandler.h">
+    <ClInclude Include="src\lib\imgui\imstb_truetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

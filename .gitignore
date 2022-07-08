@@ -4,3 +4,4 @@ temp
 bin/**/*.lib
 *.exp
 .DS_Store
+imgui.ini

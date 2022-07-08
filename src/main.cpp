@@ -1,104 +1,239 @@
-
-
 #include "core.h"
-#include "text.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h> // Will drag system OpenGL headers
-#include <stdio.h>
-Texture *test;
-Font roboto;
+#include "lib/imgui/imgui.h"
 
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
+#define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
+#define WINDOW_CENTER_Y (0.5f*WINDOW_HEIGHT)
+#define Y_SQUISH 0.541196100146197f // sqrt(2) * sin(PI / 8)
 
-bool show_demo_window = true;
-void Game(void)
+ENUM(GameState)
 {
-	InitWindow(1280, 720, "Who Stole The Sun");
-	SetTargetFPS(60);
+	GAMESTATE_PLAYING,
+	GAMESTATE_TALKING,
+	GAMESTATE_PAUSED,
+	GAMESTATE_EDITOR,
+};
 
-	int ascii[128];
-	for (int i = 0; i < COUNTOF(ascii); ++i)
-		ascii[i] = i;
-	roboto = LoadFontEx("res/Roboto.ttf", 32, ascii, COUNTOF(ascii));
+STRUCT(Player)
+{
+	Vector2 position;
+	Direction direction; // Determines which sprite to use.
+	Texture *textures[DIRECTION_ENUM_COUNT];
+};
 
-	test = LoadTextureAndTrackChanges("res/test.png");
+STRUCT(Npc)
+{
+	Vector2 position;
+	Texture *texture;
+};
 
+Texture *background;
+Image *collisionMap;
+Font roboto;
+Player player;
+Npc pinkGuy;
+Sound shatter;
 
-	const char* glsl_version = "#version 130";
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+float PlayerDistanceToNpc(Npc npc)
+{
+	Vector2 playerFeet = player.position;
+	playerFeet.y += player.textures[player.direction]->height * 0.5f;
+	playerFeet.y *= Y_SQUISH;
 
-	GLFWwindow* window = glfwGetCurrentContext();
-	if (window == NULL)
-		return;
+	Vector2 npcFeet = npc.position;
+	npcFeet.y += npc.texture->height * 0.5f;
+	npcFeet.y *= Y_SQUISH;
 
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-	ImGui::StyleColorsDark();
-
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init(glsl_version);
-	
-
-	while (not WindowShouldClose())
-	{
-		
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-
-
-		HotReloadAllTrackedItems();
-		TempReset(0);
-
-		BeginDrawing();
-		{
-			ClearBackground(BLACK);
-
-			DrawTexture(*test, 50, 50, WHITE);
-			DrawFormat(roboto, 500, 300, 32, WHITE, "Hello, sailor!\nWho killed captain Alex?");
-
-			Rectangle textBox = { 500, 100, 400, 600 };
-			float t = (float)(GetTime() - 1);
-
-			const char* text =
-				"This is the story of a man named Stanley. "
-				"Stanley worked for a company in a big building where he was Employee #427. "
-				"Employee #427's job was simple: he sat at his desk in Room 427 and he pushed buttons on a keyboard. "
-				"Orders came to him through a monitor on his desk telling him what buttons to push, how long to push them, and in what order. "
-				"This is what Employee #427 did every day of every month of every year, andalthough others may have considered it soul rending, "
-				"Stanley relished every moment that the orders came in, as though he had been made exactly for this job. "
-				"And Stanley was happy. "
-				"And then one day, something very peculiar happened. "
-				"Something that would forever change Stanley; "
-				"Something he would never quite forget. "
-				"He had been at his desk for nearly an hour when he had realized not one single order had arrived on the monitor for him to follow. "
-				"No one had shown up to give him instructions, call a meeting, or even say 'hi'.Never in all his years at the company had this happened, this complete isolation. "
-				"Something was very clearly wrong.Shocked, frozen solid, Stanley found himself unable to move for the longest time. "
-				"But as he came to his wits andregained his senses, he got up from his desk andstepped out of his office. ";
-
-			DrawAnimatedTextBox(roboto, textBox, 32, BLACK, 20 * t, text);
-		}
-		if (IsKeyDown(KEY_A))
-		{
-			ImGui::ShowDemoWindow(&show_demo_window);
-
-		}
-			
-		rlDrawRenderBatchActive();
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-		EndDrawing();
-	}
+	return Vector2Distance(playerFeet, npcFeet);
 }
 
-void GameLoopOneIteration(void)
+//
+// Playing
+//
+
+void Playing_Update()
 {
+	if (IsKeyPressed(KEY_GRAVE))
+	{
+		PushGameState(GAMESTATE_EDITOR, NULL);
+		return;
+	}
+	if (IsKeyPressed(KEY_ESCAPE))
+	{
+		PushGameState(GAMESTATE_PAUSED, NULL);
+		return;
+	}
+
+	if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_E))
+	{
+		float distance = PlayerDistanceToNpc(pinkGuy);
+		LogInfo("Distance to pink guy: %g", distance);
+		if (distance < 50)
+		{
+			PlaySound(shatter); // @TODO Remove
+			PushGameState(GAMESTATE_TALKING, NULL);
+			return;
+		}
+	}
+
+	float moveSpeed = 5;
+	if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT))
+		moveSpeed = 10;
+
+	Vector2 move = { 0 };
+	if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
+		move.x -= 1;
+	if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
+		move.x += 1;
+	if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
+		move.y -= 1;
+	if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
+		move.y += 1;
+	if (move.x != 0 || move.y != 0)
+	{
+		move = Vector2Normalize(move);
+		Vector2 dirVector = move;
+		dirVector.y *= -1;
+		player.direction = DirectionFromVector(dirVector);
+		Vector2 deltaPos = Vector2Scale(move, moveSpeed);
+
+		// In the isometric perspective, the y direction is squished down a little bit.
+		deltaPos.y *= Y_SQUISH;
+		Vector2 newPos = Vector2Add(player.position, deltaPos);
+		Vector2 feetPos = newPos;
+		feetPos.y += 0.5f * player.textures[player.direction]->height;
+
+		int footX = (int)roundf(feetPos.x);
+		int footY = (int)roundf(feetPos.y);
+		footX = ClampInt(footX, 0, collisionMap->width - 1);
+		footY = ClampInt(footY, 0, collisionMap->height - 1);
+		Color collision = GetImageColor(*collisionMap, footX, footY);
+
+		if (collision.r >= 128)
+			player.position = newPos;
+	}
+}
+void Playing_Render()
+{
+	ClearBackground(BLACK);
+	DrawTexture(*background, 0, 0, WHITE);
+	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
+	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
+}
+REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
+
+//
+// Talking
+//
+
+void Talking_Update()
+{
+	if (IsKeyPressed(KEY_E) || IsKeyPressed(KEY_SPACE))
+	{
+		PopGameState();
+		return;
+	}
+	if (IsKeyPressed(KEY_ESCAPE))
+	{
+		PushGameState(GAMESTATE_PAUSED, NULL);
+		return;
+	}
+}
+void Talking_Render()
+{
+	CallPreviousGameStateRender();
+
+	Rectangle textbox = {
+		WINDOW_CENTER_X - 300,
+		WINDOW_HEIGHT - 340,
+		600,
+		320
+	};
+	Rectangle indented = ExpandRectangle(textbox, -5);
+	Rectangle textArea = ExpandRectangle(textbox, -15);
+	Rectangle dropShadow = { textbox.x + 10, textbox.y + 10, textbox.width, textbox.height };
+
+	DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
+	DrawRectangleRounded(textbox, 0.1f, 5, WHITE);
+	DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
+
+	float t = (float)GetTimeInCurrentGameState();
+	DrawAnimatedTextBox(roboto, textArea, 32, PINK, 25 * t, 
+		"Hello, sailor!\n\n"
+		"This is the story of a man named Stanley.\n\n"
+		"Seven salty sailors sail the seven salty sees.\n\n"
+		"Several boxing wizards jump quickly.\n\n"
+		"Would you like to know more?");
+}
+REGISTER_GAME_STATE(GAMESTATE_TALKING, NULL, NULL, Talking_Update, Talking_Render);
+
+//
+// Editor
+//
+
+void Editor_Update()
+{
+	if (IsKeyPressed(KEY_GRAVE))
+	{
+		PopGameState();
+		return;
+	}
+
+	ImGui::ShowDemoWindow();
+}
+void Editor_Render()
+{
+	CallPreviousGameStateRender();
+}
+REGISTER_GAME_STATE(GAMESTATE_EDITOR, NULL, NULL, Editor_Update, Editor_Render);
+
+//
+// Paused
+//
+
+void Paused_Update(void)
+{
+	if (IsKeyPressed(KEY_ESCAPE))
+	{
+		PopGameState();
+		return;
+	}
+}
+void Paused_Render(void)
+{
+	CallPreviousGameStateRender();
+	DrawRectangle(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GrayscaleAlpha(0, 0.4f));
+	DrawFormatCentered(roboto, WINDOW_CENTER_X, WINDOW_CENTER_Y, 64, BLACK, "Paused");
+}
+REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
+
+void GameInit(void)
+{
+	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
+	InitAudioDevice();
+	SetTargetFPS(FPS);
 	
+	roboto = LoadFontAscii("res/Roboto.ttf", 32);
+	background = LoadTextureAndTrackChanges("res/background.png");
+	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
+	shatter = LoadSound("res/shatter.wav");
+	
+	player.position.x = 1280 / 2;
+	player.position.y = 720 / 2;
+	player.direction = DIRECTION_DOWN;
+	player.textures[DIRECTION_RIGHT]      = LoadTextureAndTrackChanges("res/player-right.png");
+	player.textures[DIRECTION_UP_RIGHT]   = LoadTextureAndTrackChanges("res/player-up-right.png");
+	player.textures[DIRECTION_UP]         = LoadTextureAndTrackChanges("res/player-up.png");
+	player.textures[DIRECTION_UP_LEFT]    = LoadTextureAndTrackChanges("res/player-up-left.png");
+	player.textures[DIRECTION_LEFT]       = LoadTextureAndTrackChanges("res/player-left.png");
+	player.textures[DIRECTION_DOWN_LEFT]  = LoadTextureAndTrackChanges("res/player-down-left.png");
+	player.textures[DIRECTION_DOWN]       = LoadTextureAndTrackChanges("res/player-down.png");
+	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
+	
+	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
+	pinkGuy.position.x = 400;
+	pinkGuy.position.y = 250;
 
-
-
-
+	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

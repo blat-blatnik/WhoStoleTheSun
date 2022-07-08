@@ -158,13 +158,13 @@ float ValueNoise3(unsigned seed, float x, float y, float z)
 	float f1 = f10 + (f11 - f10) * weightY;
 	return f0 + (f1 - f0) * weightX;
 }
-float ValueNoise2V(unsigned seed, Vector2 pos)
+float ValueNoise2V(unsigned seed, Vector2 position)
 {
-	return ValueNoise2(seed, pos.x, pos.y);
+	return ValueNoise2(seed, position.x, position.y);
 }
-float ValueNoise3V(unsigned seed, Vector3 pos)
+float ValueNoise3V(unsigned seed, Vector3 position)
 {
-	return ValueNoise3(seed, pos.x, pos.y, pos.z);
+	return ValueNoise3(seed, position.x, position.y, position.z);
 }
 
 float PerlinNoise1(unsigned seed, float x)
@@ -258,11 +258,11 @@ float PerlinNoise3(unsigned seed, float x, float y, float z)
 	float d1 = d10 + (d11 - d10) * weightY;
 	return d0 + (d1 - d0) * weightX;
 }
-float PerlinNoise2V(unsigned seed, Vector2 pos)
+float PerlinNoise2V(unsigned seed, Vector2 position)
 {
-	return PerlinNoise2(seed, pos.x, pos.y);
+	return PerlinNoise2(seed, position.x, position.y);
 }
-float PerlinNoise3V(unsigned seed, Vector3 pos)
+float PerlinNoise3V(unsigned seed, Vector3 position)
 {
-	return PerlinNoise3(seed, pos.x, pos.y, pos.z);
+	return PerlinNoise3(seed, position.x, position.y, position.z);
 }
