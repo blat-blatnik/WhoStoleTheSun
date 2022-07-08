@@ -97,10 +97,17 @@ Script LoadScript(const char *path, Font font)
 			}
 		}
 
+		// @TODO: Extract character name.
+
 		fileCursor += cursor;
 		paragraph.text = text;
 		paragraph.textLength = lastNonWhitespace + 1;
 		
+		// 1) Convert text to codepoints.
+		// @TODO 2) Process escape sequences.
+		// @TODO 3) Convert consecutive spaces into a single space and pauses.
+		// @TODO 4) Add explicit pauses after punctuation.
+		// @TODO 5) Convert command characters to command (negative) codepoints.
 		for (int i = 0; i < paragraph.textLength;)
 		{
 			int codepointLength;
@@ -112,6 +119,7 @@ Script LoadScript(const char *path, Font font)
 			ListAdd(&paragraph.codepoints, codepoint);
 		}
 		
+		// @TODO Caluclate the unscaled duration of the the paragraph.
 		paragraph.duration = ListCount(paragraph.codepoints);
 		ListAdd(&script.paragraphs, paragraph);
 	}

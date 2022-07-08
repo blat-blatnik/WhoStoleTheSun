@@ -24,19 +24,19 @@ STRUCT(Player)
 
 STRUCT(Npc)
 {
+	const char *name;
 	Vector2 position;
 	Texture *texture;
+	Script script;
 };
 
 Texture *background;
 Image *collisionMap;
 Font roboto;
 Player player;
-Npc pinkGuy;
+Npc pinkGuy = { "Pink Guy" };
 Sound shatter;
-
 Console console;
-
 
 float PlayerDistanceToNpc(Npc npc)
 {
@@ -74,7 +74,7 @@ void Playing_Update()
 		if (distance < 50)
 		{
 			PlaySound(shatter); // @TODO Remove
-			PushGameState(GAMESTATE_TALKING, (void *)"res/exampledialog.txt");
+			PushGameState(GAMESTATE_TALKING, &pinkGuy);
 			return;
 		}
 	}
@@ -132,23 +132,19 @@ REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Rende
 // Talking
 //
 
-Script script;
+Npc *talkingNpc;
 int paragraphIndex;
 
 void Talking_Init(void *param)
 {
-	const char *path = (char *)param;
-	script = LoadScript(path, roboto);
+	talkingNpc = (Npc *)param;
 	paragraphIndex = 0;
-}
-void Talking_Deinit()
-{
-	UnloadScript(&script);
 }
 void Talking_Update()
 {
 	if (IsKeyPressed(KEY_E) or IsKeyPressed(KEY_SPACE))
 	{
+		Script script = talkingNpc->script;
 		float t = (float)GetTimeInCurrentGameState();
 		float paragraphDuration = script.paragraphs[paragraphIndex].duration;
 		if (25 * t < paragraphDuration)
@@ -191,7 +187,7 @@ void Talking_Render()
 	DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
 
 	float t = (float)GetTimeInCurrentGameState();
-	DrawParagraph(script.paragraphs[paragraphIndex], script.font, textArea, 32, PINK, 25 * t);
+	DrawParagraph(talkingNpc->script.paragraphs[paragraphIndex], talkingNpc->script.font, textArea, 32, PINK, 25 * t);
 	//DrawAnimatedTextBox(roboto, textArea, 32, PINK, 25 * t, 
 	//	"Hello, sailor!\n\n"
 	//	"This is the story of a man named Stanley.\n\n"
@@ -199,7 +195,7 @@ void Talking_Render()
 	//	"Several boxing wizards jump quickly.\n\n"
 	//	"Would you like to know more?");
 }
-REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, Talking_Deinit, Talking_Update, Talking_Render);
+REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talking_Render);
 
 //
 // Editor
@@ -263,7 +259,7 @@ void GameInit(void)
 	SetTargetFPS(FPS);
 
 	roboto = LoadFontAscii("res/Roboto.ttf", 32);
-	//Dialog d = LoadDialog("res/exampledialog.txt", roboto);
+	//Script s = LoadScript("res/examplescript.txt", roboto);
 
 	background = LoadTextureAndTrackChanges("res/background.png");
 	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
@@ -284,7 +280,7 @@ void GameInit(void)
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
-
+	pinkGuy.script = LoadScript("res/examplescript.txt", roboto);
 
 	// teleport player
 	console.AddCommand("tp", &HandlePlayerTeleportCommand);
