@@ -3,6 +3,7 @@
 #include "lib/raylib.h"
 #include "lib/raymath.h"
 #include "lib/rlgl.h"
+
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -10,6 +11,15 @@
 #include <float.h>
 #include <iso646.h>
 #include <math.h>
+
+#ifdef __cplusplus
+#include <map>
+#include <string>
+#include <vector>
+#include "lib/imgui/imgui.h"
+#endif
+
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -536,6 +546,8 @@ void FreeFromSlabAllocator(SlabAllocator *allocator, void *block);
 // Frees all memory allocated from the allocator after the given cursor.
 void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
 
+
+
 //
 // Script
 //
@@ -636,4 +648,204 @@ inline Vector2 operator -(float left, Vector2 right) { return { left - right.x, 
 inline Vector2 operator *(float left, Vector2 right) { return { left * right.x, left * right.y }; }
 inline Vector2 operator /(float left, Vector2 right) { return { left / right.x, left / right.y }; }
 inline Vector2 operator %(float left, Vector2 right) { return { fmodf(left, right.x), fmodf(left, right.y) }; }
+
+
+//
+// Console
+//
+typedef bool(*pHandler)(std::vector<std::string> args);
+
+class Command
+{
+public:
+    Command(std::string pcmd, std::string pHelp, pHandler handle) : name(pcmd), help(pHelp), handler(handle)
+    {
+
+    }
+    Command() {};
+
+    bool Invoke(std::vector<std::string> args) { return handler(args); }
+
+    void SetHelp(std::string pHelp) { help = pHelp; }
+
+    std::string GetName() { return name; }
+
+private:
+
+    std::string name;
+    std::string help;
+    pHandler handler;
+    // maybe implement later, for now useless
+    std::vector<std::string> _commandArgTypes; // %s %d %f etc
+
+};
+
+enum CmdState
+{
+    COMMAND_NOT_FOUND,
+    COMMAND_FOUND_BAD_ARGS,
+    COMMAND_SUCCEEDED,
+    COMMAND_RESULT_HELP
+};
+struct CmdResult
+{
+    Command cmd;
+    CmdState state;
+};
+
+class Console
+{
+public:
+   
+    std::map<std::string, Command> _commandContainer;
+
+    Console();
+
+    ~Console();
+
+
+    void AddCommand(std::string command, pHandler handle, std::string pHelp = "");
+    CmdResult ExecuteCommand(char* cmd);
+    std::map<std::string, Command> GetCommands() { return _commandContainer; }
+
+    char                        InputBuf[256];
+    ImVector<char*>             Items;
+    ImGuiTextFilter             Filter;
+    bool                        AutoScroll;
+    bool                        ScrollToBottom;
+
+
+    // Portable helpers
+    static int   Stricmp(const char* s1, const char* s2) { int d; while ((d = toupper(*s2) - toupper(*s1)) == 0 && *s1) { s1++; s2++; } return d; }
+    static int   Strnicmp(const char* s1, const char* s2, int n) { int d = 0; while (n > 0 && (d = toupper(*s2) - toupper(*s1)) == 0 && *s1) { s1++; s2++; n--; } return d; }
+    static char* Strdup(const char* s) { IM_ASSERT(s); size_t len = strlen(s) + 1; void* buf = malloc(len); IM_ASSERT(buf); return (char*)memcpy(buf, (const void*)s, len); }
+    static void  Strtrim(char* s) { char* str_end = s + strlen(s); while (str_end > s && str_end[-1] == ' ') str_end--; *str_end = 0; }
+
+    void ClearLog()
+    {
+        for (int i = 0; i < Items.Size; i++)
+            free(Items[i]);
+        Items.clear();
+    }
+
+    void AddLog(const char* fmt, ...) IM_FMTARGS(2)
+    {
+        // FIXME-OPT
+        char buf[1024];
+        va_list args;
+        va_start(args, fmt);
+        vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
+        buf[IM_ARRAYSIZE(buf) - 1] = 0;
+        va_end(args);
+        Items.push_back(Strdup(buf));
+    }
+
+    void ShowConsoleWindow(const char* title, bool* p_open)
+    {
+        ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+        if (!ImGui::Begin(title, p_open))
+        {
+            ImGui::End();
+            return;
+        }
+
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("Close Console"))
+                *p_open = false;
+            ImGui::EndPopup();
+        }
+
+
+        // Reserve enough left-over height for 1 separator + 1 input text
+        const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+        ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
+
+        for (int i = 0; i < Items.Size; i++)
+        {
+            const char* item = Items[i];
+            if (!Filter.PassFilter(item))
+                continue;
+
+            ImVec4 color;
+            bool has_color = false;
+
+            //if (strstr(item, "[error]")) { color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f); has_color = true; }
+            //else if (strncmp(item, "# ", 2) == 0) { color = ImVec4(1.0f, 0.8f, 0.6f, 1.0f); has_color = true; }
+            if (has_color)
+                ImGui::PushStyleColor(ImGuiCol_Text, color);
+
+            ImGui::TextUnformatted(item);
+            if (has_color)
+                ImGui::PopStyleColor();
+        }
+
+
+        if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+            ImGui::SetScrollHereY(1.0f);
+
+        ScrollToBottom = false;
+
+        ImGui::PopStyleVar();
+        ImGui::EndChild();
+        ImGui::Separator();
+
+        // Command-line
+        bool reclaim_focus = false;
+        ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
+        if (ImGui::InputText("Input", InputBuf, IM_ARRAYSIZE(InputBuf), input_text_flags, &TextEditCallbackStub, (void*)this))
+        {
+            // here run the commands
+            char* s = InputBuf;
+
+            if ((s != NULL) && (s[0] == '\0'))
+                return;
+
+            CmdResult state = ExecuteCommand(s);
+            strcpy(s, "");
+            reclaim_focus = true;
+
+            HandleState(state);
+
+        }
+
+        // Auto-focus on window apparition
+        ImGui::SetItemDefaultFocus();
+        if (reclaim_focus)
+            ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
+
+        ImGui::End();
+    }
+    static int TextEditCallbackStub(ImGuiInputTextCallbackData* data)
+    {
+        return 1;
+    }
+
+    void HandleState(CmdResult &result)
+    {
+        switch (result.state)
+        {
+        case CmdState::COMMAND_SUCCEEDED:
+            AddLog("Worked :D");
+
+            break;
+
+        case CmdState::COMMAND_NOT_FOUND:
+            AddLog("Command not found :'(");
+            break;
+
+        case CmdState::COMMAND_FOUND_BAD_ARGS:
+            AddLog("Command found but wrong arguments, try <%s> help!", result.cmd.GetName().c_str());
+            break;
+
+        case CmdState::COMMAND_RESULT_HELP:
+
+            break;
+        }
+    }
+};
+
+
 #endif

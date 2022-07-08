@@ -96,8 +96,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Console\ChatHandler.cpp" />
-    <ClCompile Include="src\Console\ConsoleCommand.cpp" />
+    <ClCompile Include="src\core\Console.cpp" />
     <ClCompile Include="src\core\drawing.c">
       <SubType>
       </SubType>
@@ -151,8 +150,6 @@
     <None Include="webshell.html" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Console\ChatHandler.h" />
-    <ClInclude Include="src\Console\ConsoleCommand.h" />
     <ClInclude Include="src\lib\imgui\imconfig.h" />
     <ClInclude Include="src\lib\imgui\imgui.h" />
     <ClInclude Include="src\lib\imgui\imgui_impl_raylib.h" />
