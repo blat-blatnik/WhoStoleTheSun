@@ -63,12 +63,6 @@
     <ClCompile Include="src\core\color.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Console\ChatHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Console\ConsoleCommand.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\drawing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -91,6 +85,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\game_state.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Console.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Commands.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -128,12 +128,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\imgui_impl_raylib_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Console\ChatHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Console\ConsoleCommand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\imgui\imconfig.h">

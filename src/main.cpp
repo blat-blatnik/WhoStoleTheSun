@@ -35,6 +35,9 @@ Player player;
 Npc pinkGuy;
 Sound shatter;
 
+Console c;
+
+
 float PlayerDistanceToNpc(Npc npc)
 {
 	Vector2 playerFeet = player.position;
@@ -113,6 +116,8 @@ void Playing_Update()
 		if (collision.r >= 128)
 			player.position = newPos;
 	}
+
+
 }
 void Playing_Render()
 {
@@ -120,6 +125,7 @@ void Playing_Render()
 	DrawTexture(*background, 0, 0, WHITE);
 	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
+	
 }
 REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
 
@@ -181,6 +187,7 @@ void Editor_Update()
 	}
 
 	ImGui::ShowDemoWindow();
+	c.ShowConsoleWindow("Console", NULL);
 }
 void Editor_Render()
 {
@@ -208,6 +215,20 @@ void Paused_Render(void)
 }
 REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 
+bool HandlePlayerTeleportCommand(std::vector<std::string> args)
+{
+	// move x y
+	if (args.size() < 2)
+		return false;
+
+	int x = strtoul(args[0].c_str(), NULL, 10);
+	int y = strtoul(args[1].c_str(), NULL, 10);
+
+	player.position.x = x;
+	player.position.y = y;
+
+	return true;
+}
 void GameInit(void)
 {
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
@@ -234,6 +255,9 @@ void GameInit(void)
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
+
+
+	c.AddCommand("tp", &HandlePlayerTeleportCommand);
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }
