@@ -133,11 +133,13 @@ REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Rende
 //
 
 Script script;
+int paragraphIndex;
 
 void Talking_Init(void *param)
 {
 	const char *path = (char *)param;
 	script = LoadScript(path, roboto);
+	paragraphIndex = 0;
 }
 void Talking_Deinit()
 {
@@ -147,8 +149,22 @@ void Talking_Update()
 {
 	if (IsKeyPressed(KEY_E) or IsKeyPressed(KEY_SPACE))
 	{
-		PopGameState();
-		return;
+		float t = (float)GetTimeInCurrentGameState();
+		float paragraphDuration = script.paragraphs[paragraphIndex].duration;
+		if (25 * t < paragraphDuration)
+		{
+			SetFrameNumberInCurrentGameState(99999); // Should be enough to skip over to the end of the dialog.
+		}
+		else
+		{
+			++paragraphIndex;
+			if (paragraphIndex >= ListCount(script.paragraphs))
+			{
+				PopGameState();
+				return;
+			}
+			else SetFrameNumberInCurrentGameState(0);
+		}
 	}
 	if (IsKeyPressed(KEY_ESCAPE))
 	{
@@ -175,7 +191,7 @@ void Talking_Render()
 	DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
 
 	float t = (float)GetTimeInCurrentGameState();
-	DrawParagraph(script.paragraphs[0], script.font, textArea, 32, PINK, 25 * t);
+	DrawParagraph(script.paragraphs[paragraphIndex], script.font, textArea, 32, PINK, 25 * t);
 	//DrawAnimatedTextBox(roboto, textArea, 32, PINK, 25 * t, 
 	//	"Hello, sailor!\n\n"
 	//	"This is the story of a man named Stanley.\n\n"

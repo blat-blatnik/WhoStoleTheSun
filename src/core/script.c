@@ -112,6 +112,7 @@ Script LoadScript(const char *path, Font font)
 			ListAdd(&paragraph.codepoints, codepoint);
 		}
 		
+		paragraph.duration = ListCount(paragraph.codepoints);
 		ListAdd(&script.paragraphs, paragraph);
 	}
 }

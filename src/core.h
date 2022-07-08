@@ -546,8 +546,6 @@ void FreeFromSlabAllocator(SlabAllocator *allocator, void *block);
 // Frees all memory allocated from the allocator after the given cursor.
 void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
 
-
-
 //
 // Script
 //
@@ -617,6 +615,9 @@ int GetFrameNumberInCurrentGameState(void);
 
 // Returns the number of seconds that elapsed in the current game state since init was called.
 double GetTimeInCurrentGameState(void);
+
+// Sets the frame number of the current game state to a new value.
+void SetFrameNumberInCurrentGameState(int frameNumber);
 
 // Really stupid looking conveniance macro to allow defining a game state in once place.
 #define REGISTER_GAME_STATE(name, init, deinit, update, render)\

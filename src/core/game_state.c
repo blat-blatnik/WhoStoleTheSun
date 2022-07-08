@@ -123,3 +123,8 @@ double GetTimeInCurrentGameState(void)
 {
 	return current.frameNumber * FRAME_TIME;
 }
+
+void SetFrameNumberInCurrentGameState(int frameNumber)
+{
+	current.frameNumber = frameNumber;
+}
