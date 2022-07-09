@@ -568,11 +568,14 @@ STRUCT(Paragraph)
 STRUCT(Script)
 {
 	Font font;
+	Font boldFont;
+	Font italicFont;
+	Font boldItalicFont;
 	char *text;
 	List(Paragraph) paragraphs;
 };
 
-Script LoadScript(const char *path, Font font);
+Script LoadScript(const char *path, Font font, Font boldFont, Font italicFont, Font boldItalicFont);
 
 void UnloadScript(Script *script);
 

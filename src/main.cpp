@@ -33,6 +33,9 @@ STRUCT(Npc)
 Texture *background;
 Image *collisionMap;
 Font roboto;
+Font robotoBold;
+Font robotoItalic;
+Font robotoBoldItalic;
 Player player;
 Npc pinkGuy = { "Pink Guy" };
 Sound shatter;
@@ -262,8 +265,11 @@ void GameInit(void)
 	InitAudioDevice();
 	SetTargetFPS(FPS);
 
-	roboto = LoadFontAscii("res/Roboto.ttf", 32);
-	Script s = LoadScript("res/examplescript.txt", roboto);
+	roboto = LoadFontAscii("res/roboto.ttf", 32);
+	robotoBold = LoadFontAscii("res/roboto-bold.ttf", 32);
+	robotoItalic = LoadFontAscii("res/roboto-italic.ttf", 32);
+	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
+	//Script s = LoadScript("res/examplescript.txt", roboto, roboto, roboto, roboto);
 
 	background = LoadTextureAndTrackChanges("res/background.png");
 	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
@@ -284,7 +290,7 @@ void GameInit(void)
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
-	pinkGuy.script = LoadScript("res/examplescript.txt", roboto);
+	pinkGuy.script = LoadScript("res/examplescript.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
 
 	// teleport player
 	console.AddCommand("tp", &HandlePlayerTeleportCommand);

@@ -132,9 +132,16 @@ static bool IsWhitespace(int codepoint)
 	return codepoint < 128 && CharIsWhitespace((char)codepoint);
 }
 
-Script LoadScript(const char *path, Font font)
+Script LoadScript(const char *path, Font font, Font boldFont, Font italicFont, Font boldItalicFont)
 {
-	Script script = { .text = LoadFileText(path), .font = font };
+	Script script = { 
+		.text = LoadFileText(path), 
+		.font = font,
+		.boldFont = boldFont,
+		.italicFont = italicFont,
+		.boldItalicFont = boldItalicFont
+	};
+
 	if (not script.text)
 	{
 		LogError("Failed to load script file '%s'.", path);
@@ -281,11 +288,12 @@ void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float f
 		List(int) codepoints = paragraph.codepoints;
 		int numCodepoints = ListCount(codepoints);
 		
-		Font fonts[STYLE_ENUM_COUNT];
-		fonts[REGULAR] = script.font;
-		fonts[BOLD] = script.font;
-		fonts[ITALIC] = script.font;
-		fonts[BOLD_ITALIC] = script.font;
+		Font fonts[STYLE_ENUM_COUNT] = {
+			[REGULAR] = script.font,
+			[BOLD] = script.boldFont,
+			[ITALIC] = script.italicFont,
+			[BOLD_ITALIC] = script.boldItalicFont
+		};
 
 		float x = textBox.x;
 		float y = textBox.y;
@@ -339,6 +347,11 @@ void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float f
 			}
 			else
 			{
+				//@TODO @SPEED This is EXTREMELY inneficient
+				// We draw every word character by character, but we scan through it to see if it will fit on the line every single time
+				// so it's O(n^2) performance when it could easily be O(1). Could be fixed, but it would require basically copy pasting the
+				// above control code checks into the loop of the word drawing itself, and I don't wanna do that right now soo...
+
 				// Check if the word will fit on the line, and if it doesn't, break the line before drawing the word.
 				float width = 0;
 				Style backupStyle = style;
