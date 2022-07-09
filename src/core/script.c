@@ -247,6 +247,11 @@ Script LoadScript(const char *path, Font font)
 			if (lastCodepoint != COMMAND('`'))
 				lastNonPauseCodepoint = lastCodepoint;
 		}
+
+		// Remove pauses at the end of the paragraph.
+		while (ListCount(codepoints) > 0 and codepoints[ListCount(codepoints) - 1] == COMMAND('`'))
+			ListPop(&codepoints);
+
 		paragraph.codepoints = codepoints;
 		
 		// @TODO Caluclate the unscaled duration of the the paragraph.

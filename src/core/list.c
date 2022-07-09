@@ -76,6 +76,6 @@ void private_ListPop(List(void) *listPointer)
 {
 	ASSERT(ListCount(*listPointer) > 0); // Can't pop from an empty list.
 	
-	Header *header = (Header *)(*listPointer);
+	Header *header = (Header *)(*listPointer) - 1;
 	header->count--;
 }
