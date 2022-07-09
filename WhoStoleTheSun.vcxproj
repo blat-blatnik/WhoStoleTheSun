@@ -105,6 +105,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\core\script.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\lib\imgui\imgui.cpp" />
     <ClCompile Include="src\lib\imgui\imgui_demo.cpp" />
     <ClCompile Include="src\lib\imgui\imgui_draw.cpp" />

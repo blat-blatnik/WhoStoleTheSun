@@ -1,6 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+	<Type Name="Script">
+		<DisplayString>{text,s8}</DisplayString>
+		<Expand HideRawView="1">
+			<Item Name="text">text,s8</Item>
+			<Item Name="paragraphs" Condition="!paragraphs">paragraphs</Item>
+			<Item Name="paragraphs" Condition="paragraphs">paragraphs, [*((int *)paragraphs - 1)] na</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="Paragraph">
+		<DisplayString>{text, [textLength] s8}</DisplayString>
+		<Expand HideRawView="1">
+			<Item Name="duration">duration</Item>
+			<Item Name="character">character,s8</Item>
+			<Item Name="text">text, [textLength] s8</Item>
+			<Item Name="textLength">textLength</Item>
+			<Item Name="codepoints" Condition="!codepoints">codepoints</Item>
+			<Item Name="codepoints" Condition="codepoints">codepoints, [*((int *)codepoints - 1)] s32</Item>
+		</Expand>
+	</Type>
+
 	<Type Name="FileData">
 		<DisplayString>{size/1024} kB {bytes, [size] s}</DisplayString>
 		<Expand HideRawView="1">
