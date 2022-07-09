@@ -179,10 +179,11 @@ Script LoadScript(const char *path, Font font)
 		
 		// 1) Convert text to codepoints.
 		// 2) Process escape sequences.
-		// @TODO 3) Convert consecutive spaces into a single space and pauses.
+		// 3) Convert consecutive spaces into a single space and pauses.
 		// @TODO 4) Add explicit pauses after punctuation.
-		// @TODO 5) Convert command characters to command (negative) codepoints.
+		// 5) Convert command characters to command (negative) codepoints.
 		List(int) codepoints = NULL;
+		int lastNonPauseCodepoint = 0;
 		for (int i = 0; i < paragraph.textLength;)
 		{
 			int codepointLength;
@@ -226,8 +227,25 @@ Script LoadScript(const char *path, Font font)
 				codepoints[lastIndex] = '`';
 			else if (codepoint == '\\' and isEscaped)
 				codepoints[lastIndex] = '\\';
+			else if (codepoint == ' ' and not isEscaped and lastNonPauseCodepoint == ' ')
+				ListAdd(&codepoints, COMMAND('`'));
+			else if (codepoint == ',' and not isEscaped)
+			{
+				ListAdd(&codepoints, codepoint);
+				ListAdd(&codepoints, COMMAND('`'));
+			}
+			else if ((codepoint == '.' or codepoint == '!' or codepoint == '?') and not isEscaped)
+			{
+				ListAdd(&codepoints, codepoint);
+				ListAdd(&codepoints, COMMAND('`'));
+				ListAdd(&codepoints, COMMAND('`'));
+			}
 			else
 				ListAdd(&codepoints, codepoint);
+
+			int lastCodepoint = codepoints[ListCount(codepoints) - 1];
+			if (lastCodepoint != COMMAND('`'))
+				lastNonPauseCodepoint = lastCodepoint;
 		}
 		paragraph.codepoints = codepoints;
 		
