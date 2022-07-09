@@ -31,7 +31,7 @@ FileData *LoadFileAndTrackChanges(const char *path)
 	unsigned bytesRead;
 	void *data = LoadFileData(path, &bytesRead);
 
-	TrackedItem *item = ListReserveOneItem(&items);
+	TrackedItem *item = ListAllocateItem(&items);
 	item->kind = FILE_DATA;
 	item->lastModTime = GetFileModTime(path);
 	item->file.bytes = data;
@@ -47,7 +47,7 @@ Texture *LoadTextureAndTrackChanges(const char *path)
 	if (not FileExists(path))
 		return NULL;
 
-	TrackedItem *item = ListReserveOneItem(&items);
+	TrackedItem *item = ListAllocateItem(&items);
 	item->texture = LoadTexture(path);
 	item->kind = TEXTURE;
 	item->lastModTime = GetFileModTime(path);
@@ -62,7 +62,7 @@ Image *LoadImageAndTrackChanges(const char *path)
 	if (not FileExists(path))
 		return NULL;
 
-	TrackedItem *item = ListReserveOneItem(&items);
+	TrackedItem *item = ListAllocateItem(&items);
 	item->image = LoadImage(path);
 	item->kind = IMAGE;
 	item->lastModTime = GetFileModTime(path);

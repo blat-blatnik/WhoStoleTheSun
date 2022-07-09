@@ -110,15 +110,15 @@ void ListDestroy(List(void) *listPointer);
 
 // Allocates space for count items in the list, and returns a pointer to the newly allocated items.
 // This can be more efficient and convenient than ListAdd for larger structures.
-#define ListReserveItems(listPointer, count)(\
+#define ListAllocate(listPointer, count)(\
 	ListReserve((listPointer), ListCount(*listPointer) + (count)), \
 	((int *)(*(listPointer)))[-1] += (count), \
-	(*listPointer) + ListCount(*listPointer) - 1)
+	(*listPointer) + ListCount(*listPointer) - (count))
 
 // Adds space for one more item in the list, and returns a pointer to the newly allocated item.
 // This can be more efficient and convenient than ListAdd for larger structures.
-#define ListReserveOneItem(listPointer)\
-	ListReserveItems(listPointer, 1)
+#define ListAllocateItem(listPointer)\
+	ListAllocate(listPointer, 1)
 
 // Removes the last item in the list and returns it.
 #define ListPop(listPointer)\
@@ -317,7 +317,7 @@ STRUCT(Script)
 	Font italicFont;
 	Font boldItalicFont;
 	char *text;
-	List(char) stringMemory;
+	List(char) stringPool; // This is where all expressions and speaker names are stored.
 	List(Paragraph) paragraphs;
 };
 
@@ -326,6 +326,8 @@ Script LoadScript(const char *path, Font font, Font boldFont, Font italicFont, F
 void UnloadScript(Script *script);
 
 void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time);
+
+const char *GetScriptExpression(Script script, int paragraphIndex, float time);
 
 //
 // Hot-reload
