@@ -146,14 +146,14 @@ static bool IsWhitespace(int codepoint)
 	return codepoint < 128 && CharIsWhitespace((char)codepoint);
 }
 
-Script LoadScript(const char *path, Font font, Font boldFont, Font italicFont, Font boldItalicFont)
+Script LoadScript(const char *path, Font regular, Font bold, Font italic, Font boldItalic)
 {
 	Script script = { 
 		.text = LoadFileText(path), 
-		.font = font,
-		.boldFont = boldFont,
-		.italicFont = italicFont,
-		.boldItalicFont = boldItalicFont
+		.font = regular,
+		.boldFont = bold,
+		.italicFont = italic,
+		.boldItalicFont = boldItalic
 	};
 
 	if (not script.text)
@@ -171,7 +171,7 @@ Script LoadScript(const char *path, Font font, Font boldFont, Font italicFont, F
 			++fileCursor;
 		char *text = script.text + fileCursor;
 		if (!text[0])
-			return script;
+			break;
 
 		// Find out where the paragraph ends: 
 		// - either at the end of the text, 
@@ -286,11 +286,26 @@ Script LoadScript(const char *path, Font font, Font boldFont, Font italicFont, F
 		paragraph.duration = MeasureDuration(paragraph.codepoints);
 		ListAdd(&script.paragraphs, paragraph);
 	}
+
+	LogInfo("Script '%s' loaded successfully (%d paragraphs).", path, ListCount(script.paragraphs));
+	return script;
 }
 
 void UnloadScript(Script *script)
 {
-	// @TODO
+	if (not script or not script->text)
+		return;
+
+	for (int i = 0; i < ListCount(script->paragraphs); ++i)
+	{
+		ListDestroy(&script->paragraphs[i].codepoints);
+		ListDestroy((void **)&script->paragraphs[i].expressions);
+	}
+	ListDestroy(&script->paragraphs);
+	ListDestroy(&script->stringPool);
+	UnloadFileText(script->text);
+	script->text = NULL;
+	LogInfo("Script unloaded.");
 }
 
 void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time)

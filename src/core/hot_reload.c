@@ -6,6 +6,7 @@ ENUM(ItemKind)
 	FILE_DATA,
 	TEXTURE,
 	IMAGE,
+	SCRIPT,
 };
 
 STRUCT(TrackedItem)
@@ -15,6 +16,7 @@ STRUCT(TrackedItem)
 		FileData file;
 		Texture texture;
 		Image image;
+		Script script;
 	};
 	ItemKind kind;
 	long lastModTime;
@@ -72,6 +74,21 @@ Image *LoadImageAndTrackChanges(const char *path)
 	return &item->image;
 }
 
+Script *LoadScriptAndTrackChanges(const char *path, Font regular, Font bold, Font italic, Font boldItalic)
+{
+	if (not FileExists(path))
+		return NULL;
+
+	TrackedItem *item = ListAllocateItem(&items);
+	item->kind = SCRIPT;
+	item->lastModTime = GetFileModTime(path);
+	item->script = LoadScript(path, regular, bold, italic, boldItalic);
+	CopyString(item->path, path, sizeof item->path);
+	ASSERT(StringLength(path) < sizeof item->path);
+
+	return &item->script;
+}
+
 void UnloadTrackedFile(FileData **data)
 {
 	if (not *data)
@@ -114,6 +131,20 @@ void UnloadTrackedImage(Image **image)
 	*image = NULL;
 }
 
+void UnloadTrackedScript(Script **script)
+{
+	if (not *script)
+		return;
+
+	intptr_t index = (TrackedItem *)(*script) - items;
+	ASSERT(index >= 0 and index < ListCount(items)); // Is this actually a tracked item?
+	ASSERT(items[index].kind == SCRIPT);
+
+	UnloadScript(&items[index].script);
+	ListSwapRemove(&items, index);
+	*script = NULL;
+}
+
 void HotReloadAllTrackedItems(void)
 {
 	for (int i = 0; i < ListCount(items); ++i)
@@ -144,10 +175,26 @@ void HotReloadAllTrackedItems(void)
 				item->file.size = (int)size;
 			} break;
 
+			case IMAGE:
+			{
+				UnloadImage(item->image);
+				item->image = LoadImage(item->path);
+			} break;
+
 			case TEXTURE:
 			{
 				UnloadTexture(item->texture);
 				item->texture = LoadTexture(item->path);
+			} break;
+
+			case SCRIPT:
+			{
+				Font regular    = item->script.font;
+				Font bold       = item->script.boldFont;
+				Font italic     = item->script.italicFont;
+				Font boldItalic = item->script.boldItalicFont;
+				UnloadScript(&item->script);
+				item->script = LoadScript(item->path, regular, bold, italic, boldItalic);
 			} break;
 		}
 

@@ -42,7 +42,7 @@ void ListDestroy(List(void) *listPointer)
 	if (not *listPointer)
 		return;
 
-	Header *header = GetHeader(*listPointer) - 1;
+	Header *header = GetHeader(*listPointer);
 	if (header->free)
 		header->free(header);
 	*listPointer = NULL;

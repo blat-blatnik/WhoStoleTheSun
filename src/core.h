@@ -321,7 +321,7 @@ STRUCT(Script)
 	List(Paragraph) paragraphs;
 };
 
-Script LoadScript(const char *path, Font font, Font boldFont, Font italicFont, Font boldItalicFont);
+Script LoadScript(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
 
 void UnloadScript(Script *script);
 
@@ -348,6 +348,9 @@ Texture *LoadTextureAndTrackChanges(const char *path);
 // Loads an image from a file. The returned image will automatically update whenever the file changes.
 Image *LoadImageAndTrackChanges(const char *path);
 
+// Loads a script from a file. The returned script will automatically update whenever the file changes.
+Script *LoadScriptAndTrackChanges(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
+
 // Unloads a tracked file, and stops tracking its changes.
 void UnloadTrackedFile(FileData **data);
 
@@ -356,6 +359,9 @@ void UnloadTrackedTexture(Texture **texture);
 
 // Unloads a tracked image, and stops tracking its changes.
 void UnloadTrackedImage(Image **image);
+
+// Unloads a tracked script, and stops tracking its changes.
+void UnloadTrackedScript(Script **script);
 
 // Checks all tracked items and hot-reloads any that changed. Automatically called at the start of each frame.
 void HotReloadAllTrackedItems(void);

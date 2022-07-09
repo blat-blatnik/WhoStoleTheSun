@@ -27,7 +27,7 @@ STRUCT(Npc)
 	const char *name;
 	Vector2 position;
 	Texture *texture;
-	Script script;
+	Script *script;
 };
 
 Texture *background;
@@ -147,17 +147,17 @@ void Talking_Update()
 {
 	if (IsKeyPressed(KEY_E) or IsKeyPressed(KEY_SPACE))
 	{
-		Script script = talkingNpc->script;
+		Script *script = talkingNpc->script;
 		float t = (float)GetTimeInCurrentGameState();
-		float paragraphDuration = script.paragraphs[paragraphIndex].duration;
-		if (25 * t < paragraphDuration)
+		float paragraphDuration = script->paragraphs[paragraphIndex].duration;
+		if (20 * t < paragraphDuration)
 		{
 			SetFrameNumberInCurrentGameState(99999); // Should be enough to skip over to the end of the dialog.
 		}
 		else
 		{
 			++paragraphIndex;
-			if (paragraphIndex >= ListCount(script.paragraphs))
+			if (paragraphIndex >= ListCount(script->paragraphs))
 			{
 				PopGameState();
 				return;
@@ -189,21 +189,21 @@ void Talking_Render()
 	DrawRectangleRounded(textbox, 0.1f, 5, WHITE);
 	DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
 
-	Script script = talkingNpc->script;
-	Paragraph paragraph = script.paragraphs[paragraphIndex];
+	Script *script = talkingNpc->script;
+	Paragraph paragraph = script->paragraphs[paragraphIndex];
 	const char *speaker = paragraph.speaker;
 	if (!speaker)
 		speaker = talkingNpc->name;
 
 	float time = 20 * (float)GetTimeInCurrentGameState();
-	const char *expression = GetScriptExpression(script, paragraphIndex, time);
+	const char *expression = GetScriptExpression(*script, paragraphIndex, time);
 
-	DrawFormat(script.font, textArea.x + 2, textArea.y + 2, 32, BlendColors(RED, BLACK, 0.8f), "[%s] [%s]", speaker, expression);
-	DrawFormat(script.font, textArea.x, textArea.y, 32, RED, "[%s] [%s]", speaker, expression);
-	float yAdvance = 2 * GetLineHeight(script.font, 32);
+	DrawFormat(script->font, textArea.x + 2, textArea.y + 2, 32, BlendColors(RED, BLACK, 0.8f), "[%s] [%s]", speaker, expression);
+	DrawFormat(script->font, textArea.x, textArea.y, 32, RED, "[%s] [%s]", speaker, expression);
+	float yAdvance = 2 * GetLineHeight(script->font, 32);
 	textArea = ExpandRectangleEx(textArea, -yAdvance, 0, 0, 0);
 
-	DrawParagraph(script, paragraphIndex, textArea, 32, PINK, BlendColors(PINK, BLACK, 0.8f), time);
+	DrawParagraph(*script, paragraphIndex, textArea, 32, PINK, BlendColors(PINK, BLACK, 0.8f), time);
 }
 REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talking_Render);
 
@@ -293,7 +293,7 @@ void GameInit(void)
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
-	pinkGuy.script = LoadScript("res/examplescript.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	pinkGuy.script = LoadScriptAndTrackChanges("res/examplescript.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
 
 	// teleport player
 	console.AddCommand("tp", &HandlePlayerTeleportCommand);
