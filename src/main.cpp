@@ -186,14 +186,18 @@ void Talking_Render()
 	DrawRectangleRounded(textbox, 0.1f, 5, WHITE);
 	DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
 
+	Script script = talkingNpc->script;
+	Paragraph paragraph = script.paragraphs[paragraphIndex];
+	const char *speaker = paragraph.speaker;
+	if (!speaker)
+		speaker = talkingNpc->name;
+
+	DrawFormat(script.font, textArea.x, textArea.y, 32, RED, "[%s]", speaker);
+	float yAdvance = 2 * GetLineHeight(script.font, 32);
+	textArea = ExpandRectangleEx(textArea, -yAdvance, 0, 0, 0);
+
 	float t = (float)GetTimeInCurrentGameState();
-	DrawParagraph(talkingNpc->script.paragraphs[paragraphIndex], talkingNpc->script.font, textArea, 32, PINK, 25 * t);
-	//DrawAnimatedTextBox(roboto, textArea, 32, PINK, 25 * t, 
-	//	"Hello, sailor!\n\n"
-	//	"This is the story of a man named Stanley.\n\n"
-	//	"Seven salty sailors sail the seven salty sees.\n\n"
-	//	"Several boxing wizards jump quickly.\n\n"
-	//	"Would you like to know more?");
+	DrawParagraph(paragraph, script.font, textArea, 32, PINK, 25 * t);
 }
 REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talking_Render);
 
@@ -259,7 +263,7 @@ void GameInit(void)
 	SetTargetFPS(FPS);
 
 	roboto = LoadFontAscii("res/Roboto.ttf", 32);
-	//Script s = LoadScript("res/examplescript.txt", roboto);
+	Script s = LoadScript("res/examplescript.txt", roboto);
 
 	background = LoadTextureAndTrackChanges("res/background.png");
 	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");

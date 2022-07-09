@@ -96,12 +96,84 @@ Script LoadScript(const char *path, Font font)
 					break;
 			}
 		}
+		int textLength = lastNonWhitespace + 1;
 
-		// @TODO: Extract character name.
+		// Extract speaker name.
+		bool foundSpeaker = false;
+		if (text[0] == '[')
+		{
+			int speakerStart = 1;
+			int speakerEnd = -1;
+			char *nextLine = NULL;
+			for (int i = speakerStart; i < textLength; ++i)
+			{
+				if (text[i] == '\n')
+					break; // Speaker name has to be on the first line, so if we don't find a ] on the first line we don't have a name.
+				if (text[i] == ']')
+				{
+					// Now we've found the [abc] part, we need to make sure the rest of the line is empty.
+					// If the line isn't empty, then this is an expression, not a speaker name.
+					char *line = text + i + 1;
+					bool onlyWhitespaceAfterSpeaker = true;
+					for (int j = 0; j < textLength; ++j)
+					{
+						if (line[j] == '\n')
+						{
+							nextLine = line + j + 1; // Record where the actual text starts after the speaker.
+							break;
+						}
+						if (!CharIsWhitespace(line[j]))
+						{
+							onlyWhitespaceAfterSpeaker = false;
+							break;
+						}
+					}
+
+					if (onlyWhitespaceAfterSpeaker)
+					{
+						speakerEnd = i;
+					}
+					break;
+				}
+			}
+
+			if (speakerEnd != -1)
+			{
+				foundSpeaker = true;
+				int nameLength = speakerEnd - speakerStart;
+				if (nameLength > 0)
+				{
+					paragraph.speaker = MemAlloc(nameLength + 1);
+					CopyBytes(paragraph.speaker, text + speakerStart, nameLength);
+					paragraph.speaker[nameLength] = 0;
+				}
+				else paragraph.speaker = NULL; // Use the default name.
+
+				int skip = (int)(nextLine - text);
+				text = nextLine;
+				textLength -= skip;
+			}
+		}
+		if (!foundSpeaker)
+		{
+			// If we didn't find a name, the character stays the same between paragraphs.
+			const char *previousName = NULL;
+			if (script.paragraphs)
+				previousName = script.paragraphs[ListCount(script.paragraphs) - 1].speaker;
+
+			if (previousName)
+			{
+				int nameLength = StringLength(previousName);
+				paragraph.speaker = MemAlloc(nameLength + 1);
+				CopyBytes(paragraph.speaker, previousName, nameLength);
+				paragraph.speaker[nameLength] = 0;
+			}
+			else paragraph.speaker = NULL;
+		}
 
 		fileCursor += cursor;
 		paragraph.text = text;
-		paragraph.textLength = lastNonWhitespace + 1;
+		paragraph.textLength = textLength;
 		
 		// 1) Convert text to codepoints.
 		// @TODO 2) Process escape sequences.
@@ -120,14 +192,14 @@ Script LoadScript(const char *path, Font font)
 		}
 		
 		// @TODO Caluclate the unscaled duration of the the paragraph.
-		paragraph.duration = ListCount(paragraph.codepoints);
+		paragraph.duration = (float)ListCount(paragraph.codepoints);
 		ListAdd(&script.paragraphs, paragraph);
 	}
 }
 
 void UnloadScript(Script *script)
 {
-
+	// @TODO
 }
 
 void DrawParagraph(Paragraph paragraph, Font font, Rectangle textBox, float fontSize, Color color, float t)

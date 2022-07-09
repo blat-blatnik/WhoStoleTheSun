@@ -498,6 +498,9 @@ void DrawTextureCentered(Texture texture, Vector2 position, Color tint);
 // Loads all ASCII glyphs from the given .ttf file.
 Font LoadFontAscii(const char *path, int fontSize);
 
+// Returns the line height of a font for a particular font size.
+float GetLineHeight(Font font, float fontSize);
+
 // Draws a formatted string starting at (x, y) and going right and down.
 void DrawFormat(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, ...);
 
@@ -509,8 +512,6 @@ void DrawFormatCentered(Font font, float x, float y, float fontSize, Color color
 
 // Same as DrawFormatCentered but takes an explicit varargs pack.
 void DrawFormatCenteredVa(Font font, float x, float y, float fontSize, Color color, FORMAT_STRING format, va_list args);
-
-void DrawAnimatedTextBox(Font font, Rectangle textBox, float fontSize, Color color, float t, const char *string);
 
 //
 // Slab allocator
@@ -552,7 +553,7 @@ void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
 
 STRUCT(Paragraph)
 {
-	char *character;
+	char *speaker;
 	char *text; // [textLength] NOT 0 TERMINATED!
 	int textLength;
 	float duration;
