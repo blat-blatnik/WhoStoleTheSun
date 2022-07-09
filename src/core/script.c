@@ -279,7 +279,7 @@ void UnloadScript(Script *script)
 	// @TODO
 }
 
-void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, float time)
+void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time)
 {
 	int mark = TempMark();
 	{
@@ -382,6 +382,7 @@ void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float f
 				{
 					Font font = fonts[style];
 					int index = GetGlyphIndex(font, codepoint);
+					DrawTextCodepoint(font, codepoint, (Vector2) { x + 2, y + 2 }, fontSize, shadowColor);
 					DrawTextCodepoint(font, codepoint, (Vector2) { x, y }, fontSize, color);
 					x += GetAdvance(font, fontSize, index);
 					t += 1;

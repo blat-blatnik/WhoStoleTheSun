@@ -195,12 +195,13 @@ void Talking_Render()
 	if (!speaker)
 		speaker = talkingNpc->name;
 
+	DrawFormat(script.font, textArea.x + 2, textArea.y + 2, 32, BlendColors(RED, BLACK, 0.8f), "[%s]", speaker);
 	DrawFormat(script.font, textArea.x, textArea.y, 32, RED, "[%s]", speaker);
 	float yAdvance = 2 * GetLineHeight(script.font, 32);
 	textArea = ExpandRectangleEx(textArea, -yAdvance, 0, 0, 0);
 
 	float t = (float)GetTimeInCurrentGameState();
-	DrawParagraph(script, paragraphIndex, textArea, 32, PINK, 25 * t);
+	DrawParagraph(script, paragraphIndex, textArea, 32, PINK, BlendColors(PINK, BLACK, 0.8f), 25 * t);
 }
 REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talking_Render);
 

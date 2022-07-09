@@ -108,12 +108,17 @@ void ListDestroy(List(void) *listPointer);
 	++((int *)(*(listPointer)))[-1];\
 }while(0)
 
+// Allocates space for count items in the list, and returns a pointer to the newly allocated items.
+// This can be more efficient and convenient than ListAdd for larger structures.
+#define ListReserveItems(listPointer, count)(\
+	ListReserve((listPointer), ListCount(*listPointer) + (count)), \
+	((int *)(*(listPointer)))[-1] += (count), \
+	(*listPointer) + ListCount(*listPointer) - 1)
+
 // Adds space for one more item in the list, and returns a pointer to the newly allocated item.
 // This can be more efficient and convenient than ListAdd for larger structures.
-#define ListReserveOneItem(listPointer)(\
-	ListReserve((listPointer), ListCount(*listPointer) + 1),\
-	++((int *)(*(listPointer)))[-1],\
-	(*listPointer) + ListCount(*listPointer) - 1)
+#define ListReserveOneItem(listPointer)\
+	ListReserveItems(listPointer, 1)
 
 // Removes the last item in the list and returns it.
 #define ListPop(listPointer)\
@@ -290,6 +295,37 @@ void AppendFormatVa(StringBuilder *builder, FORMAT_STRING format, va_list args);
 
 // Creates a string builder from a stack buffer with the given capacity. THIS ONLY WORKS IN C, NOT IN C++.
 #define STRING_BUILDER_ON_STACK(capacity) CreateStringBuilder((char[capacity]){0}, (capacity))
+
+//
+// Script
+//
+
+STRUCT(Paragraph)
+{
+	char *speaker;
+	char *text; // [textLength] NOT 0 TERMINATED!
+	int textLength;
+	float duration;
+	List(char *) expressions;
+	List(int) codepoints;
+};
+
+STRUCT(Script)
+{
+	Font font;
+	Font boldFont;
+	Font italicFont;
+	Font boldItalicFont;
+	char *text;
+	List(char) stringMemory;
+	List(Paragraph) paragraphs;
+};
+
+Script LoadScript(const char *path, Font font, Font boldFont, Font italicFont, Font boldItalicFont);
+
+void UnloadScript(Script *script);
+
+void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time);
 
 //
 // Hot-reload
@@ -488,6 +524,9 @@ Color FloatRGB(float red, float green, float blue);
 // Returns a color with the given RGBA components in [0, 1].
 Color FloatRGBA(float red, float green, float blue, float alpha);
 
+// Linearly interpolates between c0 and c1.
+Color BlendColors(Color c0, Color c1, float t);
+
 //
 // Drawing
 //
@@ -550,36 +589,6 @@ void FreeFromSlabAllocator(SlabAllocator *allocator, void *block);
 
 // Frees all memory allocated from the allocator after the given cursor.
 void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
-
-//
-// Script
-//
-
-STRUCT(Paragraph)
-{
-	char *speaker;
-	char *text; // [textLength] NOT 0 TERMINATED!
-	int textLength;
-	float duration;
-	List(char *) expressions;
-	List(int) codepoints;
-};
-
-STRUCT(Script)
-{
-	Font font;
-	Font boldFont;
-	Font italicFont;
-	Font boldItalicFont;
-	char *text;
-	List(Paragraph) paragraphs;
-};
-
-Script LoadScript(const char *path, Font font, Font boldFont, Font italicFont, Font boldItalicFont);
-
-void UnloadScript(Script *script);
-
-void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, float time);
 
 //
 // Game states
