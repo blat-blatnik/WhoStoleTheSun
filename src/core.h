@@ -221,6 +221,7 @@ void ReplaceChar(char *string, char target, char replacement);
 // Skips all leading whitespace in a string.
 char *SkipLeadingWhitespace(const char *string);
 
+// SplitByWhitespace("Hello sailor\n\t1 2  3") -> ["Hello", "sailor", "1", "2", "3"].
 List(char *) SplitByWhitespace(const char *string);
 
 //
