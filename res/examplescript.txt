@@ -14,7 +14,7 @@ and it becomes so long that it no longer fits into a single speech bubble,
 it will automatically be split into multiple speech bubbles.
 This won't always work perfectly though, so don't rely on it too much.
 
-|These| |words| |appear| |one| |at| |a| |time!|
+|These| |words| |appear| |one| {tp 100 100} |at| |a| |time!|
 
 This    line    has    longer    pauses.
 
@@ -42,6 +42,8 @@ And now we're back to the original NPC you started the conversation with.
 [sad] And now he's sad.
 
 [happy] you can also make them change expressions [sad] mid paragraph.
+
+The NPC will go back to their default facial expression.````.````.```` []|now!|
 
 _These words_ are in _italic_.
 

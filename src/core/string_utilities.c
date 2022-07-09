@@ -86,3 +86,30 @@ char *SkipLeadingWhitespace(const char *string)
 		++string;
 	return (char *)string;
 }
+
+List(char *) SplitByWhitespace(const char *string)
+{
+	if (!string)
+		return NULL;
+
+	List(char *) results = NULL;
+	ListSetAllocator((void **)&results, TempRealloc, TempFree);
+
+	for (;;)
+	{
+		string = SkipLeadingWhitespace(string);
+		if (!string[0])
+			break;
+
+		int i = 0;
+		do ++i; while (string[i] and not CharIsWhitespace(string[i]));
+
+		char *run = TempAlloc(i + 1);
+		CopyBytes(run, string, i);
+		run[i] = 0;
+		ListAdd(&results, run);
+		string += i;
+	}
+
+	return results;
+}

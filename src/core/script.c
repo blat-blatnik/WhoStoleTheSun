@@ -151,6 +151,38 @@ static float MeasureDuration(List(int) codepoints)
 	return (float)duration;
 }
 
+static bool IsWhitespaceOrPause(int codepoint)
+{
+	if (codepoint == COMMAND('`'))
+		return true;
+	return codepoint < 128 && CharIsWhitespace((char)codepoint);
+}
+
+static List(int) BreakLines(List(int) codepoints, Font font, float fontSize, float lineWidth)
+{
+	List(int) result = NULL;
+	ListSetAllocator(&result, TempRealloc, TempFree);
+
+	int numCodepoints = ListCount(codepoints);
+	for (int i = 0; i < numCodepoints; ++i)
+	{
+		int codepoint = codepoints[i];
+		if (codepoint == COMMAND('['))
+		{
+			ListAdd(&codepoints, codepoint);
+			while (i < numCodepoints && codepoint != COMMAND(']'))
+			{
+				ListAdd(&codepoints, codepoint);
+				codepoint = codepoints[++i];
+			}
+		}
+
+
+	}
+
+	return result;
+}
+
 Script LoadScript(const char *path, Font font)
 {
 	Script script = { .text = LoadFileText(path), .font = font };
@@ -276,6 +308,8 @@ Script LoadScript(const char *path, Font font)
 			}
 			else paragraph.speaker = NULL;
 		}
+
+		List(int) codepoints = ConvertToCodepoints(text, textLength);
 
 		fileCursor += cursor;
 		paragraph.text = text;

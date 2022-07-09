@@ -8,7 +8,7 @@ STRUCT(Header)
 	int count;
 };
 
-static Header *GetHeader(List(void) list)
+static Header *GetHeader(const List(void) list)
 {
 	return (Header *)list - 1;
 }
