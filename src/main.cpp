@@ -259,7 +259,6 @@ void GameInit(void)
 
 	// teleport player
 	console.AddCommand("tp", &HandlePlayerTeleportCommand);
-	console.GetCommand("tp").SetHelp("This one needs a lot of help");
-
+	console.GetCommand("tp")->SetHelp("This needs help for sure");
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

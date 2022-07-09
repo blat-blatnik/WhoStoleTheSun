@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
-
+#include <iostream>
 Console::Console()
 {
     ClearLog();
@@ -29,13 +29,17 @@ void Console::AddCommand(std::string cmd, pHandler phandle, std::string pHelp)
     auto commandName = words[0];
     words.erase(words.begin());
 
-    Command command(commandName, pHelp, phandle);
-    
-    _commandContainer.insert(std::pair<std::string, Command>(commandName, command));
+
+    auto command = std::make_shared<Command>(commandName, pHelp, phandle);
+
+   
+    (*_commandContainer).insert(std::pair<std::string, std::shared_ptr<Command>>(commandName, command));
 }
 
 void Console::HandleResult(CmdResult& result)
 {
+    auto cmd = result.cmd;
+    
     switch (result.state)
     {
     case CmdState::COMMAND_SUCCEEDED:
@@ -48,11 +52,11 @@ void Console::HandleResult(CmdResult& result)
         break;
 
     case CmdState::COMMAND_FOUND_BAD_ARGS:
-        AddLog("Command found but wrong arguments, try <%s> help!", result.cmd.GetName().c_str());
+        AddLog("Command found but wrong arguments, try <%s> help!", cmd->GetName().c_str());
         break;
 
     case CmdState::COMMAND_RESULT_HELP:
-        AddLog(result.cmd.GetHelp());
+        AddLog(cmd->GetHelp());
         break;
     }
 }
@@ -133,7 +137,6 @@ void Console::ShowConsoleWindow(const char* title, bool* p_open)
         reclaim_focus = true;
 
         HandleResult(result);
-
     }
 
     // Auto-focus on window apparition
@@ -159,27 +162,30 @@ CmdResult Console::ExecuteCommand(char* cmd)
 
     CmdResult result;
 
-    if (words.size() > 0 && words[0] == "help")
-    {
-        result.state = CmdState::COMMAND_RESULT_HELP;
-        return result;
-    }
-
-    if (_commandContainer.find(command) == _commandContainer.end())
+    if ((*_commandContainer).find(command) == (*_commandContainer).end())
     {
         result.state = CmdState::COMMAND_NOT_FOUND;
         return result;
     }
 
-    if (_commandContainer[command].Invoke(words))
+    if (words.size() > 0 && words[0] == "help")
+    {
+        result.state = CmdState::COMMAND_RESULT_HELP;
+        result.cmd = (*_commandContainer)[command];
+        return result;
+    }
+
+
+
+    if ((*_commandContainer)[command]->Invoke(words))
     {
         result.state = CmdState::COMMAND_SUCCEEDED;
-        result.cmd = _commandContainer[command];
+        result.cmd = (*_commandContainer)[command];
     }
     else
     {
         result.state = CmdState::COMMAND_FOUND_BAD_ARGS;
-        result.cmd = _commandContainer[command];
+        result.cmd = (*_commandContainer)[command];
     }
 
     return result;

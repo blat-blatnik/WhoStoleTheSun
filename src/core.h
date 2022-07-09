@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include "lib/imgui/imgui.h"
+#include <memory>
 #endif
 
 
@@ -656,7 +657,7 @@ enum CmdState
 };
 struct CmdResult
 {
-    Command cmd;
+    std::shared_ptr<Command> cmd;
     CmdState state;
 };
 
@@ -664,7 +665,7 @@ class Console
 {
 public:
    
-    std::map<std::string, Command> _commandContainer;
+    std::map<std::string, std::shared_ptr<Command>> *_commandContainer = new std::map<std::string, std::shared_ptr<Command>>();
 
     Console();
 
@@ -673,8 +674,8 @@ public:
 
     void AddCommand(std::string command, pHandler handle, std::string pHelp = "");
     CmdResult ExecuteCommand(char* cmd);
-    std::map<std::string, Command> GetCommands() { return _commandContainer; }
-    Command GetCommand(std::string str) { return _commandContainer[str]; }
+    const std::map<std::string, std::shared_ptr<Command>>* GetCommands() { return _commandContainer; }
+    std::shared_ptr<Command> GetCommand(std::string str) { return (*_commandContainer)[str]; }
 
     char                        InputBuf[256];
     ImVector<char*>             Items;
@@ -692,7 +693,6 @@ public:
     }
 
     void AddLog(const char* fmt, ...) IM_FMTARGS(2);
-
 
     void ShowConsoleWindow(const char* title, bool* p_open);
 
