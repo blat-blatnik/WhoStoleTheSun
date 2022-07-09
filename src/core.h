@@ -221,7 +221,7 @@ void ReplaceChar(char *string, char target, char replacement);
 // Skips all leading whitespace in a string.
 char *SkipLeadingWhitespace(const char *string);
 
-// SplitByWhitespace("Hello sailor\n\t1 2  3") -> ["Hello", "sailor", "1", "2", "3"].
+// SplitByWhitespace("Hello sailor\n\t1 2  3") -> ["Hello", "sailor", "1", "2", "3"]. The result is allocated from temporary storage.
 List(char *) SplitByWhitespace(const char *string);
 
 //
@@ -576,7 +576,7 @@ Script LoadScript(const char *path, Font font);
 
 void UnloadScript(Script *script);
 
-void DrawParagraph(Paragraph paragraph, Font font, Rectangle textBox, float fontSize, Color color, float t);
+void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, float time);
 
 //
 // Game states

@@ -89,7 +89,7 @@ char *SkipLeadingWhitespace(const char *string)
 
 List(char *) SplitByWhitespace(const char *string)
 {
-	if (!string)
+	if (not string)
 		return NULL;
 
 	List(char *) results = NULL;
@@ -98,7 +98,7 @@ List(char *) SplitByWhitespace(const char *string)
 	for (;;)
 	{
 		string = SkipLeadingWhitespace(string);
-		if (!string[0])
+		if (not string[0])
 			break;
 
 		int i = 0;

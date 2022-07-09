@@ -197,7 +197,7 @@ void Talking_Render()
 	textArea = ExpandRectangleEx(textArea, -yAdvance, 0, 0, 0);
 
 	float t = (float)GetTimeInCurrentGameState();
-	DrawParagraph(paragraph, script.font, textArea, 32, PINK, 25 * t);
+	DrawParagraph(script, paragraphIndex, textArea, 32, PINK, 25 * t);
 }
 REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talking_Render);
 

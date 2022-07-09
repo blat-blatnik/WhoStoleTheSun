@@ -3,6 +3,15 @@
 #define COMMAND(codepoint) -codepoint
 #define IS_COMMAND(codepoint) (codepoint < 0)
 
+ENUM(Style)
+{
+	REGULAR     = 0,
+	BOLD        = 1 << 0,
+	ITALIC      = 1 << 1,
+	BOLD_ITALIC = BOLD | ITALIC,
+	STYLE_ENUM_COUNT
+};
+
 STRUCT(Word)
 {
 	int start;
@@ -10,46 +19,13 @@ STRUCT(Word)
 	float width;
 };
 
-static float GetAdvance(Font font, int glyphIndex)
+static float GetAdvance(Font font, float fontSize, int glyphIndex)
 {
+	float scaleFactor = fontSize / font.baseSize;
 	if (font.glyphs[glyphIndex].advanceX == 0)
-		return font.recs[glyphIndex].width;
+		return scaleFactor * font.recs[glyphIndex].width;
 	else
-		return (float)font.glyphs[glyphIndex].advanceX;
-}
-
-static List(Word) SplitIntoWords(Font font, List(int) codepoints)
-{
-	List(Word) words = NULL;
-	ListSetAllocator(&words, TempRealloc, TempFree);
-
-	int numCodepoints = ListCount(codepoints);
-	for (int i = 0; i < numCodepoints; ++i)
-	{
-		Word word = { i };
-		for (; i < numCodepoints; ++i)
-		{
-			if (CharIsWhitespace((char)codepoints[i]))
-				break;
-			++word.length;
-		}
-
-		if (word.length > 0)
-		{
-			for (int j = 0; j < word.length; ++j)
-			{
-				int codepoint = codepoints[word.start + j];
-				if (not IS_COMMAND(codepoint))
-				{
-					int index = GetGlyphIndex(font, codepoints[word.start + j]);
-					word.width += GetAdvance(font, index);
-				}
-			}
-			ListAdd(&words, word);
-		}
-	}
-
-	return words;
+		return scaleFactor * font.glyphs[glyphIndex].advanceX;
 }
 
 static List(int) ConvertToCodepoints(const char *text, int length)
@@ -151,36 +127,9 @@ static float MeasureDuration(List(int) codepoints)
 	return (float)duration;
 }
 
-static bool IsWhitespaceOrPause(int codepoint)
+static bool IsWhitespace(int codepoint)
 {
-	if (codepoint == COMMAND('`'))
-		return true;
 	return codepoint < 128 && CharIsWhitespace((char)codepoint);
-}
-
-static List(int) BreakLines(List(int) codepoints, Font font, float fontSize, float lineWidth)
-{
-	List(int) result = NULL;
-	ListSetAllocator(&result, TempRealloc, TempFree);
-
-	int numCodepoints = ListCount(codepoints);
-	for (int i = 0; i < numCodepoints; ++i)
-	{
-		int codepoint = codepoints[i];
-		if (codepoint == COMMAND('['))
-		{
-			ListAdd(&codepoints, codepoint);
-			while (i < numCodepoints && codepoint != COMMAND(']'))
-			{
-				ListAdd(&codepoints, codepoint);
-				codepoint = codepoints[++i];
-			}
-		}
-
-
-	}
-
-	return result;
 }
 
 Script LoadScript(const char *path, Font font)
@@ -309,8 +258,6 @@ Script LoadScript(const char *path, Font font)
 			else paragraph.speaker = NULL;
 		}
 
-		List(int) codepoints = ConvertToCodepoints(text, textLength);
-
 		fileCursor += cursor;
 		paragraph.text = text;
 		paragraph.textLength = textLength;
@@ -325,69 +272,105 @@ void UnloadScript(Script *script)
 	// @TODO
 }
 
-void DrawParagraph(Paragraph paragraph, Font font, Rectangle textBox, float fontSize, Color color, float t)
+void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, float time)
 {
 	int mark = TempMark();
 	{
+		paragraphIndex = ClampInt(paragraphIndex, 0, ListCount(script.paragraphs) - 1);
+		Paragraph paragraph = script.paragraphs[paragraphIndex];
 		List(int) codepoints = paragraph.codepoints;
-		List(Word) words = SplitIntoWords(font, codepoints);
-		if (ListCount(words) == 0)
-			return;
+		int numCodepoints = ListCount(codepoints);
+		
+		Font fonts[STYLE_ENUM_COUNT];
+		fonts[REGULAR] = script.font;
+		fonts[BOLD] = script.font;
+		fonts[ITALIC] = script.font;
+		fonts[BOLD_ITALIC] = script.font;
 
-		float scaleFactor = fontSize / font.baseSize;
-		float yAdvance = font.baseSize * scaleFactor;
+		float x = textBox.x;
+		float y = textBox.y;
+		float t = 0;
+		Style style = REGULAR;
+		bool group = false;
 		float maxX = textBox.x + textBox.width;
-		float penX = textBox.x;
-		float penY = textBox.y;
 
-		int i = 0;
-		int numWords = ListCount(words);
-		for (int wordIndex = 0; wordIndex < numWords; ++wordIndex)
+		for (int i = 0; i < numCodepoints and (group or t < time); ++i)
 		{
-			Word word = words[wordIndex];
-
-			for (; i < word.start; ++i)
+			int codepoint = codepoints[i];
+			if (codepoint == COMMAND('['))
 			{
-				if (i > t)
+				// @TODO Handle expressions.
+				while (i < numCodepoints and codepoint != COMMAND(']'))
 				{
-					TempReset(mark);
-					return;
+					codepoint = codepoints[++i];
 				}
-
-				int codepoint = codepoints[i];
+			}
+			else if (codepoint == COMMAND('*'))
+			{
+				style ^= BOLD;
+			}
+			else if (codepoint == COMMAND('_'))
+			{
+				style ^= ITALIC;
+			}
+			else if (codepoint == COMMAND('|'))
+			{
+				group = not group;
+			}
+			else if (IsWhitespace(codepoint) or codepoint == COMMAND('`'))
+			{
+				t += 1;
 				if (codepoint == '\n')
 				{
-					penX = textBox.x;
-					penY += yAdvance;
+					x = textBox.x;
+					y += GetLineHeight(fonts[style], fontSize);
 				}
-				else
+				else if (codepoint != COMMAND('`'))
 				{
+					Font font = fonts[style];
 					int index = GetGlyphIndex(font, codepoint);
-					DrawTextCodepoint(font, codepoint, (Vector2) { penX, penY }, fontSize, color);
-					penX += scaleFactor * GetAdvance(font, index);
+					x += GetAdvance(font, fontSize, index);
+					if (x > maxX)
+					{
+						x = textBox.x;
+						y += GetLineHeight(fonts[style], fontSize);
+					}
 				}
 			}
-
-			if (penX + word.width > maxX)
+			else
 			{
-				penX = textBox.x;
-				penY += yAdvance;
-			}
-
-			for (; i < word.start + word.length; ++i)
-			{
-				if (i > t)
+				// Check if the word will fit on the line, and if it doesn't, break the line before drawing the word.
+				float width = 0;
+				Style backupStyle = style;
+				for (int j = i; j < numCodepoints and not IsWhitespace(codepoints[j]) and codepoints[j] != COMMAND('['); ++j)
 				{
-					TempReset(mark);
-					return;
+					codepoint = codepoints[j];
+					if (codepoint == COMMAND('*'))
+						style ^= BOLD;
+					else if (codepoint == COMMAND('_'))
+						style ^= ITALIC;
+					else if (not IS_COMMAND(codepoint))
+					{
+						Font font = fonts[style];
+						int index = GetGlyphIndex(font, codepoint);
+						width += GetAdvance(font, fontSize, index);
+					}
 				}
 
-				int codepoint = codepoints[i];
-				if (codepoint != COMMAND('`'))
+				// Word is too long to fit onto current line. Break the line.
+				if (x + width > maxX)
 				{
+					x = textBox.x;
+					y += GetLineHeight(fonts[style], fontSize);
+				}
+
+				style = backupStyle;
+				{
+					Font font = fonts[style];
 					int index = GetGlyphIndex(font, codepoint);
-					DrawTextCodepoint(font, codepoint, (Vector2) { penX, penY }, fontSize, color);
-					penX += scaleFactor * GetAdvance(font, index);
+					DrawTextCodepoint(font, codepoint, (Vector2) { x, y }, fontSize, color);
+					x += GetAdvance(font, fontSize, index);
+					t += 1;
 				}
 			}
 		}
