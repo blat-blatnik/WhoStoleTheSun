@@ -162,6 +162,10 @@ void Talking_Init(void *param)
 }
 void Talking_Update()
 {
+	Script *script = talkingNpc->script;
+	if (paragraphIndex >= ListCount(script->paragraphs))
+		paragraphIndex = ListCount(script->paragraphs) - 1;
+
 	if (IsKeyPressed(KEY_E) or IsKeyPressed(KEY_SPACE))
 	{
 		Script *script = talkingNpc->script;

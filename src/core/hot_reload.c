@@ -163,7 +163,6 @@ void HotReloadAllTrackedItems(void)
 		FILE *f = fopen(item->path, "rb");
 		if (!f)
 			continue;
-		fclose(f);
 
 		switch (item->kind)
 		{
@@ -198,6 +197,7 @@ void HotReloadAllTrackedItems(void)
 			} break;
 		}
 
+		fclose(f); // Aparently if you don't keep a file handle open the whole time we sometimes fail to load.. I have no clue why.
 		item->lastModTime = modTime;
 	}
 }
