@@ -1,6 +1,7 @@
 #include "../core.h"
 
 #define COMMAND(codepoint) -codepoint
+#define IS_COMMAND(codepoint) (codepoint < 0)
 
 STRUCT(Word)
 {
@@ -37,8 +38,12 @@ static List(Word) SplitIntoWords(Font font, List(int) codepoints)
 		{
 			for (int j = 0; j < word.length; ++j)
 			{
-				int index = GetGlyphIndex(font, codepoints[word.start + j]);
-				word.width += GetAdvance(font, index);
+				int codepoint = codepoints[word.start + j];
+				if (not IS_COMMAND(codepoint))
+				{
+					int index = GetGlyphIndex(font, codepoints[word.start + j]);
+					word.width += GetAdvance(font, index);
+				}
 			}
 			ListAdd(&words, word);
 		}
@@ -180,7 +185,7 @@ Script LoadScript(const char *path, Font font)
 		// 1) Convert text to codepoints.
 		// 2) Process escape sequences.
 		// 3) Convert consecutive spaces into a single space and pauses.
-		// @TODO 4) Add explicit pauses after punctuation.
+		// 4) Add explicit pauses after punctuation.
 		// 5) Convert command characters to command (negative) codepoints.
 		List(int) codepoints = NULL;
 		int lastNonPauseCodepoint = 0;
@@ -323,9 +328,12 @@ void DrawParagraph(Paragraph paragraph, Font font, Rectangle textBox, float font
 				}
 
 				int codepoint = codepoints[i];
-				int index = GetGlyphIndex(font, codepoint);
-				DrawTextCodepoint(font, codepoint, (Vector2) { penX, penY }, fontSize, color);
-				penX += scaleFactor * GetAdvance(font, index);
+				if (codepoint != COMMAND('`'))
+				{
+					int index = GetGlyphIndex(font, codepoint);
+					DrawTextCodepoint(font, codepoint, (Vector2) { penX, penY }, fontSize, color);
+					penX += scaleFactor * GetAdvance(font, index);
+				}
 			}
 		}
 	}
