@@ -1,5 +1,7 @@
 #include "../core.h"
 
+#define COMMAND(codepoint) -codepoint
+
 STRUCT(Word)
 {
 	int start;
@@ -48,7 +50,7 @@ static List(Word) SplitIntoWords(Font font, List(int) codepoints)
 Script LoadScript(const char *path, Font font)
 {
 	Script script = { .text = LoadFileText(path), .font = font };
-	if (!script.text)
+	if (not script.text)
 	{
 		LogError("Failed to load script file '%s'.", path);
 		return script;
@@ -75,7 +77,7 @@ Script LoadScript(const char *path, Font font)
 			if (!text[cursor])
 				break;
 
-			if (!CharIsWhitespace(text[cursor]))
+			if (not CharIsWhitespace(text[cursor]))
 			{
 				lastNonWhitespace = cursor;
 			}
@@ -122,7 +124,7 @@ Script LoadScript(const char *path, Font font)
 							nextLine = line + j + 1; // Record where the actual text starts after the speaker.
 							break;
 						}
-						if (!CharIsWhitespace(line[j]))
+						if (not CharIsWhitespace(line[j]))
 						{
 							onlyWhitespaceAfterSpeaker = false;
 							break;
@@ -154,7 +156,7 @@ Script LoadScript(const char *path, Font font)
 				textLength -= skip;
 			}
 		}
-		if (!foundSpeaker)
+		if (not foundSpeaker)
 		{
 			// If we didn't find a name, the character stays the same between paragraphs.
 			const char *previousName = NULL;
@@ -176,10 +178,11 @@ Script LoadScript(const char *path, Font font)
 		paragraph.textLength = textLength;
 		
 		// 1) Convert text to codepoints.
-		// @TODO 2) Process escape sequences.
+		// 2) Process escape sequences.
 		// @TODO 3) Convert consecutive spaces into a single space and pauses.
 		// @TODO 4) Add explicit pauses after punctuation.
 		// @TODO 5) Convert command characters to command (negative) codepoints.
+		List(int) codepoints = NULL;
 		for (int i = 0; i < paragraph.textLength;)
 		{
 			int codepointLength;
@@ -188,8 +191,45 @@ Script LoadScript(const char *path, Font font)
 				break;
 			i += codepointLength;
 
-			ListAdd(&paragraph.codepoints, codepoint);
+			int lastIndex = ListCount(codepoints) - 1;
+			bool isEscaped = lastIndex > 0 and codepoints[lastIndex] == COMMAND('\\');
+
+			if (codepoint == '\\' and not isEscaped)
+				ListAdd(&codepoints, COMMAND('\\'));
+			else if (codepoint == '[' and not isEscaped)
+				ListAdd(&codepoints, COMMAND('['));
+			else if (codepoint == ']' and not isEscaped)
+				ListAdd(&codepoints, COMMAND('}'));
+			else if (codepoint == '|' and not isEscaped)
+				ListAdd(&codepoints, COMMAND('|'));
+			else if (codepoint == '_' and not isEscaped)
+				ListAdd(&codepoints, COMMAND('_'));
+			else if (codepoint == '*' and not isEscaped)
+				ListAdd(&codepoints, COMMAND('*'));
+			else if (codepoint == '`' and not isEscaped)
+				ListAdd(&codepoints, COMMAND('`'));
+			else if (codepoint == ' ' and isEscaped)
+				codepoints[lastIndex] = ' ';
+			else if (codepoint == 'n' and isEscaped)
+				codepoints[lastIndex] = '\n';
+			else if (codepoint == '[' and isEscaped)
+				codepoints[lastIndex] = '[';
+			else if (codepoint == ']' and isEscaped)
+				codepoints[lastIndex] = ']';
+			else if (codepoint == '|' and isEscaped)
+				codepoints[lastIndex] = '|';
+			else if (codepoint == '_' and isEscaped)
+				codepoints[lastIndex] = '_';
+			else if (codepoint == '*' and isEscaped)
+				codepoints[lastIndex] = '*';
+			else if (codepoint == '`' and isEscaped)
+				codepoints[lastIndex] = '`';
+			else if (codepoint == '\\' and isEscaped)
+				codepoints[lastIndex] = '\\';
+			else
+				ListAdd(&codepoints, codepoint);
 		}
+		paragraph.codepoints = codepoints;
 		
 		// @TODO Caluclate the unscaled duration of the the paragraph.
 		paragraph.duration = (float)ListCount(paragraph.codepoints);

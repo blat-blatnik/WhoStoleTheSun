@@ -8,7 +8,7 @@ Like this!
 If you write a really really really long paragraph like this one,
 and it becomes so long that it no longer fits into a single speech bubble, 
 it will automatically be split into multiple speech bubbles.
-This doesn't always work perfectly though, so don't rely on it too much.
+This won't always work perfectly though, so don't rely on it too much.
 
 |These| |words| |appear| |one| |at| |a| |time!|
 
