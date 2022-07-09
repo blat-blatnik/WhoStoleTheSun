@@ -1,5 +1,10 @@
 #include "../core.h"
 
+// This code is pretty terrible, much harder to understand than I would have liked. 
+// I really hope we don't have to change/add stuff.
+// The problem of parsing these files is pretty complicated for me, so I just made it work as best I could.
+// If I had more time I could have made it better. But I spent like 2 days on this, I should move on to other things..
+
 #define CONTROL(codepoint) -codepoint
 #define IS_CONTROL(codepoint) (codepoint < 0)
 
@@ -44,22 +49,24 @@ static List(int) ConvertToCodepoints(const char *text, int length, List(char) *s
 		int lastIndex = ListCount(codepoints) - 1;
 		bool isEscaped = lastIndex > 0 and codepoints[lastIndex] == CONTROL('\\');
 
-		if (codepoint == '[' and not isEscaped)
+		if ((codepoint == '[' or codepoint == '{') and not isEscaped)
 		{
+
 			// Expressions go into string memory, and get encoded as CONTROL('[') followed by an index into string memory.
 			int start = i;
-			while (i < length && text[i] != ']')
+			char closing = codepoint == '[' ? ']' : '}';
+			while (i < length and text[i] != closing)
 				++i;
 
-			ListAdd(&codepoints, CONTROL('['));
-			int expressionLength = i - start;
-			if (expressionLength > 0)
+			ListAdd(&codepoints, CONTROL(codepoint));
+			int stringLength = i - start;
+			if (stringLength > 0)
 			{
-				int expressionIndex = ListCount(*stringPool);
-				char *expression = ListAllocate(stringPool, expressionLength + 1);
-				CopyBytes(expression, text + start, expressionLength);
-				expression[expressionLength] = 0;
-				ListAdd(&codepoints, expressionIndex);
+				int stringIndex = ListCount(*stringPool);
+				char *string = ListAllocate(stringPool, stringLength + 1);
+				CopyBytes(string, text + start, stringLength);
+				string[stringLength] = 0;
+				ListAdd(&codepoints, stringIndex);
 			}
 			else ListAdd(&codepoints, -1); // -1 means "default" expression.
 
@@ -83,6 +90,10 @@ static List(int) ConvertToCodepoints(const char *text, int length, List(char) *s
 			codepoints[lastIndex] = '[';
 		else if (codepoint == ']' and isEscaped)
 			codepoints[lastIndex] = ']';
+		else if (codepoint == '{' and isEscaped)
+			codepoints[lastIndex] = '{';
+		else if (codepoint == '}' and isEscaped)
+			codepoints[lastIndex] = '}';
 		else if (codepoint == '|' and isEscaped)
 			codepoints[lastIndex] = '|';
 		else if (codepoint == '_' and isEscaped)
@@ -134,7 +145,7 @@ static float MeasureDuration(List(int) codepoints)
 		if (not IS_CONTROL(codepoint) or codepoint == CONTROL('`'))
 			++duration;
 
-		if (codepoint == CONTROL('['))
+		if (codepoint == CONTROL('[') or codepoint == CONTROL('{'))
 			++i;
 	}
 
@@ -305,21 +316,22 @@ void UnloadScript(Script *script)
 	ListDestroy(&script->stringPool);
 	UnloadFileText(script->text);
 	script->text = NULL;
+	script->commandIndex = 0;
 	LogInfo("Script unloaded.");
 }
 
-void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time)
+void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time)
 {
-	paragraphIndex = ClampInt(paragraphIndex, 0, ListCount(script.paragraphs) - 1);
-	Paragraph paragraph = script.paragraphs[paragraphIndex];
+	paragraphIndex = ClampInt(paragraphIndex, 0, ListCount(script->paragraphs) - 1);
+	Paragraph paragraph = script->paragraphs[paragraphIndex];
 	List(int) codepoints = paragraph.codepoints;
 	int numCodepoints = ListCount(codepoints);
 
 	Font fonts[STYLE_ENUM_COUNT] = {
-		[REGULAR] = script.font,
-		[BOLD] = script.boldFont,
-		[ITALIC] = script.italicFont,
-		[BOLD_ITALIC] = script.boldItalicFont
+		[REGULAR    ] = script->font,
+		[BOLD       ] = script->boldFont,
+		[ITALIC     ] = script->italicFont,
+		[BOLD_ITALIC] = script->boldItalicFont
 	};
 
 	float x = textBox.x;
@@ -328,13 +340,25 @@ void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float f
 	Style style = REGULAR;
 	bool group = false;
 	float maxX = textBox.x + textBox.width;
+	int commandIndex = 0;
 
 	for (int i = 0; i < numCodepoints and (group or t < time); ++i)
 	{
 		int codepoint = codepoints[i];
 		if (codepoint == CONTROL('['))
 		{
-			++i; // Skip the expression index.
+			++i; // Skip the string index.
+		}
+		else if (codepoint == CONTROL('{'))
+		{
+			int stringIndex = codepoints[++i];
+			char *command = &script->stringPool[stringIndex];
+			if (++commandIndex > script->commandIndex)
+			{
+				//@TODO: Actually run the command.
+				script->commandIndex++;
+				LogInfo("Script executing command %d: '%s'.", script->commandIndex, command);
+			}
 		}
 		else if (codepoint == CONTROL('*'))
 		{
@@ -441,11 +465,15 @@ const char *GetScriptExpression(Script script, int paragraphIndex, float time)
 			int codepoint = codepoints[j];
 			if (codepoint == CONTROL('['))
 			{
-				int expressionIndex = codepoints[++j];
-				if (expressionIndex == -1)
+				int stringIndex = codepoints[++j];
+				if (stringIndex == -1)
 					expression = "default";
 				else
-					expression = &script.stringPool[expressionIndex];
+					expression = &script.stringPool[stringIndex];
+			}
+			else if (codepoint == CONTROL('{'))
+			{
+				++j; // Skip the string index.
 			}
 			else if (not IS_CONTROL(codepoint) or codepoint == CONTROL('`'))
 			{

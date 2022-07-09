@@ -158,6 +158,7 @@ int paragraphIndex;
 void Talking_Init(void *param)
 {
 	talkingNpc = (Npc *)param;
+	talkingNpc->script->commandIndex = 0;
 	paragraphIndex = 0;
 }
 void Talking_Update()
@@ -168,7 +169,6 @@ void Talking_Update()
 
 	if (IsKeyPressed(KEY_E) or IsKeyPressed(KEY_SPACE))
 	{
-		Script *script = talkingNpc->script;
 		float t = (float)GetTimeInCurrentGameState();
 		float paragraphDuration = script->paragraphs[paragraphIndex].duration;
 		if (20 * t < paragraphDuration)
@@ -267,7 +267,7 @@ void Talking_Render()
 		float yAdvance = 2 * GetLineHeight(script->font, 32);
 		textArea = ExpandRectangleEx(textArea, -yAdvance, 0, 0, 0);
 
-		DrawParagraph(*script, paragraphIndex, textArea, 32, PINK, BlendColors(PINK, BLACK, 0.8f), time);
+		DrawScriptParagraph(script, paragraphIndex, textArea, 32, PINK, BlendColors(PINK, BLACK, 0.8f), time);
 	}
 }
 REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talking_Render);

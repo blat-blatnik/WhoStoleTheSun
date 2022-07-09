@@ -54,3 +54,7 @@ Escape characters:
 "\\\`" displays "\`"
 "\\\\" displays "\\"
 These are useful if you actually want to a draw control character.
+
+(This doesn't work yet)
+You can also run console commands from within scripts.
+Executing command "tp 100 100":               3               2               1               {tp 100 100}|blast off!|

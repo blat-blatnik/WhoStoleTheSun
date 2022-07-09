@@ -316,17 +316,22 @@ STRUCT(Script)
 	Font boldFont;
 	Font italicFont;
 	Font boldItalicFont;
+	int commandIndex; // Keeps track of which commands have already run so they don't run twice.
 	char *text;
 	List(char) stringPool; // This is where all expressions and speaker names are stored.
 	List(Paragraph) paragraphs;
 };
 
+// Loads a script from the given text file.
 Script LoadScript(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
 
+// Unloads all script memory and nullifies the script.
 void UnloadScript(Script *script);
 
-void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time);
+// Draws the script paragraph at the given index. NOTE: This also executes console commands within the paragraph!
+void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time);
 
+// Gets the current speaker expression at the given time in the paragraph.
 const char *GetScriptExpression(Script script, int paragraphIndex, float time);
 
 //
