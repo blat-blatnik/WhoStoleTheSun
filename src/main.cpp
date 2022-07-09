@@ -45,7 +45,9 @@ Font robotoBold;
 Font robotoItalic;
 Font robotoBoldItalic;
 Player player;
+Texture *playerNeutral;
 Npc pinkGuy = { "Pink Guy" };
+Npc greenGuy = { "Green Guy" };
 Sound shatter;
 Console console;
 
@@ -212,17 +214,31 @@ void Talking_Render()
 		DrawRectangleRounded(portraitBox, 0.1f, 5, WHITE);
 		DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
 
-		int expressionIndex = 0;
-		for (int i = 0; i < talkingNpc->numExpressions; ++i)
+		Texture *portrait = NULL;
+		if (StringsEqualNocase(speaker, "player"))
+			portrait = playerNeutral;
+		else
 		{
-			if (StringsEqualNocase(talkingNpc->expressions[i].name, expression))
+			Npc *npc = talkingNpc;
+			if (StringsEqualNocase(speaker, "pink guy"))
+				npc = &pinkGuy;
+			else if (StringsEqualNocase(speaker, "green guy"))
+				npc = &greenGuy;
+
+			int expressionIndex = 0;
+			for (int i = 0; i < npc->numExpressions; ++i)
 			{
-				expressionIndex = i;
-				break;
+				if (StringsEqualNocase(npc->expressions[i].name, expression))
+				{
+					expressionIndex = i;
+					break;
+				}
 			}
+
+			portrait = npc->expressions[expressionIndex].portrait;
 		}
 
-		DrawTextureCentered(*talkingNpc->expressions[expressionIndex].portrait, RectangleCenter(portraitBox), WHITE);
+		DrawTextureCentered(*portrait, RectangleCenter(portraitBox), WHITE);
 	}
 
 	// Text
@@ -327,7 +343,8 @@ void GameInit(void)
 	player.textures[DIRECTION_DOWN_LEFT]  = LoadTextureAndTrackChanges("res/player-down-left.png");
 	player.textures[DIRECTION_DOWN]       = LoadTextureAndTrackChanges("res/player-down.png");
 	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
-	
+	playerNeutral = LoadTextureAndTrackChanges("res/player-neutral.png");
+
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
@@ -339,6 +356,10 @@ void GameInit(void)
 	CopyString(pinkGuy.expressions[1].name, "happy", sizeof pinkGuy.expressions[1].name);
 	CopyString(pinkGuy.expressions[2].name, "sad", sizeof pinkGuy.expressions[2].name);
 	pinkGuy.numExpressions = 3;
+
+	greenGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/green-guy-neutral.png");
+	CopyString(greenGuy.expressions[0].name, "neutral", sizeof greenGuy.expressions[0].name);
+	greenGuy.numExpressions = 1;
 
 	// teleport player
 	console.AddCommand("tp", &HandlePlayerTeleportCommand);
