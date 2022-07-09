@@ -49,7 +49,7 @@ static List(int) ConvertToCodepoints(const char *text, int length)
 		else if (codepoint == '[' and not isEscaped)
 			ListAdd(&codepoints, COMMAND('['));
 		else if (codepoint == ']' and not isEscaped)
-			ListAdd(&codepoints, COMMAND('}'));
+			ListAdd(&codepoints, COMMAND(']'));
 		else if (codepoint == '|' and not isEscaped)
 			ListAdd(&codepoints, COMMAND('|'));
 		else if (codepoint == '_' and not isEscaped)
@@ -365,6 +365,7 @@ void DrawParagraph(Script script, int paragraphIndex, Rectangle textBox, float f
 				}
 
 				style = backupStyle;
+				codepoint = codepoints[i];
 				{
 					Font font = fonts[style];
 					int index = GetGlyphIndex(font, codepoint);

@@ -43,7 +43,7 @@ The NPC will go back to their default facial expression.````.````.```` []|now!|
 
 _These words_ are in _italic_.
 
-And *These words* are in *bold*.
+And *these words* are in *bold*.
 
 _*These ones*_ are both *bold* and _italic_. *_These ones also_*.
 
