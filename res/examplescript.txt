@@ -1,5 +1,9 @@
 This is a line of text.
 
+One, two, three, four, five, six, seven, eight, nine, ten!
+
+One. two. three. four. five. six. seven. eight. nine. ten!
+
 Every paragraph, separated by an empty line, starts a new speech bubble.
 
 You can explicitly start a new line
@@ -48,10 +52,10 @@ _*These ones*_ are both *bold* and _italic_. *_These ones also_*.
 Escape characters:
 "\\ " displays a space, even when it's next to other spaces.
 "\\n" starts a new line without breaking the current paragraph.
-"\\[" displays "\["
-"\\]" displays "\]"
-"\\|" displays "\|"
-"\\_" displays "\_"
-"\\*" displays "\*"
-"\\`" displays "\`"
+"\\\[" displays "\["
+"\\\]" displays "\]"
+"\\\|" displays "\|"
+"\\\_" displays "\_"
+"\\\*" displays "\*"
+"\\\`" displays "\`"
 "\\\\" displays "\\"

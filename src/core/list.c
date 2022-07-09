@@ -8,6 +8,11 @@ STRUCT(Header)
 	int count;
 };
 
+static Header *GetHeader(List(void) list)
+{
+	return (Header *)list - 1;
+}
+
 void ListSetAllocator(List(void) *listPointer, void *(*realloc)(void *block, int newSize), void(*free)(void *block))
 {
 	ASSERT(not *listPointer); // You can only call ListSetAllocator on a completely empty (NULL) list!
@@ -15,7 +20,7 @@ void ListSetAllocator(List(void) *listPointer, void *(*realloc)(void *block, int
 	if (not *listPointer)
 		*listPointer = (Header *)realloc(NULL, sizeof(Header)) + 1;
 
-	Header *header = (Header *)(*listPointer) - 1;
+	Header *header = GetHeader(*listPointer);
 	header->realloc = realloc;
 	header->free = free;
 	header->capacity = 0;
@@ -24,12 +29,12 @@ void ListSetAllocator(List(void) *listPointer, void *(*realloc)(void *block, int
 
 int ListCount(const List(void) list)
 {
-	return list ? ((Header *)list - 1)->count : 0;
+	return list ? GetHeader(list)->count : 0;
 }
 
 int ListCapacity(const List(void) list)
 {
-	return list ? ((Header *)list - 1)->capacity : 0;
+	return list ? GetHeader(list)->capacity : 0;
 }
 
 void ListDestroy(List(void) *listPointer)
@@ -37,7 +42,7 @@ void ListDestroy(List(void) *listPointer)
 	if (not *listPointer)
 		return;
 
-	Header *header = (Header *)(*listPointer) - 1;
+	Header *header = GetHeader(*listPointer) - 1;
 	if (header->free)
 		header->free(header);
 	*listPointer = NULL;
@@ -65,7 +70,7 @@ void private_ListReserve(List(void) *listPointer, int neededCapacity, int sizeOf
 	}
 	else
 	{
-		Header *header = (Header *)(*listPointer) - 1;
+		Header *header = GetHeader(*listPointer);
 		header = header->realloc(header, sizeof(Header) + capacity * sizeOfOneItem);
 		header->capacity = capacity;
 		*listPointer = header + 1;
@@ -76,6 +81,6 @@ void private_ListPop(List(void) *listPointer)
 {
 	ASSERT(ListCount(*listPointer) > 0); // Can't pop from an empty list.
 	
-	Header *header = (Header *)(*listPointer) - 1;
+	Header *header = GetHeader(*listPointer);
 	header->count--;
 }

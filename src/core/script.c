@@ -52,6 +52,105 @@ static List(Word) SplitIntoWords(Font font, List(int) codepoints)
 	return words;
 }
 
+static List(int) ConvertToCodepoints(const char *text, int length)
+{
+	List(int) codepoints = NULL;
+
+	int lastNonPauseCodepoint = 0;
+	for (int i = 0; i < length;)
+	{
+		int advance;
+		int codepoint = GetCodepoint(text + i, &advance);
+		if (!codepoint)
+			break;
+		i += advance;
+
+		int lastIndex = ListCount(codepoints) - 1;
+		bool isEscaped = lastIndex > 0 and codepoints[lastIndex] == COMMAND('\\');
+
+		if (codepoint == '\\' and not isEscaped)
+			ListAdd(&codepoints, COMMAND('\\'));
+		else if (codepoint == '[' and not isEscaped)
+			ListAdd(&codepoints, COMMAND('['));
+		else if (codepoint == ']' and not isEscaped)
+			ListAdd(&codepoints, COMMAND('}'));
+		else if (codepoint == '|' and not isEscaped)
+			ListAdd(&codepoints, COMMAND('|'));
+		else if (codepoint == '_' and not isEscaped)
+			ListAdd(&codepoints, COMMAND('_'));
+		else if (codepoint == '*' and not isEscaped)
+			ListAdd(&codepoints, COMMAND('*'));
+		else if (codepoint == '`' and not isEscaped)
+			ListAdd(&codepoints, COMMAND('`'));
+		else if (codepoint == ' ' and isEscaped)
+			codepoints[lastIndex] = ' ';
+		else if (codepoint == 'n' and isEscaped)
+			codepoints[lastIndex] = '\n';
+		else if (codepoint == '[' and isEscaped)
+			codepoints[lastIndex] = '[';
+		else if (codepoint == ']' and isEscaped)
+			codepoints[lastIndex] = ']';
+		else if (codepoint == '|' and isEscaped)
+			codepoints[lastIndex] = '|';
+		else if (codepoint == '_' and isEscaped)
+			codepoints[lastIndex] = '_';
+		else if (codepoint == '*' and isEscaped)
+			codepoints[lastIndex] = '*';
+		else if (codepoint == '`' and isEscaped)
+			codepoints[lastIndex] = '`';
+		else if (codepoint == '\\' and isEscaped)
+			codepoints[lastIndex] = '\\';
+		else if (codepoint == ' ' and not isEscaped and lastNonPauseCodepoint == ' ')
+			ListAdd(&codepoints, COMMAND('`'));
+		else if (codepoint == ',' and not isEscaped)
+		{
+			ListAdd(&codepoints, codepoint);
+			ListAdd(&codepoints, COMMAND('`'));
+			ListAdd(&codepoints, COMMAND('`'));
+		}
+		else if ((codepoint == '.' or codepoint == '!' or codepoint == '?') and not isEscaped)
+		{
+			ListAdd(&codepoints, codepoint);
+			ListAdd(&codepoints, COMMAND('`'));
+			ListAdd(&codepoints, COMMAND('`'));
+			ListAdd(&codepoints, COMMAND('`'));
+			ListAdd(&codepoints, COMMAND('`'));
+		}
+		else
+			ListAdd(&codepoints, codepoint);
+
+		int lastCodepoint = codepoints[ListCount(codepoints) - 1];
+		if (lastCodepoint != COMMAND('`'))
+			lastNonPauseCodepoint = lastCodepoint;
+	}
+
+	// Remove pauses at the end.
+	while (ListCount(codepoints) > 0 and codepoints[ListCount(codepoints) - 1] == COMMAND('`'))
+		ListPop(&codepoints);
+
+	return codepoints;
+}
+
+static float MeasureDuration(List(int) codepoints)
+{
+	int numCodepoints = ListCount(codepoints);
+	int duration = 0;
+	for (int i = 0; i < numCodepoints; ++i)
+	{
+		int codepoint = codepoints[i];
+		if (not IS_COMMAND(codepoint) or codepoint == COMMAND('`'))
+			++duration;
+
+		if (codepoint == COMMAND('['))
+		{
+			while (i < numCodepoints and codepoint != COMMAND(']'))
+				codepoint = codepoints[++i];
+		}
+	}
+
+	return (float)duration;
+}
+
 Script LoadScript(const char *path, Font font)
 {
 	Script script = { .text = LoadFileText(path), .font = font };
@@ -181,86 +280,8 @@ Script LoadScript(const char *path, Font font)
 		fileCursor += cursor;
 		paragraph.text = text;
 		paragraph.textLength = textLength;
-		
-		// 1) Convert text to codepoints.
-		// 2) Process escape sequences.
-		// 3) Convert consecutive spaces into a single space and pauses.
-		// 4) Add explicit pauses after punctuation.
-		// 5) Convert command characters to command (negative) codepoints.
-		List(int) codepoints = NULL;
-		int lastNonPauseCodepoint = 0;
-		for (int i = 0; i < paragraph.textLength;)
-		{
-			int codepointLength;
-			int codepoint = GetCodepoint(paragraph.text + i, &codepointLength);
-			if (!codepoint)
-				break;
-			i += codepointLength;
-
-			int lastIndex = ListCount(codepoints) - 1;
-			bool isEscaped = lastIndex > 0 and codepoints[lastIndex] == COMMAND('\\');
-
-			if (codepoint == '\\' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('\\'));
-			else if (codepoint == '[' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('['));
-			else if (codepoint == ']' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('}'));
-			else if (codepoint == '|' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('|'));
-			else if (codepoint == '_' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('_'));
-			else if (codepoint == '*' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('*'));
-			else if (codepoint == '`' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('`'));
-			else if (codepoint == ' ' and isEscaped)
-				codepoints[lastIndex] = ' ';
-			else if (codepoint == 'n' and isEscaped)
-				codepoints[lastIndex] = '\n';
-			else if (codepoint == '[' and isEscaped)
-				codepoints[lastIndex] = '[';
-			else if (codepoint == ']' and isEscaped)
-				codepoints[lastIndex] = ']';
-			else if (codepoint == '|' and isEscaped)
-				codepoints[lastIndex] = '|';
-			else if (codepoint == '_' and isEscaped)
-				codepoints[lastIndex] = '_';
-			else if (codepoint == '*' and isEscaped)
-				codepoints[lastIndex] = '*';
-			else if (codepoint == '`' and isEscaped)
-				codepoints[lastIndex] = '`';
-			else if (codepoint == '\\' and isEscaped)
-				codepoints[lastIndex] = '\\';
-			else if (codepoint == ' ' and not isEscaped and lastNonPauseCodepoint == ' ')
-				ListAdd(&codepoints, COMMAND('`'));
-			else if (codepoint == ',' and not isEscaped)
-			{
-				ListAdd(&codepoints, codepoint);
-				ListAdd(&codepoints, COMMAND('`'));
-			}
-			else if ((codepoint == '.' or codepoint == '!' or codepoint == '?') and not isEscaped)
-			{
-				ListAdd(&codepoints, codepoint);
-				ListAdd(&codepoints, COMMAND('`'));
-				ListAdd(&codepoints, COMMAND('`'));
-			}
-			else
-				ListAdd(&codepoints, codepoint);
-
-			int lastCodepoint = codepoints[ListCount(codepoints) - 1];
-			if (lastCodepoint != COMMAND('`'))
-				lastNonPauseCodepoint = lastCodepoint;
-		}
-
-		// Remove pauses at the end of the paragraph.
-		while (ListCount(codepoints) > 0 and codepoints[ListCount(codepoints) - 1] == COMMAND('`'))
-			ListPop(&codepoints);
-
-		paragraph.codepoints = codepoints;
-		
-		// @TODO Caluclate the unscaled duration of the the paragraph.
-		paragraph.duration = (float)ListCount(paragraph.codepoints);
+		paragraph.codepoints = ConvertToCodepoints(text, textLength);
+		paragraph.duration = MeasureDuration(paragraph.codepoints);
 		ListAdd(&script.paragraphs, paragraph);
 	}
 }
