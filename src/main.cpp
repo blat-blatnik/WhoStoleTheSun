@@ -51,6 +51,11 @@ Npc greenGuy = { "Green Guy" };
 Sound shatter;
 Console console;
 
+extern "C" void DELETEME_ExecuteConsoleCommandFromC(char *command)
+{
+	console.ExecuteCommand(command);
+}
+
 float PlayerDistanceToNpc(Npc npc)
 {
 	Vector2 playerFeet = player.position;

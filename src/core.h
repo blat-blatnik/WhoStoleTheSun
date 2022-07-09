@@ -663,6 +663,8 @@ void SetFrameNumberInCurrentGameState(int frameNumber);
 // Initialize the game. This is used in runtime.cpp, but should actually be defined by the game.
 void GameInit(void);
 
+void DELETEME_ExecuteConsoleCommandFromC(char *command);
+
 #ifdef __cplusplus
 }
 inline Vector2 operator +(Vector2 v) { return v; }
