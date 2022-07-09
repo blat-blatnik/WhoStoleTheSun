@@ -15,6 +15,12 @@ ENUM(GameState)
 	GAMESTATE_EDITOR,
 };
 
+STRUCT(Expression)
+{
+	char name[32];
+	Texture *portrait;
+};
+
 STRUCT(Player)
 {
 	Vector2 position;
@@ -28,6 +34,8 @@ STRUCT(Npc)
 	Vector2 position;
 	Texture *texture;
 	Script *script;
+	int numExpressions;
+	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 };
 
 Texture *background;
@@ -175,20 +183,6 @@ void Talking_Render()
 {
 	CallPreviousGameStateRender();
 
-	Rectangle textbox = {
-		WINDOW_CENTER_X - 300,
-		WINDOW_HEIGHT - 340,
-		600,
-		320
-	};
-	Rectangle indented = ExpandRectangle(textbox, -5);
-	Rectangle textArea = ExpandRectangle(textbox, -15);
-	Rectangle dropShadow = { textbox.x + 10, textbox.y + 10, textbox.width, textbox.height };
-
-	DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
-	DrawRectangleRounded(textbox, 0.1f, 5, WHITE);
-	DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
-
 	Script *script = talkingNpc->script;
 	Paragraph paragraph = script->paragraphs[paragraphIndex];
 	const char *speaker = paragraph.speaker;
@@ -198,12 +192,56 @@ void Talking_Render()
 	float time = 20 * (float)GetTimeInCurrentGameState();
 	const char *expression = GetScriptExpression(*script, paragraphIndex, time);
 
-	DrawFormat(script->font, textArea.x + 2, textArea.y + 2, 32, BlendColors(RED, BLACK, 0.8f), "[%s] [%s]", speaker, expression);
-	DrawFormat(script->font, textArea.x, textArea.y, 32, RED, "[%s] [%s]", speaker, expression);
-	float yAdvance = 2 * GetLineHeight(script->font, 32);
-	textArea = ExpandRectangleEx(textArea, -yAdvance, 0, 0, 0);
+	Rectangle textbox = {
+		WINDOW_CENTER_X - 300,
+		WINDOW_HEIGHT - 340,
+		600,
+		320
+	};
+	Rectangle portraitBox = textbox;
+	portraitBox.x = 30;
+	portraitBox.width = 300;
 
-	DrawParagraph(*script, paragraphIndex, textArea, 32, PINK, BlendColors(PINK, BLACK, 0.8f), time);
+	// Portrait
+	{
+		Rectangle indented = ExpandRectangle(portraitBox, -5);
+		Rectangle textArea = ExpandRectangle(portraitBox, -15);
+		Rectangle dropShadow = { portraitBox.x + 10, portraitBox.y + 10, portraitBox.width, portraitBox.height };
+
+		DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
+		DrawRectangleRounded(portraitBox, 0.1f, 5, WHITE);
+		DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
+
+		int expressionIndex = 0;
+		for (int i = 0; i < talkingNpc->numExpressions; ++i)
+		{
+			if (StringsEqualNocase(talkingNpc->expressions[i].name, expression))
+			{
+				expressionIndex = i;
+				break;
+			}
+		}
+
+		DrawTextureCentered(*talkingNpc->expressions[expressionIndex].portrait, RectangleCenter(portraitBox), WHITE);
+	}
+
+	// Text
+	{
+		Rectangle indented = ExpandRectangle(textbox, -5);
+		Rectangle textArea = ExpandRectangle(textbox, -15);
+		Rectangle dropShadow = { textbox.x + 10, textbox.y + 10, textbox.width, textbox.height };
+
+		DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
+		DrawRectangleRounded(textbox, 0.1f, 5, WHITE);
+		DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
+
+		DrawFormat(script->font, textArea.x + 2, textArea.y + 2, 32, BlendColors(RED, BLACK, 0.8f), "[%s] [%s]", speaker, expression);
+		DrawFormat(script->font, textArea.x, textArea.y, 32, RED, "[%s] [%s]", speaker, expression);
+		float yAdvance = 2 * GetLineHeight(script->font, 32);
+		textArea = ExpandRectangleEx(textArea, -yAdvance, 0, 0, 0);
+
+		DrawParagraph(*script, paragraphIndex, textArea, 32, PINK, BlendColors(PINK, BLACK, 0.8f), time);
+	}
 }
 REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talking_Render);
 
@@ -294,6 +332,13 @@ void GameInit(void)
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
 	pinkGuy.script = LoadScriptAndTrackChanges("res/examplescript.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	pinkGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/pink-guy-neutral.png");
+	pinkGuy.expressions[1].portrait = LoadTextureAndTrackChanges("res/pink-guy-happy.png");
+	pinkGuy.expressions[2].portrait = LoadTextureAndTrackChanges("res/pink-guy-sad.png");
+	CopyString(pinkGuy.expressions[0].name, "neutral", sizeof pinkGuy.expressions[0].name);
+	CopyString(pinkGuy.expressions[1].name, "happy", sizeof pinkGuy.expressions[1].name);
+	CopyString(pinkGuy.expressions[2].name, "sad", sizeof pinkGuy.expressions[2].name);
+	pinkGuy.numExpressions = 3;
 
 	// teleport player
 	console.AddCommand("tp", &HandlePlayerTeleportCommand);

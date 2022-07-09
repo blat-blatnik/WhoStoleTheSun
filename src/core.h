@@ -492,6 +492,9 @@ float Clamp01(float x);
 // Clamps an integer to [min, max].
 int ClampInt(int x, int min, int max);
 
+// Returns the center point of the rectangle.
+Vector2 RectangleCenter(Rectangle rect);
+
 // Expands a rectangle equally in all 4 directions.
 Rectangle ExpandRectangle(Rectangle rect, float amount);
 
