@@ -90,6 +90,13 @@ void Playing_Update()
 			PushGameState(GAMESTATE_TALKING, &pinkGuy);
 			return;
 		}
+		distance = PlayerDistanceToNpc(greenGuy);
+		if (distance < 50)
+		{
+			PlaySound(shatter); // @TODO Remove
+			PushGameState(GAMESTATE_TALKING, &greenGuy);
+			return;
+		}
 	}
 
 	float moveSpeed = 5;
@@ -135,9 +142,9 @@ void Playing_Render()
 {
 	ClearBackground(BLACK);
 	DrawTexture(*background, 0, 0, WHITE);
-	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
-	
+	DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
+	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 }
 REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
 
@@ -348,7 +355,7 @@ void GameInit(void)
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
-	pinkGuy.script = LoadScriptAndTrackChanges("res/examplescript.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	pinkGuy.script = LoadScriptAndTrackChanges("res/example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
 	pinkGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/pink-guy-neutral.png");
 	pinkGuy.expressions[1].portrait = LoadTextureAndTrackChanges("res/pink-guy-happy.png");
 	pinkGuy.expressions[2].portrait = LoadTextureAndTrackChanges("res/pink-guy-sad.png");
@@ -357,6 +364,10 @@ void GameInit(void)
 	CopyString(pinkGuy.expressions[2].name, "sad", sizeof pinkGuy.expressions[2].name);
 	pinkGuy.numExpressions = 3;
 
+	greenGuy.texture = LoadTextureAndTrackChanges("res/green-guy.png");
+	greenGuy.position.x = 600;
+	greenGuy.position.y = 150;
+	greenGuy.script = LoadScriptAndTrackChanges("res/green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
 	greenGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/green-guy-neutral.png");
 	CopyString(greenGuy.expressions[0].name, "neutral", sizeof greenGuy.expressions[0].name);
 	greenGuy.numExpressions = 1;
