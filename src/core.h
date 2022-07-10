@@ -689,84 +689,8 @@ inline Vector2 operator %(float left, Vector2 right) { return { fmodf(left, righ
 //
 // Console
 //
-
-typedef bool(*pHandler)(std::vector<std::string> args);
-
-class Command
-{
-public:
-	Command(std::string pcmd, std::string pHelp, pHandler handle) : name(pcmd), help(pHelp), handler(handle) {}
-    Command() {};
-
-    bool Invoke(std::vector<std::string> args) { return handler(args); }
-
-    void SetHelp(std::string pHelp) { help = pHelp; }
-    const char* GetHelp() { return help.c_str(); }
-    std::string GetName() { return name; }
-
-private:
-
-    std::string name;
-    std::string help;
-    pHandler handler;
-    // maybe implement later, for now useless
-    std::vector<std::string> _commandArgTypes; // %s %d %f etc
-
-};
-
-enum CmdState
-{
-    COMMAND_NOT_FOUND,
-    COMMAND_FOUND_BAD_ARGS,
-    COMMAND_SUCCEEDED,
-    COMMAND_RESULT_HELP
-};
-struct CmdResult
-{
-    std::shared_ptr<Command> cmd;
-    CmdState state;
-};
-
-class Console
-{
-public:
-   
-    std::map<std::string, std::shared_ptr<Command>> *_commandContainer = new std::map<std::string, std::shared_ptr<Command>>();
-
-    Console();
-
-    ~Console();
-
-
-    void AddCommand(std::string command, pHandler handle, std::string pHelp = "");
-    CmdResult ExecuteCommand(char* cmd);
-    const std::map<std::string, std::shared_ptr<Command>>* GetCommands() { return _commandContainer; }
-    std::shared_ptr<Command> GetCommand(std::string str) { return (*_commandContainer)[str]; }
-
-    char                        InputBuf[256];
-    ImVector<char*>             Items;
-    ImGuiTextFilter             Filter;
-    bool                        AutoScroll;
-    bool                        ScrollToBottom;
-
-    static char* Strdup(const char* s) { IM_ASSERT(s); size_t len = strlen(s) + 1; void* buf = malloc(len); IM_ASSERT(buf); return (char*)memcpy(buf, (const void*)s, len); }
-
-    void ClearLog()
-    {
-        for (int i = 0; i < Items.Size; i++)
-            free(Items[i]);
-        Items.clear();
-    }
-
-    void AddLog(const char* fmt, ...) IM_FMTARGS(2);
-
-    void ShowConsoleWindow(const char* title, bool* p_open);
-
-    static int TextEditCallbackStub(ImGuiInputTextCallbackData* data) { return NULL; }
-
-    void HandleResult(CmdResult& result);
-  
-};
-
-
+typedef bool(*pHandler)(List(const char*) args);
+void AddCommand(const char* command, pHandler handle, const char* help);
+void ExecuteCommand(const char* command);
+void RenderConsole();
 #endif

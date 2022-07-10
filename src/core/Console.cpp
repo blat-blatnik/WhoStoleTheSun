@@ -4,13 +4,7 @@
 #include <sstream>
 #include <iostream>
 
-Console::Console()
-{
-    ClearLog();
-
-    AutoScroll = true;
-    ScrollToBottom = false;
-}
+#pragma once
 
 std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
 {
@@ -18,10 +12,10 @@ std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
 
     std::vector<std::string> output;
     std::stringstream ss;
-    
+
     while (i < string.size())
     {
-        if(string[i] == spacer)
+        if (string[i] == spacer)
             if (ss.str().length() > 0)
             {
                 output.push_back(ss.str());
@@ -35,176 +29,276 @@ std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
         }
         i++;
 
-        if((i == string.size()) && (ss.str().length() > 0))
+        if ((i == string.size()) && (ss.str().length() > 0))
         {
             output.push_back(ss.str());
             ss.str(std::string());
         }
     }
-    
+
     return output;
 }
 
-Console::~Console()
+typedef bool(*pHandler)(List(const char*) args);
+
+class Command
 {
-    ClearLog();
-}
-void Console::AddCommand(std::string cmd, pHandler phandle, std::string pHelp)
+public:
+    Command(std::string pcmd, std::string pHelp, pHandler handle) : name(pcmd), help(pHelp), handler(handle) {}
+    Command() {};
+
+    bool Invoke(List(const char*) args) { return handler(args); }
+
+    void SetHelp(std::string pHelp) { help = pHelp; }
+    const char* GetHelp() { return help.c_str(); }
+    std::string GetName() { return name; }
+
+private:
+
+    std::string name;
+    std::string help;
+    pHandler handler;
+    // maybe implement later, for now useless
+    std::vector<std::string> _commandArgTypes; // %s %d %f etc
+
+};
+
+enum CmdState
 {
-    auto words = SplitStringByCharacter(std::string(cmd), ' ');
-
-    auto commandName = words[0];
-    words.erase(words.begin());
-
-    auto command = std::make_shared<Command>(commandName, pHelp, phandle);
-
-    (*_commandContainer).insert(std::pair<std::string, std::shared_ptr<Command>>(commandName, command));
-}
-
-void Console::HandleResult(CmdResult& result)
+    COMMAND_NOT_FOUND,
+    COMMAND_FOUND_BAD_ARGS,
+    COMMAND_SUCCEEDED,
+    COMMAND_RESULT_HELP
+};
+struct CmdResult
 {
-    auto cmd = result.cmd;
-    
-    switch (result.state)
+    std::shared_ptr<Command> cmd;
+    CmdState state;
+};
+
+class Console
+{
+public:
+
+    std::map<std::string, std::shared_ptr<Command>>* _commandContainer = new std::map<std::string, std::shared_ptr<Command>>();
+
+    Console()
     {
-    case CmdState::COMMAND_SUCCEEDED:
-        AddLog("Worked :D");
+        ClearLog();
 
-        break;
-
-    case CmdState::COMMAND_NOT_FOUND:
-        AddLog("Command not found :'(");
-        break;
-
-    case CmdState::COMMAND_FOUND_BAD_ARGS:
-        AddLog("Command found but wrong arguments, try <%s> help!", cmd->GetName().c_str());
-        break;
-
-    case CmdState::COMMAND_RESULT_HELP:
-        AddLog(cmd->GetHelp());
-        break;
-    }
-}
-void Console::AddLog(const char* fmt, ...)
-{
-    // FIXME-OPT
-    char buf[1024];
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
-    buf[IM_ARRAYSIZE(buf) - 1] = 0;
-    va_end(args);
-    Items.push_back(Strdup(buf));
-}
-void Console::ShowConsoleWindow(const char* title, bool* p_open)
-{
-    ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-    if (!ImGui::Begin(title, p_open))
-    {
-        ImGui::End();
-        return;
+        AutoScroll = true;
+        ScrollToBottom = false;
     }
 
-    if (ImGui::BeginPopupContextItem())
+    ~Console()
     {
-        if (ImGui::MenuItem("Close Console"))
-            *p_open = false;
-        ImGui::EndPopup();
+        ClearLog();
     }
 
 
-    // Reserve enough left-over height for 1 separator + 1 input text
-    const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-    ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
-
-    for (int i = 0; i < Items.Size; i++)
+    void AddCommand(const char* cmd, pHandler handle, const char* pHelp = "")
     {
-        const char* item = Items[i];
-        if (!Filter.PassFilter(item))
-            continue;
+        auto words = SplitStringByCharacter(std::string(cmd), ' ');
 
-        ImVec4 color;
-        bool has_color = false;
+        auto commandName = words[0];
+        words.erase(words.begin());
 
-        if (has_color)
-            ImGui::PushStyleColor(ImGuiCol_Text, color);
+        auto command = std::make_shared<Command>(commandName, std::string(pHelp), handle);
 
-        ImGui::TextUnformatted(item);
-        if (has_color)
-            ImGui::PopStyleColor();
+        (*_commandContainer).insert(std::pair<std::string, std::shared_ptr<Command>>(commandName, command));
     }
 
-
-    if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-        ImGui::SetScrollHereY(1.0f);
-
-    ScrollToBottom = false;
-
-    ImGui::PopStyleVar();
-    ImGui::EndChild();
-    ImGui::Separator();
-
-    // Command-line
-    bool reclaim_focus = false;
-    ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
-    if (ImGui::InputText("Input", InputBuf, IM_ARRAYSIZE(InputBuf), input_text_flags, &TextEditCallbackStub, (void*)this))
+    CmdResult ExecuteCommand(const char* cmd)
     {
-        // here run the commands
-        char* s = InputBuf;
+        auto words = SplitStringByCharacter(std::string(cmd), ' ');
 
-        if ((s != NULL) && (s[0] == '\0'))
+        auto command = words[0];
+        words.erase(words.begin());
+
+        CmdResult result;
+
+        if ((*_commandContainer).find(command) == (*_commandContainer).end())
+        {
+            result.state = CmdState::COMMAND_NOT_FOUND;
+            return result;
+        }
+
+        if (words.size() > 0 && words[0] == "help")
+        {
+            result.state = CmdState::COMMAND_RESULT_HELP;
+            result.cmd = (*_commandContainer)[command];
+            return result;
+        }
+
+        List(const char*) wordsList = NULL;
+        ListSetAllocator((void **)&wordsList, TempRealloc, TempFree);
+
+
+        for (int i = 0; i < words.size(); i++)
+            ListAdd(&wordsList, words[i].c_str());
+
+        if ((*_commandContainer)[command]->Invoke(wordsList))
+        {
+            result.state = CmdState::COMMAND_SUCCEEDED;
+            result.cmd = (*_commandContainer)[command];
+        }
+        else
+        {
+            result.state = CmdState::COMMAND_FOUND_BAD_ARGS;
+            result.cmd = (*_commandContainer)[command];
+        }
+
+        return result;
+    }
+    const std::map<std::string, std::shared_ptr<Command>>* GetCommands() { return _commandContainer; }
+    std::shared_ptr<Command> GetCommand(std::string str) { return (*_commandContainer)[str]; }
+
+    char                        InputBuf[256];
+    ImVector<char*>             Items;
+    ImGuiTextFilter             Filter;
+    bool                        AutoScroll;
+    bool                        ScrollToBottom;
+
+    static char* Strdup(const char* s) { IM_ASSERT(s); size_t len = strlen(s) + 1; void* buf = malloc(len); IM_ASSERT(buf); return (char*)memcpy(buf, (const void*)s, len); }
+
+    void ClearLog()
+    {
+        for (int i = 0; i < Items.Size; i++)
+            free(Items[i]);
+        Items.clear();
+    }
+
+    void AddLog(const char* fmt, ...) IM_FMTARGS(2)
+    {
+        // FIXME-OPT
+        char buf[1024];
+        va_list args;
+        va_start(args, fmt);
+        vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
+        buf[IM_ARRAYSIZE(buf) - 1] = 0;
+        va_end(args);
+        Items.push_back(Strdup(buf));
+    }
+
+    void ShowConsoleWindow(const char* title, bool* p_open)
+    {
+        ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+        if (!ImGui::Begin(title, p_open))
+        {
+            ImGui::End();
             return;
+        }
 
-        CmdResult result = ExecuteCommand(s);
-        strcpy(s, "");
-        reclaim_focus = true;
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("Close Console"))
+                *p_open = false;
+            ImGui::EndPopup();
+        }
 
-        HandleResult(result);
+
+        // Reserve enough left-over height for 1 separator + 1 input text
+        const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+        ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1)); // Tighten spacing
+
+        for (int i = 0; i < Items.Size; i++)
+        {
+            const char* item = Items[i];
+            if (!Filter.PassFilter(item))
+                continue;
+
+            ImVec4 color;
+            bool has_color = false;
+
+            if (has_color)
+                ImGui::PushStyleColor(ImGuiCol_Text, color);
+
+            ImGui::TextUnformatted(item);
+            if (has_color)
+                ImGui::PopStyleColor();
+        }
+
+
+        if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+            ImGui::SetScrollHereY(1.0f);
+
+        ScrollToBottom = false;
+
+        ImGui::PopStyleVar();
+        ImGui::EndChild();
+        ImGui::Separator();
+
+        // Command-line
+        bool reclaim_focus = false;
+        ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
+        if (ImGui::InputText("Input", InputBuf, IM_ARRAYSIZE(InputBuf), input_text_flags, &TextEditCallbackStub, (void*)this))
+        {
+            // here run the commands
+            char* s = InputBuf;
+
+            if ((s != NULL) && (s[0] == '\0'))
+                return;
+
+            CmdResult result = ExecuteCommand(s);
+            strcpy(s, "");
+            reclaim_focus = true;
+
+            HandleResult(result);
+        }
+
+        // Auto-focus on window apparition
+        ImGui::SetItemDefaultFocus();
+        if (reclaim_focus)
+            ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
+
+        ImGui::End();
     }
 
-    // Auto-focus on window apparition
-    ImGui::SetItemDefaultFocus();
-    if (reclaim_focus)
-        ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
+    static int TextEditCallbackStub(ImGuiInputTextCallbackData* data) { return NULL; }
 
-    ImGui::End();
-}
+    void HandleResult(CmdResult& result)
+    {
+        auto cmd = result.cmd;
 
-CmdResult Console::ExecuteCommand(char* cmd)
+        switch (result.state)
+        {
+        case CmdState::COMMAND_SUCCEEDED:
+            AddLog("Worked :D");
+
+            break;
+
+        case CmdState::COMMAND_NOT_FOUND:
+            AddLog("Command not found :'(");
+            break;
+
+        case CmdState::COMMAND_FOUND_BAD_ARGS:
+            AddLog("Command found but wrong arguments, try <%s> help!", cmd->GetName().c_str());
+            break;
+
+        case CmdState::COMMAND_RESULT_HELP:
+            AddLog(cmd->GetHelp());
+            break;
+        }
+    }
+
+};
+
+Console g_console;
+
+void AddCommand(const char* command, pHandler handle, const char* help)
 {
-    auto words = SplitStringByCharacter(std::string(cmd), ' ');
-
-    auto command = words[0];
-    words.erase(words.begin());
-    
-    CmdResult result;
-
-    if ((*_commandContainer).find(command) == (*_commandContainer).end())
-    {
-        result.state = CmdState::COMMAND_NOT_FOUND;
-        return result;
-    }
-
-    if (words.size() > 0 && words[0] == "help")
-    {
-        result.state = CmdState::COMMAND_RESULT_HELP;
-        result.cmd = (*_commandContainer)[command];
-        return result;
-    }
-
-    if ((*_commandContainer)[command]->Invoke(words))
-    {
-        result.state = CmdState::COMMAND_SUCCEEDED;
-        result.cmd = (*_commandContainer)[command];
-    }
-    else
-    {
-        result.state = CmdState::COMMAND_FOUND_BAD_ARGS;
-        result.cmd = (*_commandContainer)[command];
-    }
-
-    return result;
-
+    g_console.AddCommand(command, handle, help);
 }
+void ExecuteCommand(const char* command)
+{
+    g_console.ExecuteCommand(command);
+}
+
+void RenderConsole()
+{
+    g_console.ShowConsoleWindow("Console", NULL);
+}
+
+

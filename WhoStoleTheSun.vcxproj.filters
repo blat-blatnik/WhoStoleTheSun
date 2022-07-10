@@ -90,6 +90,9 @@
     <ClCompile Include="src\core\script.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\Console.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
