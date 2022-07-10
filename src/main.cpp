@@ -56,11 +56,11 @@ Texture *playerNeutral;
 Npc pinkGuy = { "Pink Guy" };
 Npc greenGuy = { "Green Guy" };
 Sound shatter;
-Console console;
+
 
 extern "C" void DELETEME_ExecuteConsoleCommandFromC(char *command)
 {
-	console.ExecuteCommand(command);
+	//console.ExecuteCommand(command);
 }
 
 float PlayerDistanceToNpc(Npc npc)
@@ -297,7 +297,7 @@ void Editor_Update()
 	}
 
 	ImGui::ShowDemoWindow();
-	console.ShowConsoleWindow("Console", NULL);
+	RenderConsole();
 }
 void Editor_Render()
 {
@@ -325,14 +325,14 @@ void Paused_Render(void)
 }
 REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 
-bool HandlePlayerTeleportCommand(std::vector<std::string> args)
+bool HandlePlayerTeleportCommand(List(const char*) args)
 {
 	// move x y
-	if (args.size() < 2)
+	if (ListCount(args) < 2)
 		return false;
 
-	int x = strtoul(args[0].c_str(), NULL, 10);
-	int y = strtoul(args[1].c_str(), NULL, 10);
+	int x = strtoul(args[0], NULL, 10);
+	int y = strtoul(args[1], NULL, 10);
 
 	player.position.x = x;
 	player.position.y = y;
@@ -406,7 +406,7 @@ void GameInit(void)
 	greenGuy.numExpressions = 1;
 
 	// teleport player
-	console.AddCommand("tp", &HandlePlayerTeleportCommand);
-	console.GetCommand("tp")->SetHelp("This needs help for sure");
+	AddCommand("tp", &HandlePlayerTeleportCommand, "");
+	//.GetCommand("tp")->SetHelp("This needs help for sure");
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }
