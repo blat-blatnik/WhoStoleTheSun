@@ -663,7 +663,6 @@ void SetFrameNumberInCurrentGameState(int frameNumber);
 STRUCT(InputButton)
 {
 	bool isDown;
-	bool isToggled;
 	bool wasPressed;
 	bool wasReleased;
 };
@@ -671,7 +670,6 @@ STRUCT(InputButton)
 STRUCT(InputAxis)
 {
 	Vector2 position;
-	Vector2 delta;
 };
 
 ENUM(InputMode)

@@ -47,29 +47,17 @@ static List(Mapping) mappings;
 
 static void UpdateButtonFromButton(InputButton *button, bool isDown, bool wasPressed, bool wasReleased)
 {
-	button->isDown = isDown;
-	button->wasPressed = wasPressed;
-	button->wasReleased = wasReleased;
-	if (wasPressed)
-		button->isToggled = not button->isToggled;
+	button->isDown |= isDown;
+	button->wasPressed |= wasPressed;
+	button->wasReleased |= wasReleased;
 }
 
-static void UpdateAxisFromButton(InputAxis *axis, bool isDown, bool wasPressed, bool wasReleased, float xWhenPressed, float yWhenPressed)
+static void UpdateAxisFromButton(InputAxis *axis, bool isDown, float xWhenPressed, float yWhenPressed)
 {
 	if (isDown)
 	{
 		axis->position.x += xWhenPressed;
 		axis->position.y += yWhenPressed;
-	}
-	if (wasPressed)
-	{
-		axis->delta.x += xWhenPressed;
-		axis->delta.y += yWhenPressed;
-	}
-	if (wasReleased)
-	{
-		axis->delta.x -= xWhenPressed;
-		axis->delta.y -= yWhenPressed;
 	}
 }
 
@@ -77,15 +65,9 @@ static void UpdateButtonFromAxis(InputButton *button, float x, float y, float do
 {
 	bool down = x * dotX + y * dotY >= threshold;
 	if (not down and button->isDown)
-	{
-		button->wasPressed = false;
-		button->wasReleased = true;
-	}
+		button->wasReleased |= true;
 	else if (down and not button->isDown)
-	{
-		button->wasPressed = true;
-		button->wasReleased = true;
-	}
+		button->wasPressed |= true;
 	button->isDown = down;
 }
 
@@ -197,7 +179,9 @@ void UpdateInputMappings(void)
 			case CONTROLLER_BUTTON_TO_BUTTON:
 			case CONTROLLER_AXIS_TO_BUTTON:
 			{
-
+				map.to.button->isDown = false;
+				map.to.button->wasPressed = false;
+				map.to.button->wasReleased = false;
 			} break;
 
 			case KEY_TO_AXIS:
@@ -224,7 +208,7 @@ void UpdateInputMappings(void)
 			case KEY_TO_AXIS:
 			{
 				KeyboardKey key = map.from.key;
-				UpdateAxisFromButton(map.to.axis, IsKeyDown(key), IsKeyPressed(key), IsKeyReleased(key), map.xWhenPressed, map.yWhenPressed);
+				UpdateAxisFromButton(map.to.axis, IsKeyDown(key), map.xWhenPressed, map.yWhenPressed);
 			} break;
 			case MOUSE_BUTTON_TO_BUTTON:
 			{
@@ -236,8 +220,6 @@ void UpdateInputMappings(void)
 				MouseButton button = map.from.mouseButton;
 				UpdateAxisFromButton(map.to.axis, 
 					IsMouseButtonDown(button), 
-					IsMouseButtonPressed(button), 
-					IsMouseButtonReleased(button),
 					map.xWhenPressed, map.yWhenPressed);
 			} break;
 			case CONTROLLER_BUTTON_TO_BUTTON:
@@ -253,8 +235,6 @@ void UpdateInputMappings(void)
 				GamepadButton button = map.from.controllerButton;
 				UpdateAxisFromButton(map.to.axis,
 					IsGamepadButtonDown(0, button),
-					IsGamepadButtonPressed(0, button),
-					IsGamepadButtonReleased(0, button),
 					map.xWhenPressed,
 					map.yWhenPressed);
 			} break;
