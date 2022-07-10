@@ -39,6 +39,23 @@ STRUCT(Npc)
 };
 
 
+class Sprite
+{
+public:
+	Sprite(const char* path)
+	{
+		auto a = LoadDirectoryFiles(path);
+	} 
+};
+class SpriteManager
+{
+public:
+	SpriteManager()
+	{
+
+	}
+
+};
 class Object
 {
 public:
@@ -46,7 +63,14 @@ public:
 	{
 
 	}
-	
+
+	const char* name;
+	Vector2 position;
+	Texture* texture;
+	Script* script;
+	float scale;
+	int numExpressions;
+	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 };
 
 
@@ -395,6 +419,11 @@ void GameInit(void)
 
 	// teleport player
 	AddCommand("tp", &HandlePlayerTeleportCommand, "");
-	//.GetCommand("tp")->SetHelp("This needs help for sure");
+	
+
+	Sprite spr("res/tex_player/");
+
+
+
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

@@ -239,7 +239,10 @@ public:
             char* s = InputBuf;
 
             if ((s != NULL) && (s[0] == '\0'))
+            {
+                ImGui::End();
                 return;
+            }
 
             CmdResult result = ExecuteCommand(s);
             strcpy(s, "");
