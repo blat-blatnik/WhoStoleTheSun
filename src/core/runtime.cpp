@@ -12,24 +12,12 @@ extern "C" __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
-STRUCT(Functions)
-{
-	void(*init)(void *parameter);
-	void(*deinit)(void);
-	void(*update)(void);
-	void(*render)(void);
-};
-
-static Functions registry[100];
-static int stack[100];
-static int cursor;
-static int currentState;
-
 static void DoOneFrame()
 {
 	HotReloadAllTrackedItems();
 	TempReset(0);
 	BeginDrawing();
+	UpdateInputMappings();
 	ImGui_ImplRaylib_NewFrame();
 	ImGui::NewFrame();
 	{

@@ -56,4 +56,4 @@ Escape characters:
 These are useful if you actually want to a draw control character.
 
 You can also run console commands from within scripts.
-Executing command "tp 100 100":               3               2               1               {tp 100 100}|blast off!|
+Executing command "tp 500 500":               3               2               1               {tp 500 500}|go!|

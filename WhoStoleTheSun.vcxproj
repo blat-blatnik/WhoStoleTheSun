@@ -63,7 +63,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
+      <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4133;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -83,7 +83,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
+      <TreatSpecificWarningsAsErrors>4002;4003;4006;4013;4020;4024;4028;4029;4047;4087;4098;4131;4133;4431;4473;4474;4477;4645;4715;4716;</TreatSpecificWarningsAsErrors>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -102,6 +102,10 @@
       </SubType>
     </ClCompile>
     <ClCompile Include="src\core\game_state.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\core\input.c">
       <SubType>
       </SubType>
     </ClCompile>
