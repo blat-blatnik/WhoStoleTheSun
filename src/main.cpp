@@ -38,6 +38,7 @@ STRUCT(Npc)
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 };
 
+STRUCT(Input)
 
 class Sprite
 {
@@ -58,6 +59,8 @@ public:
 };
 class Object
 {
+	InputAxis movement;
+	InputButton interact;
 public:
 	Object()
 	{
@@ -73,7 +76,7 @@ public:
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 };
 
-
+Input input;
 Texture *background;
 Image *collisionMap;
 Font roboto;
@@ -122,7 +125,8 @@ void Playing_Update()
 		return;
 	}
 
-	if (IsKeyPressed(KEY_SPACE) or IsKeyPressed(KEY_E))
+	//bool interact = IsKeyPressed(KEY_SPACE) or IsKeyPressed(KEY_E);
+	if (input.interact.wasPressed)
 	{
 		float distance = PlayerDistanceToNpc(pinkGuy);
 		if (distance < 50)
@@ -144,25 +148,24 @@ void Playing_Update()
 	if (IsKeyDown(KEY_LEFT_SHIFT) or IsKeyDown(KEY_RIGHT_SHIFT))
 		moveSpeed = 10;
 
-	Vector2 move = { 0 };
-	if (IsKeyDown(KEY_LEFT) or IsKeyDown(KEY_A))
-		move.x -= 1;
-	if (IsKeyDown(KEY_RIGHT) or IsKeyDown(KEY_D))
-		move.x += 1;
-	if (IsKeyDown(KEY_UP) or IsKeyDown(KEY_W))
-		move.y -= 1;
-	if (IsKeyDown(KEY_DOWN) or IsKeyDown(KEY_S))
-		move.y += 1;
-	if (move.x != 0 or move.y != 0)
+	Vector2 move = input.movement.position;
+	float magnitude = Vector2Length(move);
+	if (magnitude > 0.2f)
 	{
 		move = Vector2Normalize(move);
+		magnitude = Clamp01(Remap(magnitude, 0.2f, 0.8f, 0, 1));
+		move.x *= magnitude;
+		//move.x /= ;
+		//move.y *= magnitude * Y_SQUISH;
+		move.y *= magnitude * Y_SQUISH;
+		LogInfo("%.2f, %.2f", move.x, move.y);
+
 		Vector2 dirVector = move;
 		dirVector.y *= -1;
 		player.direction = DirectionFromVector(dirVector);
 		Vector2 deltaPos = Vector2Scale(move, moveSpeed);
 
 		// In the isometric perspective, the y direction is squished down a little bit.
-		deltaPos.y *= Y_SQUISH;
 		Vector2 newPos = Vector2Add(player.position, deltaPos);
 		Vector2 feetPos = newPos;
 		feetPos.y += 0.5f * player.textures[player.direction]->height;
@@ -208,7 +211,7 @@ void Talking_Update()
 	if (paragraphIndex >= ListCount(script->paragraphs))
 		paragraphIndex = ListCount(script->paragraphs) - 1;
 
-	if (IsKeyPressed(KEY_E) or IsKeyPressed(KEY_SPACE))
+	if (input.interact.wasPressed)
 	{
 		float t = (float)GetTimeInCurrentGameState();
 		float paragraphDuration = script->paragraphs[paragraphIndex].duration;
@@ -374,11 +377,28 @@ void GameInit(void)
 	InitAudioDevice();
 	SetTargetFPS(FPS);
 
+	MapKeyToInputButton(KEY_SPACE, &input.interact);
+	MapKeyToInputButton(KEY_E, &input.interact);
+	MapControllerButtonToInputButton(GAMEPAD_BUTTON_RIGHT_FACE_DOWN, &input.interact);
+
+	MapKeyToInputAxis(KEY_W, &input.movement, 0, -1);
+	MapKeyToInputAxis(KEY_S, &input.movement, 0, +1);
+	MapKeyToInputAxis(KEY_A, &input.movement, -1, 0);
+	MapKeyToInputAxis(KEY_D, &input.movement, +1, 0);
+	MapKeyToInputAxis(KEY_UP, &input.movement, 0, -1);
+	MapKeyToInputAxis(KEY_DOWN, &input.movement, 0, +1);
+	MapKeyToInputAxis(KEY_LEFT, &input.movement, -1, 0);
+	MapKeyToInputAxis(KEY_RIGHT, &input.movement, +1, 0);
+	MapControllerButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_UP, &input.movement, 0, -1);
+	MapControllerButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_DOWN, &input.movement, 0, +1);
+	MapControllerButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_LEFT, &input.movement, -1, 0);
+	MapControllerButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_RIGHT, &input.movement, +1, 0);
+	MapControllerAxisToInputAxis(GAMEPAD_AXIS_LEFT_X, &input.movement);
+
 	roboto = LoadFontAscii("res/roboto.ttf", 32);
 	robotoBold = LoadFontAscii("res/roboto-bold.ttf", 32);
 	robotoItalic = LoadFontAscii("res/roboto-italic.ttf", 32);
 	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
-	//Script s = LoadScript("res/examplescript.txt", roboto, roboto, roboto, roboto);
 
 	background = LoadTextureAndTrackChanges("res/background.png");
 	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");

@@ -657,6 +657,48 @@ void SetFrameNumberInCurrentGameState(int frameNumber);
 	static int PASTE(dummy__, __LINE__) = [](){ RegisterGameState(name, init, deinit, update, render); return 0; }();
 
 //
+// Input
+//
+
+STRUCT(InputButton)
+{
+	bool isDown;
+	bool isToggled;
+	bool wasPressed;
+	bool wasReleased;
+};
+
+STRUCT(InputAxis)
+{
+	Vector2 position;
+	Vector2 delta;
+};
+
+ENUM(InputMode)
+{
+	INPUT_MODE_KEYBOARD_AND_MOUSE,
+	INPUT_MODE_CONTROLLER,
+};
+
+void MapKeyToInputButton(KeyboardKey key, InputButton *button);
+
+void MapKeyToInputAxis(KeyboardKey key, InputAxis *axis, float xWhenPressed, float yWhenPressed);
+
+void MapMouseButtonToInputButton(MouseButton mouseButton, InputButton *button);
+
+void MapMouseButtonToInputAxis(MouseButton mouseButton, InputAxis *axis, float xWhenPressed, float yWhenPressed);
+
+void MapControllerButtonToInputButton(GamepadButton controllerButton, InputButton *button);
+
+void MapControllerButtonToInputAxis(GamepadButton controllerButton, InputAxis *axis, float xWhenPressed, float yWhenPressed);
+
+void MapControllerAxisToInputButton(GamepadAxis controllerAxis, InputButton *button, float dotX, float dotY, float threshold);
+
+void MapControllerAxisToInputAxis(GamepadAxis controllerAxis, InputAxis *axis);
+
+void UpdateInputMappings(void);
+
+//
 // Runtime
 //
 
