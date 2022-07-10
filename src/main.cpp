@@ -39,6 +39,10 @@ STRUCT(Npc)
 };
 
 STRUCT(Input)
+{
+	InputAxis movement;
+	InputButton interact;
+};
 
 class Sprite
 {
@@ -59,8 +63,7 @@ public:
 };
 class Object
 {
-	InputAxis movement;
-	InputButton interact;
+
 public:
 	Object()
 	{
