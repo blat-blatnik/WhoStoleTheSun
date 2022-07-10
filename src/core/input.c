@@ -121,7 +121,7 @@ void MapMouseButtonToInputAxis(MouseButton mouseButton, InputAxis *axis, float x
 	}));
 }
 
-void MapControllerButtonToInputButton(GamepadButton controllerButton, InputButton *button)
+void MapGamepadButtonToInputButton(GamepadButton controllerButton, InputButton *button)
 {
 	ListAdd(&mappings, ((Mapping)
 	{
@@ -131,7 +131,7 @@ void MapControllerButtonToInputButton(GamepadButton controllerButton, InputButto
 	}));
 }
 
-void MapControllerButtonToInputAxis(GamepadButton controllerButton, InputAxis *axis, float xWhenPressed, float yWhenPressed)
+void MapGamepadButtonToInputAxis(GamepadButton controllerButton, InputAxis *axis, float xWhenPressed, float yWhenPressed)
 {
 	ListAdd(&mappings, ((Mapping)
 	{
@@ -143,7 +143,7 @@ void MapControllerButtonToInputAxis(GamepadButton controllerButton, InputAxis *a
 	}));
 }
 
-void MapControllerAxisToInputButton(GamepadAxis controllerAxis, InputButton *button, float dotX, float dotY, float threshold)
+void MapGamepadAxisToInputButton(GamepadAxis controllerAxis, InputButton *button, float dotX, float dotY, float threshold)
 {
 	ListAdd(&mappings, ((Mapping)
 	{
@@ -156,7 +156,7 @@ void MapControllerAxisToInputButton(GamepadAxis controllerAxis, InputButton *but
 	}));
 }
 
-void MapControllerAxisToInputAxis(GamepadAxis controllerAxis, InputAxis *axis)
+void MapGamepadAxisToInputAxis(GamepadAxis controllerAxis, InputAxis *axis)
 {
 	ListAdd(&mappings, ((Mapping)
 	{

@@ -686,13 +686,13 @@ void MapMouseButtonToInputButton(MouseButton mouseButton, InputButton *button);
 
 void MapMouseButtonToInputAxis(MouseButton mouseButton, InputAxis *axis, float xWhenPressed, float yWhenPressed);
 
-void MapControllerButtonToInputButton(GamepadButton controllerButton, InputButton *button);
+void MapGamepadButtonToInputButton(GamepadButton gamepadButton, InputButton *button);
 
-void MapControllerButtonToInputAxis(GamepadButton controllerButton, InputAxis *axis, float xWhenPressed, float yWhenPressed);
+void MapGamepadButtonToInputAxis(GamepadButton gamepadButton, InputAxis *axis, float xWhenPressed, float yWhenPressed);
 
-void MapControllerAxisToInputButton(GamepadAxis controllerAxis, InputButton *button, float dotX, float dotY, float threshold);
+void MapGamepadAxisToInputButton(GamepadAxis gamepadAxis, InputButton *button, float dotX, float dotY, float threshold);
 
-void MapControllerAxisToInputAxis(GamepadAxis controllerAxis, InputAxis *axis);
+void MapGamepadAxisToInputAxis(GamepadAxis gamepadAxis, InputAxis *axis);
 
 void UpdateInputMappings(void);
 
