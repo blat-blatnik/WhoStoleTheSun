@@ -11,28 +11,52 @@ Console::Console()
     ScrollToBottom = false;
 }
 
+std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
+{
+    int i = 0;
+
+    std::vector<std::string> output;
+    std::stringstream ss;
+    
+    while (i < string.size())
+    {
+        if(string[i] == spacer)
+            if (ss.str().length() > 0)
+            {
+                output.push_back(ss.str());
+                ss.str(std::string());
+            }
+
+
+        if (string[i] != spacer)
+        {
+            ss << string[i];
+        }
+        i++;
+
+        if((i == string.size()) && (ss.str().length() > 0))
+        {
+            output.push_back(ss.str());
+            ss.str(std::string());
+        }
+    }
+    
+    return output;
+}
+
 Console::~Console()
 {
     ClearLog();
 }
 void Console::AddCommand(std::string cmd, pHandler phandle, std::string pHelp)
 {
-    char space_char = ' ';
-    std::vector<std::string> words{};
+    auto words = SplitStringByCharacter(std::string(cmd), ' ');
 
-    std::stringstream sstream(cmd);
-    std::string word;
-    while (std::getline(sstream, word, space_char)) {
-        word.erase(std::remove_if(word.begin(), word.end(), ispunct), word.end());
-        words.push_back(word);
-    }
     auto commandName = words[0];
     words.erase(words.begin());
 
-
     auto command = std::make_shared<Command>(commandName, pHelp, phandle);
 
-   
     (*_commandContainer).insert(std::pair<std::string, std::shared_ptr<Command>>(commandName, command));
 }
 
@@ -146,20 +170,14 @@ void Console::ShowConsoleWindow(const char* title, bool* p_open)
 
     ImGui::End();
 }
+
 CmdResult Console::ExecuteCommand(char* cmd)
 {
-    char space_char = ' ';
-    std::vector<std::string> words{};
+    auto words = SplitStringByCharacter(std::string(cmd), ' ');
 
-    std::stringstream sstream(cmd);
-    std::string word;
-    while (std::getline(sstream, word, space_char)) {
-        word.erase(std::remove_if(word.begin(), word.end(), ispunct), word.end());
-        words.push_back(word);
-    }
     auto command = words[0];
     words.erase(words.begin());
-
+    
     CmdResult result;
 
     if ((*_commandContainer).find(command) == (*_commandContainer).end())
@@ -174,8 +192,6 @@ CmdResult Console::ExecuteCommand(char* cmd)
         result.cmd = (*_commandContainer)[command];
         return result;
     }
-
-
 
     if ((*_commandContainer)[command]->Invoke(words))
     {
