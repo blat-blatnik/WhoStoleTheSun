@@ -13,10 +13,10 @@
 #include <math.h>
 
 #ifdef __cplusplus
+#include "lib/imgui/imgui.h"
 #include <map>
 #include <string>
 #include <vector>
-#include "lib/imgui/imgui.h"
 #include <memory>
 #endif
 
@@ -76,6 +76,64 @@ extern "C" {
 
 // (Fixed) amount of time that advanced between frames. The game must always hit this frame time, otherwise it will slow down.
 #define FRAME_TIME (1.0f / FPS)
+
+//
+// List
+//
+
+// Use this to declare lists, e.g. List(int) myList = NULL; You can also do int *myList = NULL, but this makes it more distinct.
+#define List(T) T*
+
+// Sets the allocator used by the list. By default, lists use MemRealloc and MemFree (heap allocation).
+void ListSetAllocator(List(void) *listPointer, void *(*realloc)(void *block, int newSize), void(*free)(void *block));
+
+// Returns the number of items in the list.
+int ListCount(const List(void) list);
+
+// Returns the capacity of the list, which is the number of items the list can hold before having to resize.
+int ListCapacity(const List(void) list);
+
+// Deallocates all memory held by the list.
+void ListDestroy(List(void) *listPointer);
+
+// Ensures that the list has space for at least the given number of elements.
+#define ListReserve(listPointer, neededCapacity)\
+	private_ListReserve((List(void)*)(listPointer), (neededCapacity), sizeof (*listPointer)[0])
+
+// Adds an item to the list.
+#define ListAdd(listPointer, item) do{\
+	int private_index = ListCount((const List(void))*(listPointer));\
+	ListReserve((listPointer), private_index + 1);\
+	(*(listPointer))[private_index] = (item);\
+	++((int *)(*(listPointer)))[-1];\
+}while(0)
+
+// Allocates space for count items in the list, and returns a pointer to the newly allocated items.
+// This can be more efficient and convenient than ListAdd for larger structures.
+#define ListAllocate(listPointer, count)(\
+	ListReserve((listPointer), ListCount(*listPointer) + (count)), \
+	((int *)(*(listPointer)))[-1] += (count), \
+	(*listPointer) + ListCount(*listPointer) - (count))
+
+// Adds space for one more item in the list, and returns a pointer to the newly allocated item.
+// This can be more efficient and convenient than ListAdd for larger structures.
+#define ListAllocateItem(listPointer)\
+	ListAllocate(listPointer, 1)
+
+// Removes the last item in the list and returns it.
+#define ListPop(listPointer)\
+	(private_ListPop(listPointer), (*listPointer)[ListCount(*listPointer)])
+
+// Removes the item at the given index in the list by swapping it with the last item in the list.
+// This will destroy the order of the list, but if you don't care about the order, it's very fast.
+#define ListSwapRemove(listPointer, index) do{\
+	if ((index) < ListCount(*(listPointer)))\
+		(*listPointer)[index] = (*listPointer)[--((int *)(*listPointer))[-1]];\
+}while(0);\
+
+// Implementation details..
+void private_ListReserve(List(void) *listPointer, int neededCapacity, int sizeOfOneItem);
+void private_ListPop(List(void) *listPointer);
 
 //
 // Logging
@@ -168,6 +226,9 @@ void ReplaceChar(char *string, char target, char replacement);
 // Skips all leading whitespace in a string.
 char *SkipLeadingWhitespace(const char *string);
 
+// SplitByWhitespace("Hello sailor\n\t1 2  3") -> ["Hello", "sailor", "1", "2", "3"]. The result is allocated from temporary storage.
+List(char *) SplitByWhitespace(const char *string);
+
 //
 // Temporary allocator
 //
@@ -204,59 +265,6 @@ char *TempFormat(FORMAT_STRING format, ...);
 char *TempFormatVa(FORMAT_STRING format, va_list args);
 
 //
-// List
-//
-
-// Use this to declare lists, e.g. List(int) myList = NULL; You can also do int *myList = NULL, but this makes it more distinct.
-#define List(T) T*
-
-// Sets the allocator used by the list. By default, lists use MemRealloc and MemFree (heap allocation).
-void ListSetAllocator(List(void) *listPointer, void *(*realloc)(void *block, int newSize), void(*free)(void *block));
-
-// Returns the number of items in the list.
-int ListCount(const List(void) list);
-
-// Returns the capacity of the list, which is the number of items the list can hold before having to resize.
-int ListCapacity(const List(void) list);
-
-// Deallocates all memory held by the list.
-void ListDestroy(List(void) *listPointer);
-
-// Ensures that the list has space for at least the given number of elements.
-#define ListReserve(listPointer, neededCapacity)\
-	private_ListReserve((listPointer), (neededCapacity), sizeof (*listPointer)[0])
-
-// Adds an item to the list.
-#define ListAdd(listPointer, item) do{\
-	int private_index = ListCount(*(listPointer));\
-	ListReserve((listPointer), private_index + 1);\
-	(*(listPointer))[private_index] = (item);\
-	++((int *)(*(listPointer)))[-1];\
-}while(0)
-
-// Adds space for one more item in the list, and returns a pointer to the newly allocated item.
-// This can be more efficient and convenient than ListAdd for larger structures.
-#define ListReserveOneItem(listPointer)(\
-	ListReserve((listPointer), ListCount(*listPointer) + 1),\
-	++((int *)(*(listPointer)))[-1],\
-	(*listPointer) + ListCount(*listPointer) - 1)
-
-// Removes the last item in the list and returns it.
-#define ListPop(listPointer)\
-	(private_ListPop(listPointer), (*listPointer)[ListCount(*listPointer)])
-
-// Removes the item at the given index in the list by swapping it with the last item in the list.
-// This will destroy the order of the list, but if you don't care about the order, it's very fast.
-#define ListSwapRemove(listPointer, index) do{\
-	if ((index) < ListCount(*(listPointer)))\
-		(*listPointer)[index] = (*listPointer)[--((int *)(*listPointer))[-1]];\
-}while(0);\
-
-// Implementation details..
-void private_ListReserve(List(void) *listPointer, int neededCapacity, int sizeOfOneItem);
-void private_ListPop(List(void) *listPointer);
-
-//
 // String Builder
 //
 
@@ -289,6 +297,44 @@ void AppendFormatVa(StringBuilder *builder, FORMAT_STRING format, va_list args);
 #define STRING_BUILDER_ON_STACK(capacity) CreateStringBuilder((char[capacity]){0}, (capacity))
 
 //
+// Script
+//
+
+STRUCT(Paragraph)
+{
+	char *speaker;
+	char *text; // [textLength] NOT 0 TERMINATED!
+	int textLength;
+	float duration;
+	List(char *) expressions;
+	List(int) codepoints;
+};
+
+STRUCT(Script)
+{
+	Font font;
+	Font boldFont;
+	Font italicFont;
+	Font boldItalicFont;
+	int commandIndex; // Keeps track of which commands have already run so they don't run twice.
+	char *text;
+	List(char) stringPool; // This is where all expressions and speaker names are stored.
+	List(Paragraph) paragraphs;
+};
+
+// Loads a script from the given text file.
+Script LoadScript(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
+
+// Unloads all script memory and nullifies the script.
+void UnloadScript(Script *script);
+
+// Draws the script paragraph at the given index. NOTE: This also executes console commands within the paragraph!
+void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time);
+
+// Gets the current speaker expression at the given time in the paragraph.
+const char *GetScriptExpression(Script script, int paragraphIndex, float time);
+
+//
 // Hot-reload
 //
 
@@ -307,6 +353,9 @@ Texture *LoadTextureAndTrackChanges(const char *path);
 // Loads an image from a file. The returned image will automatically update whenever the file changes.
 Image *LoadImageAndTrackChanges(const char *path);
 
+// Loads a script from a file. The returned script will automatically update whenever the file changes.
+Script *LoadScriptAndTrackChanges(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
+
 // Unloads a tracked file, and stops tracking its changes.
 void UnloadTrackedFile(FileData **data);
 
@@ -315,6 +364,9 @@ void UnloadTrackedTexture(Texture **texture);
 
 // Unloads a tracked image, and stops tracking its changes.
 void UnloadTrackedImage(Image **image);
+
+// Unloads a tracked script, and stops tracking its changes.
+void UnloadTrackedScript(Script **script);
 
 // Checks all tracked items and hot-reloads any that changed. Automatically called at the start of each frame.
 void HotReloadAllTrackedItems(void);
@@ -445,6 +497,9 @@ float Clamp01(float x);
 // Clamps an integer to [min, max].
 int ClampInt(int x, int min, int max);
 
+// Returns the center point of the rectangle.
+Vector2 RectangleCenter(Rectangle rect);
+
 // Expands a rectangle equally in all 4 directions.
 Rectangle ExpandRectangle(Rectangle rect, float amount);
 
@@ -484,6 +539,9 @@ Color FloatRGB(float red, float green, float blue);
 
 // Returns a color with the given RGBA components in [0, 1].
 Color FloatRGBA(float red, float green, float blue, float alpha);
+
+// Linearly interpolates between c0 and c1.
+Color BlendColors(Color c0, Color c1, float t);
 
 //
 // Drawing
@@ -549,33 +607,6 @@ void FreeFromSlabAllocator(SlabAllocator *allocator, void *block);
 void ResetSlabAllocator(SlabAllocator *allocator, int cursor);
 
 //
-// Script
-//
-
-STRUCT(Paragraph)
-{
-	char *speaker;
-	char *text; // [textLength] NOT 0 TERMINATED!
-	int textLength;
-	float duration;
-	List(char *) expressions;
-	List(int) codepoints;
-};
-
-STRUCT(Script)
-{
-	Font font;
-	char *text;
-	List(Paragraph) paragraphs;
-};
-
-Script LoadScript(const char *path, Font font);
-
-void UnloadScript(Script *script);
-
-void DrawParagraph(Paragraph paragraph, Font font, Rectangle textBox, float fontSize, Color color, float t);
-
-//
 // Game states
 //
 
@@ -632,6 +663,8 @@ void SetFrameNumberInCurrentGameState(int frameNumber);
 // Initialize the game. This is used in runtime.cpp, but should actually be defined by the game.
 void GameInit(void);
 
+void DELETEME_ExecuteConsoleCommandFromC(char *command);
+
 #ifdef __cplusplus
 }
 inline Vector2 operator +(Vector2 v) { return v; }
@@ -656,6 +689,7 @@ inline Vector2 operator %(float left, Vector2 right) { return { fmodf(left, righ
 //
 // Console
 //
+
 typedef bool(*pHandler)(std::vector<std::string> args);
 
 class Command

@@ -1,7 +1,21 @@
 #include "../core.h"
 
-#define COMMAND(codepoint) -codepoint
-#define IS_COMMAND(codepoint) (codepoint < 0)
+// This code is pretty terrible, much harder to understand than I would have liked. 
+// I really hope we don't have to change/add stuff.
+// The problem of parsing these files is pretty complicated for me, so I just made it work as best I could.
+// If I had more time I could have made it better. But I spent like 2 days on this, I should move on to other things..
+
+#define CONTROL(codepoint) -codepoint
+#define IS_CONTROL(codepoint) (codepoint < 0)
+
+ENUM(Style)
+{
+	REGULAR     = 0,
+	BOLD        = 1 << 0,
+	ITALIC      = 1 << 1,
+	BOLD_ITALIC = BOLD | ITALIC,
+	STYLE_ENUM_COUNT
+};
 
 STRUCT(Word)
 {
@@ -10,51 +24,149 @@ STRUCT(Word)
 	float width;
 };
 
-static float GetAdvance(Font font, int glyphIndex)
+static float GetAdvance(Font font, float fontSize, int glyphIndex)
 {
+	float scaleFactor = fontSize / font.baseSize;
 	if (font.glyphs[glyphIndex].advanceX == 0)
-		return font.recs[glyphIndex].width;
+		return scaleFactor * font.recs[glyphIndex].width;
 	else
-		return (float)font.glyphs[glyphIndex].advanceX;
+		return scaleFactor * font.glyphs[glyphIndex].advanceX;
 }
 
-static List(Word) SplitIntoWords(Font font, List(int) codepoints)
+static List(int) ConvertToCodepoints(const char *text, int length, List(char) *stringPool)
 {
-	List(Word) words = NULL;
-	ListSetAllocator(&words, TempRealloc, TempFree);
+	List(int) codepoints = NULL;
 
-	int numCodepoints = ListCount(codepoints);
-	for (int i = 0; i < numCodepoints; ++i)
+	int lastNonPauseCodepoint = 0;
+	for (int i = 0; i < length;)
 	{
-		Word word = { i };
-		for (; i < numCodepoints; ++i)
-		{
-			if (CharIsWhitespace((char)codepoints[i]))
-				break;
-			++word.length;
-		}
+		int advance;
+		int codepoint = GetCodepoint(text + i, &advance);
+		if (!codepoint)
+			break;
+		i += advance;
 
-		if (word.length > 0)
+		int lastIndex = ListCount(codepoints) - 1;
+		bool isEscaped = lastIndex > 0 and codepoints[lastIndex] == CONTROL('\\');
+
+		if ((codepoint == '[' or codepoint == '{') and not isEscaped)
 		{
-			for (int j = 0; j < word.length; ++j)
+
+			// Expressions go into string memory, and get encoded as CONTROL('[') followed by an index into string memory.
+			int start = i;
+			char closing = codepoint == '[' ? ']' : '}';
+			while (i < length and text[i] != closing)
+				++i;
+
+			ListAdd(&codepoints, CONTROL(codepoint));
+			int stringLength = i - start;
+			if (stringLength > 0)
 			{
-				int codepoint = codepoints[word.start + j];
-				if (not IS_COMMAND(codepoint))
-				{
-					int index = GetGlyphIndex(font, codepoints[word.start + j]);
-					word.width += GetAdvance(font, index);
-				}
+				int stringIndex = ListCount(*stringPool);
+				char *string = ListAllocate(stringPool, stringLength + 1);
+				CopyBytes(string, text + start, stringLength);
+				string[stringLength] = 0;
+				ListAdd(&codepoints, stringIndex);
 			}
-			ListAdd(&words, word);
+			else ListAdd(&codepoints, -1); // -1 means "default" expression.
+
+			++i; // Skip the ]
 		}
+		else if (codepoint == '\\' and not isEscaped)
+			ListAdd(&codepoints, CONTROL('\\'));
+		else if (codepoint == '|' and not isEscaped)
+			ListAdd(&codepoints, CONTROL('|'));
+		else if (codepoint == '_' and not isEscaped)
+			ListAdd(&codepoints, CONTROL('_'));
+		else if (codepoint == '*' and not isEscaped)
+			ListAdd(&codepoints, CONTROL('*'));
+		else if (codepoint == '`' and not isEscaped)
+			ListAdd(&codepoints, CONTROL('`'));
+		else if (codepoint == ' ' and isEscaped)
+			codepoints[lastIndex] = ' ';
+		else if (codepoint == 'n' and isEscaped)
+			codepoints[lastIndex] = '\n';
+		else if (codepoint == '[' and isEscaped)
+			codepoints[lastIndex] = '[';
+		else if (codepoint == ']' and isEscaped)
+			codepoints[lastIndex] = ']';
+		else if (codepoint == '{' and isEscaped)
+			codepoints[lastIndex] = '{';
+		else if (codepoint == '}' and isEscaped)
+			codepoints[lastIndex] = '}';
+		else if (codepoint == '|' and isEscaped)
+			codepoints[lastIndex] = '|';
+		else if (codepoint == '_' and isEscaped)
+			codepoints[lastIndex] = '_';
+		else if (codepoint == '*' and isEscaped)
+			codepoints[lastIndex] = '*';
+		else if (codepoint == '`' and isEscaped)
+			codepoints[lastIndex] = '`';
+		else if (codepoint == '\\' and isEscaped)
+			codepoints[lastIndex] = '\\';
+		else if (codepoint == ' ' and not isEscaped and lastNonPauseCodepoint == ' ')
+			ListAdd(&codepoints, CONTROL('`'));
+		else if (codepoint == ',' and not isEscaped)
+		{
+			ListAdd(&codepoints, codepoint);
+			ListAdd(&codepoints, CONTROL('`'));
+			ListAdd(&codepoints, CONTROL('`'));
+		}
+		else if ((codepoint == '.' or codepoint == '!' or codepoint == '?') and not isEscaped)
+		{
+			ListAdd(&codepoints, codepoint);
+			ListAdd(&codepoints, CONTROL('`'));
+			ListAdd(&codepoints, CONTROL('`'));
+			ListAdd(&codepoints, CONTROL('`'));
+			ListAdd(&codepoints, CONTROL('`'));
+		}
+		else
+			ListAdd(&codepoints, codepoint);
+
+		int lastCodepoint = codepoints[ListCount(codepoints) - 1];
+		if (lastCodepoint != CONTROL('`'))
+			lastNonPauseCodepoint = lastCodepoint;
 	}
 
-	return words;
+	// Remove pauses at the end.
+	while (ListCount(codepoints) > 0 and codepoints[ListCount(codepoints) - 1] == CONTROL('`'))
+		ListPop(&codepoints);
+
+	return codepoints;
 }
 
-Script LoadScript(const char *path, Font font)
+static float MeasureDuration(List(int) codepoints)
 {
-	Script script = { .text = LoadFileText(path), .font = font };
+	int numCodepoints = ListCount(codepoints);
+	int duration = 0;
+	for (int i = 0; i < numCodepoints; ++i)
+	{
+		int codepoint = codepoints[i];
+		if (not IS_CONTROL(codepoint) or codepoint == CONTROL('`'))
+			++duration;
+
+		if (codepoint == CONTROL('[') or codepoint == CONTROL('{'))
+			++i;
+	}
+
+	return (float)duration;
+}
+
+static bool IsWhitespace(int codepoint)
+{
+	return codepoint < 128 && CharIsWhitespace((char)codepoint);
+}
+
+Script LoadScript(const char *path, Font regular, Font bold, Font italic, Font boldItalic)
+{
+	Script script = { 
+		.text = LoadFileText(path), 
+		.font = regular,
+		.boldFont = bold,
+		.italicFont = italic,
+		.boldItalicFont = boldItalic
+	};
+
 	if (not script.text)
 	{
 		LogError("Failed to load script file '%s'.", path);
@@ -70,7 +182,7 @@ Script LoadScript(const char *path, Font font)
 			++fileCursor;
 		char *text = script.text + fileCursor;
 		if (!text[0])
-			return script;
+			break;
 
 		// Find out where the paragraph ends: 
 		// - either at the end of the text, 
@@ -150,7 +262,7 @@ Script LoadScript(const char *path, Font font)
 				int nameLength = speakerEnd - speakerStart;
 				if (nameLength > 0)
 				{
-					paragraph.speaker = MemAlloc(nameLength + 1);
+					paragraph.speaker = ListAllocate(&script.stringPool, nameLength + 1);
 					CopyBytes(paragraph.speaker, text + speakerStart, nameLength);
 					paragraph.speaker[nameLength] = 0;
 				}
@@ -171,7 +283,7 @@ Script LoadScript(const char *path, Font font)
 			if (previousName)
 			{
 				int nameLength = StringLength(previousName);
-				paragraph.speaker = MemAlloc(nameLength + 1);
+				paragraph.speaker = ListAllocate(&script.stringPool, nameLength + 1);
 				CopyBytes(paragraph.speaker, previousName, nameLength);
 				paragraph.speaker[nameLength] = 0;
 			}
@@ -181,161 +293,195 @@ Script LoadScript(const char *path, Font font)
 		fileCursor += cursor;
 		paragraph.text = text;
 		paragraph.textLength = textLength;
-		
-		// 1) Convert text to codepoints.
-		// 2) Process escape sequences.
-		// 3) Convert consecutive spaces into a single space and pauses.
-		// 4) Add explicit pauses after punctuation.
-		// 5) Convert command characters to command (negative) codepoints.
-		List(int) codepoints = NULL;
-		int lastNonPauseCodepoint = 0;
-		for (int i = 0; i < paragraph.textLength;)
-		{
-			int codepointLength;
-			int codepoint = GetCodepoint(paragraph.text + i, &codepointLength);
-			if (!codepoint)
-				break;
-			i += codepointLength;
-
-			int lastIndex = ListCount(codepoints) - 1;
-			bool isEscaped = lastIndex > 0 and codepoints[lastIndex] == COMMAND('\\');
-
-			if (codepoint == '\\' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('\\'));
-			else if (codepoint == '[' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('['));
-			else if (codepoint == ']' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('}'));
-			else if (codepoint == '|' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('|'));
-			else if (codepoint == '_' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('_'));
-			else if (codepoint == '*' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('*'));
-			else if (codepoint == '`' and not isEscaped)
-				ListAdd(&codepoints, COMMAND('`'));
-			else if (codepoint == ' ' and isEscaped)
-				codepoints[lastIndex] = ' ';
-			else if (codepoint == 'n' and isEscaped)
-				codepoints[lastIndex] = '\n';
-			else if (codepoint == '[' and isEscaped)
-				codepoints[lastIndex] = '[';
-			else if (codepoint == ']' and isEscaped)
-				codepoints[lastIndex] = ']';
-			else if (codepoint == '|' and isEscaped)
-				codepoints[lastIndex] = '|';
-			else if (codepoint == '_' and isEscaped)
-				codepoints[lastIndex] = '_';
-			else if (codepoint == '*' and isEscaped)
-				codepoints[lastIndex] = '*';
-			else if (codepoint == '`' and isEscaped)
-				codepoints[lastIndex] = '`';
-			else if (codepoint == '\\' and isEscaped)
-				codepoints[lastIndex] = '\\';
-			else if (codepoint == ' ' and not isEscaped and lastNonPauseCodepoint == ' ')
-				ListAdd(&codepoints, COMMAND('`'));
-			else if (codepoint == ',' and not isEscaped)
-			{
-				ListAdd(&codepoints, codepoint);
-				ListAdd(&codepoints, COMMAND('`'));
-			}
-			else if ((codepoint == '.' or codepoint == '!' or codepoint == '?') and not isEscaped)
-			{
-				ListAdd(&codepoints, codepoint);
-				ListAdd(&codepoints, COMMAND('`'));
-				ListAdd(&codepoints, COMMAND('`'));
-			}
-			else
-				ListAdd(&codepoints, codepoint);
-
-			int lastCodepoint = codepoints[ListCount(codepoints) - 1];
-			if (lastCodepoint != COMMAND('`'))
-				lastNonPauseCodepoint = lastCodepoint;
-		}
-
-		// Remove pauses at the end of the paragraph.
-		while (ListCount(codepoints) > 0 and codepoints[ListCount(codepoints) - 1] == COMMAND('`'))
-			ListPop(&codepoints);
-
-		paragraph.codepoints = codepoints;
-		
-		// @TODO Caluclate the unscaled duration of the the paragraph.
-		paragraph.duration = (float)ListCount(paragraph.codepoints);
+		paragraph.codepoints = ConvertToCodepoints(text, textLength, &script.stringPool);
+		paragraph.duration = MeasureDuration(paragraph.codepoints);
 		ListAdd(&script.paragraphs, paragraph);
 	}
+
+	LogInfo("Script '%s' loaded successfully (%d paragraphs).", path, ListCount(script.paragraphs));
+	return script;
 }
 
 void UnloadScript(Script *script)
 {
-	// @TODO
+	if (not script or not script->text)
+		return;
+
+	for (int i = 0; i < ListCount(script->paragraphs); ++i)
+	{
+		ListDestroy(&script->paragraphs[i].codepoints);
+		ListDestroy((void **)&script->paragraphs[i].expressions);
+	}
+	ListDestroy(&script->paragraphs);
+	ListDestroy(&script->stringPool);
+	UnloadFileText(script->text);
+	script->text = NULL;
+	script->commandIndex = 0;
+	LogInfo("Script unloaded.");
 }
 
-void DrawParagraph(Paragraph paragraph, Font font, Rectangle textBox, float fontSize, Color color, float t)
+void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time)
 {
-	int mark = TempMark();
+	paragraphIndex = ClampInt(paragraphIndex, 0, ListCount(script->paragraphs) - 1);
+	Paragraph paragraph = script->paragraphs[paragraphIndex];
+	List(int) codepoints = paragraph.codepoints;
+	int numCodepoints = ListCount(codepoints);
+
+	Font fonts[STYLE_ENUM_COUNT] = {
+		[REGULAR    ] = script->font,
+		[BOLD       ] = script->boldFont,
+		[ITALIC     ] = script->italicFont,
+		[BOLD_ITALIC] = script->boldItalicFont
+	};
+
+	float x = textBox.x;
+	float y = textBox.y;
+	float t = 0;
+	Style style = REGULAR;
+	bool group = false;
+	float maxX = textBox.x + textBox.width;
+	int commandIndex = 0;
+
+	for (int i = 0; i < numCodepoints and (group or t < time); ++i)
 	{
-		List(int) codepoints = paragraph.codepoints;
-		List(Word) words = SplitIntoWords(font, codepoints);
-		if (ListCount(words) == 0)
-			return;
-
-		float scaleFactor = fontSize / font.baseSize;
-		float yAdvance = font.baseSize * scaleFactor;
-		float maxX = textBox.x + textBox.width;
-		float penX = textBox.x;
-		float penY = textBox.y;
-
-		int i = 0;
-		int numWords = ListCount(words);
-		for (int wordIndex = 0; wordIndex < numWords; ++wordIndex)
+		int codepoint = codepoints[i];
+		if (codepoint == CONTROL('['))
 		{
-			Word word = words[wordIndex];
-
-			for (; i < word.start; ++i)
+			++i; // Skip the string index.
+		}
+		else if (codepoint == CONTROL('{'))
+		{
+			int stringIndex = codepoints[++i];
+			char *command = &script->stringPool[stringIndex];
+			if (++commandIndex > script->commandIndex)
 			{
-				if (i > t)
-				{
-					TempReset(mark);
-					return;
-				}
-
-				int codepoint = codepoints[i];
-				if (codepoint == '\n')
-				{
-					penX = textBox.x;
-					penY += yAdvance;
-				}
-				else
-				{
-					int index = GetGlyphIndex(font, codepoint);
-					DrawTextCodepoint(font, codepoint, (Vector2) { penX, penY }, fontSize, color);
-					penX += scaleFactor * GetAdvance(font, index);
-				}
+				//@TODO: Actually run the command.
+				script->commandIndex++;
+				LogInfo("Script executing command %d: '%s'.", script->commandIndex, command);
+				DELETEME_ExecuteConsoleCommandFromC(command);
 			}
-
-			if (penX + word.width > maxX)
+		}
+		else if (codepoint == CONTROL('*'))
+		{
+			style ^= BOLD;
+		}
+		else if (codepoint == CONTROL('_'))
+		{
+			style ^= ITALIC;
+		}
+		else if (codepoint == CONTROL('|'))
+		{
+			group = not group;
+		}
+		else if (IsWhitespace(codepoint) or codepoint == CONTROL('`'))
+		{
+			t += 1;
+			if (codepoint == '\n')
 			{
-				penX = textBox.x;
-				penY += yAdvance;
+				x = textBox.x;
+				y += GetLineHeight(fonts[style], fontSize);
 			}
-
-			for (; i < word.start + word.length; ++i)
+			else if (codepoint != CONTROL('`'))
 			{
-				if (i > t)
+				Font font = fonts[style];
+				int index = GetGlyphIndex(font, codepoint);
+				x += GetAdvance(font, fontSize, index);
+				if (x > maxX)
 				{
-					TempReset(mark);
-					return;
-				}
-
-				int codepoint = codepoints[i];
-				if (codepoint != COMMAND('`'))
-				{
-					int index = GetGlyphIndex(font, codepoint);
-					DrawTextCodepoint(font, codepoint, (Vector2) { penX, penY }, fontSize, color);
-					penX += scaleFactor * GetAdvance(font, index);
+					x = textBox.x;
+					y += GetLineHeight(fonts[style], fontSize);
 				}
 			}
 		}
+		else
+		{
+			//@TODO @SPEED This is EXTREMELY inneficient
+			// We draw every word character by character, but we scan through it to see if it will fit on the line every single time
+			// so it's O(n^2) performance when it could easily be O(1). Could be fixed, but it would require basically copy pasting the
+			// above control code checks into the loop of the word drawing itself, and I don't wanna do that right now soo...
+
+			// Check if the word will fit on the line, and if it doesn't, break the line before drawing the word.
+			float width = 0;
+			Style backupStyle = style;
+			for (int j = i; j < numCodepoints and not IsWhitespace(codepoints[j]) and codepoints[j] != CONTROL('['); ++j)
+			{
+				codepoint = codepoints[j];
+				if (codepoint == CONTROL('*'))
+					style ^= BOLD;
+				else if (codepoint == CONTROL('_'))
+					style ^= ITALIC;
+				else if (not IS_CONTROL(codepoint))
+				{
+					Font font = fonts[style];
+					int index = GetGlyphIndex(font, codepoint);
+					width += GetAdvance(font, fontSize, index);
+				}
+			}
+
+			// Word is too long to fit onto current line. Break the line.
+			if (x + width > maxX)
+			{
+				x = textBox.x;
+				y += GetLineHeight(fonts[style], fontSize);
+			}
+
+			style = backupStyle;
+			codepoint = codepoints[i];
+
+			// @SPEED Here we could draw the entire word instead of just the one character.
+			{
+				Font font = fonts[style];
+				int index = GetGlyphIndex(font, codepoint);
+				DrawTextCodepoint(font, codepoint, (Vector2) { x + 2, y + 2 }, fontSize, shadowColor);
+				DrawTextCodepoint(font, codepoint, (Vector2) { x, y }, fontSize, color);
+				x += GetAdvance(font, fontSize, index);
+				t += 1;
+			}
+		}
 	}
-	TempReset(mark);
+}
+
+const char *GetScriptExpression(Script script, int paragraphIndex, float time)
+{
+	// @SPEED The very existance of this call is inneficient.
+	// It basically has to crawl through the entire script to find the expression.
+	const char *prevSpeaker = "";
+	const char *expression = "default";
+	paragraphIndex = ClampInt(paragraphIndex, 0, ListCount(script.paragraphs) - 1); 
+
+	for (int i = 0; i <= paragraphIndex; ++i)
+	{
+		Paragraph paragraph = script.paragraphs[i];
+		if (not StringsEqual(paragraph.speaker, prevSpeaker))
+		{
+			prevSpeaker = paragraph.speaker;
+			expression = "default";
+		}
+
+		List(int) codepoints = paragraph.codepoints;
+		int numCodepoints = ListCount(codepoints);
+		float t = 0;
+		for (int j = 0; j < numCodepoints and (t < time or i != paragraphIndex); ++j)
+		{
+			int codepoint = codepoints[j];
+			if (codepoint == CONTROL('['))
+			{
+				int stringIndex = codepoints[++j];
+				if (stringIndex == -1)
+					expression = "default";
+				else
+					expression = &script.stringPool[stringIndex];
+			}
+			else if (codepoint == CONTROL('{'))
+			{
+				++j; // Skip the string index.
+			}
+			else if (not IS_CONTROL(codepoint) or codepoint == CONTROL('`'))
+			{
+				t += 1;
+			}
+		}
+	}
+
+	return expression;
 }

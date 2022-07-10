@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+
 Console::Console()
 {
     ClearLog();

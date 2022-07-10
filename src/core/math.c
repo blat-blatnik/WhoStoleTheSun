@@ -72,6 +72,15 @@ int ClampInt(int x, int min, int max)
 	return x;
 }
 
+Vector2 RectangleCenter(Rectangle rect)
+{
+	return (Vector2)
+	{
+		rect.x + 0.5f * rect.width,
+		rect.y + 0.5f * rect.height,
+	};
+}
+
 Rectangle ExpandRectangle(Rectangle rect, float amount)
 {
 	return ExpandRectangleEx(rect, amount, amount, amount, amount);

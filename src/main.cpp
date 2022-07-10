@@ -1,6 +1,6 @@
 #include "core.h"
 #include "lib/imgui/imgui.h"
-#include <iostream>
+
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
@@ -15,6 +15,12 @@ ENUM(GameState)
 	GAMESTATE_EDITOR,
 };
 
+STRUCT(Expression)
+{
+	char name[32];
+	Texture *portrait;
+};
+
 STRUCT(Player)
 {
 	Vector2 position;
@@ -27,122 +33,28 @@ STRUCT(Npc)
 	const char *name;
 	Vector2 position;
 	Texture *texture;
-	Script script;
-};
-
-enum TextureType
-{
-	Type1,
-	Type2,
-	Type3,
-	Type4,
-	Max
-};
-
-class Sprite
-{
-public:
-	Sprite(const char* path, TextureType texType, Vector2 spritePartition = Vector2One()) : path(path), type(texType), partition(spritePartition)
-	{
-		texture = LoadTextureAndTrackChanges(path);
-	}
-	Sprite() {}
-
-	const char* path;
-	TextureType type;
-	Texture* texture;
-	Vector2 partition;
-};
-
-class SpriteManager
-{
-public:
-	SpriteManager()
-	{
-
-	}
-
-	void Init()
-	{
-		sprites.reserve(TextureType::Max);
-		spr1 = Sprite("res/cauldron.png", TextureType::Type1, { 6, 1 });
-		_animationLength = spr1.partition.x * spr1.partition.y;
-	}
-
-	void Update()
-	{
-		// here we update the window position if
-		// we are animating a sprite
-		// otherwise I think nothing else
-		// should happen
-
-
-		// also game runs at 60 fps so this gets called 60 times every second
-
-		// let's say we animate sprite 1 
-
-
-		int i = (int)(_animationTime / _animationLength); // ith frame
-
-		auto x = i % (int)spr1.partition.x;
-		auto y = i / (int)spr1.partition.y;
-
-		window.width = spr1.texture->width / spr1.partition.x;
-		window.height = spr1.texture->height / spr1.partition.y;
-		window.x = x * window.width;
-		window.y = y * window.height;
-
-		_animationTime +=   100 * FRAME_TIME;
-
-
-	}
-
-	void Render(Vector2 position = Vector2One())
-	{
-		DrawTextureRec(*spr1.texture, window, { 400, 200 }, WHITE);
-		//DrawTextureCentered(*spr1.texture, { 400 ,400 }, WHITE);
-	}
-
-	void AddSprite(Sprite spr) { sprites.push_back(spr); }
-private:
-
-	Rectangle CalculateRectangle()
-	{
-		Rectangle output;
-
-
-		return output;
-	}
-
-	Sprite spr1;
-
-	std::vector<Sprite> sprites;
-	Rectangle window;
-	
-	float _animationTime;
-	bool _hasNoAnimation;
-	float _animationLength;
-};
-
-SpriteManager sprmgr;
-
-class Object
-{
-public:
-	Object(const char* name, Vector2 pos, Script scr) : name(name), position(pos), script(scr) {}
-
-	const char* name;
-	Vector2 position;
-	Script script;
+	Script *script;
+	int numExpressions;
+	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 };
 
 Texture *background;
 Image *collisionMap;
 Font roboto;
+Font robotoBold;
+Font robotoItalic;
+Font robotoBoldItalic;
 Player player;
+Texture *playerNeutral;
 Npc pinkGuy = { "Pink Guy" };
+Npc greenGuy = { "Green Guy" };
 Sound shatter;
 Console console;
+
+extern "C" void DELETEME_ExecuteConsoleCommandFromC(char *command)
+{
+	console.ExecuteCommand(command);
+}
 
 float PlayerDistanceToNpc(Npc npc)
 {
@@ -181,6 +93,13 @@ void Playing_Update()
 		{
 			PlaySound(shatter); // @TODO Remove
 			PushGameState(GAMESTATE_TALKING, &pinkGuy);
+			return;
+		}
+		distance = PlayerDistanceToNpc(greenGuy);
+		if (distance < 50)
+		{
+			PlaySound(shatter); // @TODO Remove
+			PushGameState(GAMESTATE_TALKING, &greenGuy);
 			return;
 		}
 	}
@@ -222,15 +141,15 @@ void Playing_Update()
 			player.position = newPos;
 	}
 
-	sprmgr.Update();
+
 }
 void Playing_Render()
 {
 	ClearBackground(BLACK);
 	DrawTexture(*background, 0, 0, WHITE);
-	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
-	sprmgr.Render();
+	DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
+	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 }
 REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
 
@@ -244,23 +163,27 @@ int paragraphIndex;
 void Talking_Init(void *param)
 {
 	talkingNpc = (Npc *)param;
+	talkingNpc->script->commandIndex = 0;
 	paragraphIndex = 0;
 }
 void Talking_Update()
 {
+	Script *script = talkingNpc->script;
+	if (paragraphIndex >= ListCount(script->paragraphs))
+		paragraphIndex = ListCount(script->paragraphs) - 1;
+
 	if (IsKeyPressed(KEY_E) or IsKeyPressed(KEY_SPACE))
 	{
-		Script script = talkingNpc->script;
 		float t = (float)GetTimeInCurrentGameState();
-		float paragraphDuration = script.paragraphs[paragraphIndex].duration;
-		if (25 * t < paragraphDuration)
+		float paragraphDuration = script->paragraphs[paragraphIndex].duration;
+		if (20 * t < paragraphDuration)
 		{
 			SetFrameNumberInCurrentGameState(99999); // Should be enough to skip over to the end of the dialog.
 		}
 		else
 		{
 			++paragraphIndex;
-			if (paragraphIndex >= ListCount(script.paragraphs))
+			if (paragraphIndex >= ListCount(script->paragraphs))
 			{
 				PopGameState();
 				return;
@@ -278,32 +201,79 @@ void Talking_Render()
 {
 	CallPreviousGameStateRender();
 
+	Script *script = talkingNpc->script;
+	Paragraph paragraph = script->paragraphs[paragraphIndex];
+	const char *speaker = paragraph.speaker;
+	if (!speaker)
+		speaker = talkingNpc->name;
+
+	float time = 20 * (float)GetTimeInCurrentGameState();
+	const char *expression = GetScriptExpression(*script, paragraphIndex, time);
+
 	Rectangle textbox = {
 		WINDOW_CENTER_X - 300,
 		WINDOW_HEIGHT - 340,
 		600,
 		320
 	};
-	Rectangle indented = ExpandRectangle(textbox, -5);
-	Rectangle textArea = ExpandRectangle(textbox, -15);
-	Rectangle dropShadow = { textbox.x + 10, textbox.y + 10, textbox.width, textbox.height };
+	Rectangle portraitBox = textbox;
+	portraitBox.x = 30;
+	portraitBox.width = 300;
 
-	DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
-	DrawRectangleRounded(textbox, 0.1f, 5, WHITE);
-	DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
+	// Portrait
+	{
+		Rectangle indented = ExpandRectangle(portraitBox, -5);
+		Rectangle textArea = ExpandRectangle(portraitBox, -15);
+		Rectangle dropShadow = { portraitBox.x + 10, portraitBox.y + 10, portraitBox.width, portraitBox.height };
 
-	Script script = talkingNpc->script;
-	Paragraph paragraph = script.paragraphs[paragraphIndex];
-	const char *speaker = paragraph.speaker;
-	if (!speaker)
-		speaker = talkingNpc->name;
+		DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
+		DrawRectangleRounded(portraitBox, 0.1f, 5, WHITE);
+		DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
 
-	DrawFormat(script.font, textArea.x, textArea.y, 32, RED, "[%s]", speaker);
-	float yAdvance = 2 * GetLineHeight(script.font, 32);
-	textArea = ExpandRectangleEx(textArea, -yAdvance, 0, 0, 0);
+		Texture *portrait = NULL;
+		if (StringsEqualNocase(speaker, "player"))
+			portrait = playerNeutral;
+		else
+		{
+			Npc *npc = talkingNpc;
+			if (StringsEqualNocase(speaker, "pink guy"))
+				npc = &pinkGuy;
+			else if (StringsEqualNocase(speaker, "green guy"))
+				npc = &greenGuy;
 
-	float t = (float)GetTimeInCurrentGameState();
-	DrawParagraph(paragraph, script.font, textArea, 32, PINK, 25 * t);
+			int expressionIndex = 0;
+			for (int i = 0; i < npc->numExpressions; ++i)
+			{
+				if (StringsEqualNocase(npc->expressions[i].name, expression))
+				{
+					expressionIndex = i;
+					break;
+				}
+			}
+
+			portrait = npc->expressions[expressionIndex].portrait;
+		}
+
+		DrawTextureCentered(*portrait, RectangleCenter(portraitBox), WHITE);
+	}
+
+	// Text
+	{
+		Rectangle indented = ExpandRectangle(textbox, -5);
+		Rectangle textArea = ExpandRectangle(textbox, -15);
+		Rectangle dropShadow = { textbox.x + 10, textbox.y + 10, textbox.width, textbox.height };
+
+		DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
+		DrawRectangleRounded(textbox, 0.1f, 5, WHITE);
+		DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
+
+		DrawFormat(script->font, textArea.x + 2, textArea.y + 2, 32, BlendColors(RED, BLACK, 0.8f), "[%s] [%s]", speaker, expression);
+		DrawFormat(script->font, textArea.x, textArea.y, 32, RED, "[%s] [%s]", speaker, expression);
+		float yAdvance = 2 * GetLineHeight(script->font, 32);
+		textArea = ExpandRectangleEx(textArea, -yAdvance, 0, 0, 0);
+
+		DrawScriptParagraph(script, paragraphIndex, textArea, 32, PINK, BlendColors(PINK, BLACK, 0.8f), time);
+	}
 }
 REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talking_Render);
 
@@ -362,34 +332,17 @@ bool HandlePlayerTeleportCommand(std::vector<std::string> args)
 
 	return true;
 }
-bool HandleTestCommand(std::vector<std::string> args)
-{
-	for (int i = 0; i < 9; i++)
-	{
-		
-		auto x = i % 3;
-		auto y = i / 3;
-
-		std::cout << y << " " << x << "\n";
-	}
-	return true;
-}
-
-bool HandleListCommandsCommand(std::vector<std::string> args)
-{
-	auto cmds = console.GetCommands();
-
-	return false;
-}
-
 void GameInit(void)
 {
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
 	InitAudioDevice();
 	SetTargetFPS(FPS);
 
-	roboto = LoadFontAscii("res/Roboto.ttf", 32);
-	Script s = LoadScript("res/examplescript.txt", roboto);
+	roboto = LoadFontAscii("res/roboto.ttf", 32);
+	robotoBold = LoadFontAscii("res/roboto-bold.ttf", 32);
+	robotoItalic = LoadFontAscii("res/roboto-italic.ttf", 32);
+	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
+	//Script s = LoadScript("res/examplescript.txt", roboto, roboto, roboto, roboto);
 
 	background = LoadTextureAndTrackChanges("res/background.png");
 	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
@@ -406,19 +359,30 @@ void GameInit(void)
 	player.textures[DIRECTION_DOWN_LEFT]  = LoadTextureAndTrackChanges("res/player-down-left.png");
 	player.textures[DIRECTION_DOWN]       = LoadTextureAndTrackChanges("res/player-down.png");
 	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
-	
-
-	sprmgr.Init();
+	playerNeutral = LoadTextureAndTrackChanges("res/player-neutral.png");
 
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
-	pinkGuy.script = LoadScript("res/examplescript.txt", roboto);
+	pinkGuy.script = LoadScriptAndTrackChanges("res/example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	pinkGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/pink-guy-neutral.png");
+	pinkGuy.expressions[1].portrait = LoadTextureAndTrackChanges("res/pink-guy-happy.png");
+	pinkGuy.expressions[2].portrait = LoadTextureAndTrackChanges("res/pink-guy-sad.png");
+	CopyString(pinkGuy.expressions[0].name, "neutral", sizeof pinkGuy.expressions[0].name);
+	CopyString(pinkGuy.expressions[1].name, "happy", sizeof pinkGuy.expressions[1].name);
+	CopyString(pinkGuy.expressions[2].name, "sad", sizeof pinkGuy.expressions[2].name);
+	pinkGuy.numExpressions = 3;
+
+	greenGuy.texture = LoadTextureAndTrackChanges("res/green-guy.png");
+	greenGuy.position.x = 600;
+	greenGuy.position.y = 150;
+	greenGuy.script = LoadScriptAndTrackChanges("res/green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	greenGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/green-guy-neutral.png");
+	CopyString(greenGuy.expressions[0].name, "neutral", sizeof greenGuy.expressions[0].name);
+	greenGuy.numExpressions = 1;
 
 	// teleport player
 	console.AddCommand("tp", &HandlePlayerTeleportCommand);
 	console.GetCommand("tp")->SetHelp("This needs help for sure");
-
-	console.AddCommand("test", &HandleTestCommand);
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }
