@@ -707,8 +707,13 @@ void UpdateInputMappings(void);
 //
 
 typedef bool(*CommandHandler)(List(const char *) args);
+
+bool ParseCommandBoolArg(const char *string, bool *outSuccess);
+
 void AddCommand(const char *command, CommandHandler handle, const char *help);
+
 void ExecuteCommand(const char *command);
+
 void RenderConsole(void);
 
 //

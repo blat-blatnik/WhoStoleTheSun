@@ -83,6 +83,7 @@ public:
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 };
 
+bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
 Texture *background;
 Image *collisionMap;
@@ -135,6 +136,39 @@ Vector2 MovePointWithCollisions(Vector2 position, Vector2 velocity)
 		return newPosition;
 	else
 		return position;
+}
+
+// Console commands.
+
+bool HandlePlayerTeleportCommand(List(const char *) args)
+{
+	// move x y
+	if (ListCount(args) < 2)
+		return false;
+
+	int x = strtoul(args[0], NULL, 10);
+	int y = strtoul(args[1], NULL, 10);
+
+	player.position.x = (float)x;
+	player.position.y = (float)y;
+
+	return true;
+}
+bool HandleToggleDevModeCommand(List(const char *) args)
+{
+	if (ListCount(args) == 0)
+	{
+		devMode = not devMode;
+		return true;
+	}
+
+	bool success;
+	bool arg = ParseCommandBoolArg(args[0], &success);
+	if (!success)
+		return false;
+
+	devMode = arg;
+	return true;
 }
 
 //
@@ -242,8 +276,25 @@ void Talking_Update()
 	}
 
 	Script *script = talkingNpc->script;
-	if (paragraphIndex >= ListCount(script->paragraphs))
-		paragraphIndex = ListCount(script->paragraphs) - 1;
+	int numParagraphs = ListCount(script->paragraphs);
+	if (paragraphIndex >= numParagraphs)
+		paragraphIndex = numParagraphs - 1;
+
+	if (devMode and IsKeyPressed(KEY_LEFT))
+	{
+		paragraphIndex = ClampInt(paragraphIndex - 1, 0, numParagraphs - 1);
+		SetFrameNumberInCurrentGameState(0);
+	}
+	if (devMode and IsKeyPressed(KEY_RIGHT))
+	{
+		if (paragraphIndex == numParagraphs - 1)
+			SetFrameNumberInCurrentGameState(99999); // Should be enough to skip over to the end of the dialog.
+		else
+		{
+			paragraphIndex = ClampInt(paragraphIndex + 1, 0, numParagraphs - 1);
+			SetFrameNumberInCurrentGameState(0);
+		}
+	}
 
 	if (input.interact.wasPressed)
 	{
@@ -386,20 +437,6 @@ void Paused_Render(void)
 }
 REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 
-bool HandlePlayerTeleportCommand(List(const char*) args)
-{
-	// move x y
-	if (ListCount(args) < 2)
-		return false;
-
-	int x = strtoul(args[0], NULL, 10);
-	int y = strtoul(args[1], NULL, 10);
-
-	player.position.x = (float)x;
-	player.position.y = (float)y;
-
-	return true;
-}
 void GameInit(void)
 {
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
@@ -479,6 +516,7 @@ void GameInit(void)
 	greenGuy.numExpressions = 1;
 
 	AddCommand("tp", &HandlePlayerTeleportCommand, "");
+	AddCommand("dev", &HandleToggleDevModeCommand, "");
 	
 
 	Sprite spr("res/tex_player/");
