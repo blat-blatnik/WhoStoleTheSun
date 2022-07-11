@@ -74,6 +74,22 @@ Image *LoadImageAndTrackChanges(const char *path)
 	return &item->image;
 }
 
+Image *LoadImageAndTrackChangesEx(const char *path, PixelFormat format)
+{
+	if (not FileExists(path))
+		return NULL;
+
+	TrackedItem *item = ListAllocateItem(&items);
+	item->image = LoadImage(path);
+	ImageFormat(&item->image, format);
+	item->kind = IMAGE;
+	item->lastModTime = GetFileModTime(path);
+	CopyString(item->path, path, sizeof item->path);
+	ASSERT(StringLength(path) < sizeof item->path);
+
+	return &item->image;
+}
+
 Script *LoadScriptAndTrackChanges(const char *path, Font regular, Font bold, Font italic, Font boldItalic)
 {
 	if (not FileExists(path))

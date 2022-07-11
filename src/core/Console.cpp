@@ -1,12 +1,12 @@
+#pragma once
+
 #include "../core.h"
 #include <vector>
 #include <string>
 #include <sstream>
 
 
-#pragma once
-
-std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
+static std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
 {
     int i = 0;
 
@@ -292,10 +292,31 @@ public:
 
 Console g_console;
 
+extern "C" bool ParseCommandBoolArg(const char *string, bool *outSuccess)
+{
+    *outSuccess = false;
+    if (not string)
+        return false;
+
+    if (StringsEqual(string, "1") or StringsEqualNocase(string, "true") or StringsEqualNocase(string, "on"))
+    {
+        *outSuccess = true;
+        return true;
+    }
+    if (StringsEqual(string, "0") or StringsEqualNocase(string, "false") or StringsEqualNocase(string, "off"))
+    {
+        *outSuccess = true;
+        return false;
+    }
+
+    return false;
+}
+
 extern "C" void AddCommand(const char *command, CommandHandler handle, const char *help)
 {
     g_console.AddCommand(command, handle, help);
 }
+
 extern "C" void ExecuteCommand(const char* command)
 {
     g_console.ExecuteCommand(command);

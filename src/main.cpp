@@ -8,7 +8,8 @@
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
 #define WINDOW_CENTER_Y (0.5f*WINDOW_HEIGHT)
-#define Y_SQUISH 0.541196100146197f // sqrt(2) * sin(PI / 8)
+#define Y_SQUISH 0.5f // sqrt(2) * sin(PI / 8)
+//#define Y_SQUISH 0.541196100146197f // sqrt(2) * sin(PI / 8)
 
 ENUM(GameState)
 {
@@ -191,6 +192,7 @@ public:
 	
 };
 
+bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
 Texture *background;
 Image *collisionMap;
@@ -218,22 +220,22 @@ float PlayerDistanceToNpc(Npc npc)
 
 	return Vector2Distance(playerFeet, npcFeet);
 }
-bool SampleCollisionMap(Vector2 position)
+bool CheckCollisionMap(Image map, float x, float y)
 {
-	int x = (int)position.x;
-	int y = (int)position.y;
+	int xi = (int)floorf(x);
+	int yi = (int)floorf(y);
 
-	if (x < 0)
-		return false;
-	if (x >= collisionMap->width)
-		return false;
-	if (y < 0)
-		return false;
-	if (y >= collisionMap->height)
-		return false;
+	if (xi < 0)
+		return true;
+	if (xi >= map.width)
+		return true;
+	if (yi < 0)
+		return true;
+	if (yi >= map.height)
+		return true;
 
-	Color color = GetImageColor(*collisionMap, x, y);
-	return color.r > 128;
+	Color color = GetImageColor(map, xi, yi);
+	return color.r < 128;
 }
 Vector2 MovePointWithCollisions(Vector2 position, Vector2 velocity)
 {
@@ -241,10 +243,43 @@ Vector2 MovePointWithCollisions(Vector2 position, Vector2 velocity)
 	Vector2 p1 = position + velocity;
 	
 	Vector2 newPosition = position + velocity;
-	if (SampleCollisionMap(newPosition))
+	if (not CheckCollisionMap(*collisionMap, newPosition.x, newPosition.y))
 		return newPosition;
 	else
 		return position;
+}
+
+// Console commands.
+
+bool HandlePlayerTeleportCommand(List(const char *) args)
+{
+	// move x y
+	if (ListCount(args) < 2)
+		return false;
+
+	int x = strtoul(args[0], NULL, 10);
+	int y = strtoul(args[1], NULL, 10);
+
+	player.position.x = (float)x;
+	player.position.y = (float)y;
+
+	return true;
+}
+bool HandleToggleDevModeCommand(List(const char *) args)
+{
+	if (ListCount(args) == 0)
+	{
+		devMode = not devMode;
+		return true;
+	}
+
+	bool success;
+	bool arg = ParseCommandBoolArg(args[0], &success);
+	if (!success)
+		return false;
+
+	devMode = arg;
+	return true;
 }
 
 //
@@ -318,11 +353,21 @@ void Playing_Update()
 void Playing_Render()
 {
 	ClearBackground(BLACK);
-	DrawTexture(*background, 0, 0, WHITE);
-	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
-	DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
-	//DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
-	player2.Render();
+	
+	Camera2D camera = { 0 };
+	camera.target = player.position;
+	camera.offset.x = WINDOW_CENTER_X;
+	camera.offset.y = WINDOW_CENTER_Y;
+	camera.zoom = 1;
+	BeginMode2D(camera);
+	{
+		DrawTexture(*background, 0, 0, WHITE);
+		DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
+		DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
+		//DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
+		player2.Render();
+	}
+	EndMode2D();
 }
 REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
 
@@ -348,8 +393,25 @@ void Talking_Update()
 	}
 
 	Script *script = talkingNpc->script;
-	if (paragraphIndex >= ListCount(script->paragraphs))
-		paragraphIndex = ListCount(script->paragraphs) - 1;
+	int numParagraphs = ListCount(script->paragraphs);
+	if (paragraphIndex >= numParagraphs)
+		paragraphIndex = numParagraphs - 1;
+
+	if (devMode and IsKeyPressed(KEY_LEFT))
+	{
+		paragraphIndex = ClampInt(paragraphIndex - 1, 0, numParagraphs - 1);
+		SetFrameNumberInCurrentGameState(0);
+	}
+	if (devMode and IsKeyPressed(KEY_RIGHT))
+	{
+		if (paragraphIndex == numParagraphs - 1)
+			SetFrameNumberInCurrentGameState(99999); // Should be enough to skip over to the end of the dialog.
+		else
+		{
+			paragraphIndex = ClampInt(paragraphIndex + 1, 0, numParagraphs - 1);
+			SetFrameNumberInCurrentGameState(0);
+		}
+	}
 
 	if (input.interact.wasPressed)
 	{
@@ -492,20 +554,6 @@ void Paused_Render(void)
 }
 REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 
-bool HandlePlayerTeleportCommand(List(const char*) args)
-{
-	// move x y
-	if (ListCount(args) < 2)
-		return false;
-
-	int x = strtoul(args[0], NULL, 10);
-	int y = strtoul(args[1], NULL, 10);
-
-	player.position.x = (float)x;
-	player.position.y = (float)y;
-
-	return true;
-}
 void GameInit(void)
 {
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
@@ -547,8 +595,8 @@ void GameInit(void)
 	robotoItalic = LoadFontAscii("res/roboto-italic.ttf", 32);
 	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
 
-	background = LoadTextureAndTrackChanges("res/background.png");
-	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
+	background = LoadTextureAndTrackChanges("res/background2.png");
+	collisionMap = LoadImageAndTrackChangesEx("res/collision-map2.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
 	shatter = LoadSound("res/shatter.wav");
 	
 	player.position.x = 1280 / 2;
@@ -576,7 +624,7 @@ void GameInit(void)
 
 
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
-	pinkGuy.position.x = 400;
+	pinkGuy.position.x = 700;
 	pinkGuy.position.y = 250;
 	pinkGuy.script = LoadScriptAndTrackChanges("res/example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
 	pinkGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/pink-guy-neutral.png");
@@ -588,15 +636,15 @@ void GameInit(void)
 	pinkGuy.numExpressions = 3;
 
 	greenGuy.texture = LoadTextureAndTrackChanges("res/green-guy.png");
-	greenGuy.position.x = 600;
-	greenGuy.position.y = 150;
+	greenGuy.position.x = 1000;
+	greenGuy.position.y = 250;
 	greenGuy.script = LoadScriptAndTrackChanges("res/green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
 	greenGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/green-guy-neutral.png");
 	CopyString(greenGuy.expressions[0].name, "neutral", sizeof greenGuy.expressions[0].name);
 	greenGuy.numExpressions = 1;
 
-	// teleport player
 	AddCommand("tp", &HandlePlayerTeleportCommand, "");
+	AddCommand("dev", &HandleToggleDevModeCommand, "");
 	
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
