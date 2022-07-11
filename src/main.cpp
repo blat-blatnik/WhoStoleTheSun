@@ -2,6 +2,8 @@
 #include "lib/imgui/imgui.h"
 #include <iostream>
 #include <sstream>
+
+
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
@@ -58,7 +60,6 @@ public:
 		std::stringstream ss;
 		for (int i = 0; i < files.count; i++)
 		{
-
 			ss << path << i << ".png";
 			auto s = ss.str();
 			auto tex = LoadTextureAndTrackChanges(ss.str().c_str());
@@ -67,21 +68,29 @@ public:
 		}
 	} 
 	
-	List(Texture*) textures;
+	List(Texture*) textures = NULL;
 };
+
+
 
 class SpriteManager
 {
 public:
-	SpriteManager(bool help)
-	{
-		Sprite spr("res/tex_player/");
-		ListAdd(&sprites, spr);
-	}
 
 	SpriteManager()
 	{
-		
+		//Sprite spr("res/tex_player/");
+		//ListAdd(&sprites, spr);
+	}
+
+	SpriteManager(int reservedSprites)
+	{
+		ListAllocate(&sprites, reservedSprites);
+	}
+
+	~SpriteManager()
+	{
+
 	}
 
 	void Update()
@@ -90,28 +99,47 @@ public:
 		if (!sprites)
 			return;
 
-		if (!sprites[0].textures)
+		if (!sprites[_spriteIndex].textures)
 			return;
 
-		_animationLength = ListCount(sprites[0].textures);
+		if (ListCount(sprites[_spriteIndex].textures) == 1)
+		{
+			_index = 0;
+			return;
+		}
 
-		index = int(_animationTime) % _animationLength;
+		_animationLength = ListCount(sprites[_spriteIndex].textures);
+
+		_index = int(_animationTime) % _animationLength;
 
 
-		_animationTime += 10 * FRAME_TIME;
+		_animationTime += _speed * FRAME_TIME;
 
-		if (_animationTime > _animationLength)
+		if (_animationTime >= _animationLength)
 			_animationTime = 0;
 	}
 
-	void Render(Vector2 position)
-	{
-		DrawTextureCentered(*sprites[0].textures[index], position, WHITE);
+	void Render(Vector2 position, float scale)
+	{		
+		if (!&sprites[_spriteIndex])
+			return;
+
+		DrawTextureCenteredScaled(*sprites[_spriteIndex].textures[_index], position, scale, WHITE);
 	}
 
+	void AddSprite(const char* path)
+	{
+		Sprite spr = Sprite(path);
+		ListAdd(&sprites, spr);
+	}
 	void AddSprite(Sprite spr)
 	{
 		ListAdd(&sprites, spr);
+	}
+
+	void SetSprite(Sprite spr, int index)
+	{
+		sprites[index] = spr;
 	}
 
 	void SetAnimation(int spriteInd)
@@ -119,30 +147,48 @@ public:
 		_spriteIndex = spriteInd;
 	}
 
-	int _spriteIndex;
-	int index;
+	void SetSpeed(float speed) { _speed = speed; }
+private:
+
+	int _spriteIndex = 0;
+	int _index = 0;
 	float _animationTime;
 	int _animationLength;
+	float _speed = 1;
+
 	List(Sprite) sprites = NULL;
 
 };
+
 class Object
 {
 
 public:
 	Object()
 	{
-		
+		position = { 200, 200 };
 	}
 
+	void Update()
+	{
+		spriteMgr.Update();
+	}
+
+	void Render()
+	{
+		spriteMgr.Render(position, scale);
+	}
+
+	SpriteManager spriteMgr;
 	const char* name;
 	Vector2 position;
-	Texture* texture;
 	Script* script;
-	float scale;
+	float scale = 1;
+	float rotation;
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
-	SpriteManager spriteMgr;
+
+	
 };
 
 Input input;
@@ -157,7 +203,9 @@ Texture *playerNeutral;
 Npc pinkGuy = { "Pink Guy" };
 Npc greenGuy = { "Green Guy" };
 Sound shatter;
-SpriteManager manager;
+
+Object player2;
+
 float PlayerDistanceToNpc(Npc npc)
 {
 	Vector2 playerFeet = player.position;
@@ -258,9 +306,14 @@ void Playing_Update()
 		feetPos.y += 0.5f * player.textures[player.direction]->height;
 		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
 		player.position = player.position + (newFeetPos - feetPos);
+
+		player2.position = player.position;
+		player2.spriteMgr.SetAnimation(player.direction);
 	}
 
-	manager.Update();
+
+	player2.Update();
+
 }
 void Playing_Render()
 {
@@ -268,9 +321,8 @@ void Playing_Render()
 	DrawTexture(*background, 0, 0, WHITE);
 	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
 	DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
-	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
-
-	manager.Render({500, 500});
+	//DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
+	player2.Render();
 }
 REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
 
@@ -512,6 +564,17 @@ void GameInit(void)
 	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
 	playerNeutral = LoadTextureAndTrackChanges("res/player-neutral.png");
 
+	player2.spriteMgr.AddSprite("res/player_right/");
+	player2.spriteMgr.AddSprite("res/player_up_right/");
+	player2.spriteMgr.AddSprite("res/player_up/");
+	player2.spriteMgr.AddSprite("res/player_up_left/");
+	player2.spriteMgr.AddSprite("res/player_left/");
+
+	player2.spriteMgr.AddSprite("res/player_down_left/");
+	player2.spriteMgr.AddSprite("res/player_down/");
+	player2.spriteMgr.AddSprite("res/player_down_right/");
+
+
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 400;
 	pinkGuy.position.y = 250;
@@ -535,9 +598,6 @@ void GameInit(void)
 	// teleport player
 	AddCommand("tp", &HandlePlayerTeleportCommand, "");
 	
-
-
-	manager = SpriteManager(true);
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

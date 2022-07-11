@@ -555,6 +555,8 @@ Color BlendColors(Color c0, Color c1, float t);
 // Draws a texture centered at the given point.
 void DrawTextureCentered(Texture texture, Vector2 position, Color tint);
 
+void DrawTextureCenteredScaled(Texture texture, Vector2 position, float scale, Color tint);
+
 //
 // Text
 //
