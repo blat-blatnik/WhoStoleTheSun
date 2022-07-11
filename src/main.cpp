@@ -65,7 +65,7 @@ public:
 	}
 
 };
-class Object
+struct Object
 {
 
 public:
@@ -203,10 +203,20 @@ void Playing_Update()
 void Playing_Render()
 {
 	ClearBackground(BLACK);
-	DrawTexture(*background, 0, 0, WHITE);
-	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
-	DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
-	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
+	
+	Camera2D camera = { 0 };
+	camera.target = player.position;
+	camera.offset.x = WINDOW_CENTER_X;
+	camera.offset.y = WINDOW_CENTER_Y;
+	camera.zoom = 1;
+	BeginMode2D(camera);
+	{
+		DrawTexture(*background, 0, 0, WHITE);
+		DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
+		DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
+		DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
+	}
+	EndMode2D();
 }
 REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
 
@@ -431,8 +441,8 @@ void GameInit(void)
 	robotoItalic = LoadFontAscii("res/roboto-italic.ttf", 32);
 	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
 
-	background = LoadTextureAndTrackChanges("res/background.png");
-	collisionMap = LoadImageAndTrackChangesEx("res/collision-map.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
+	background = LoadTextureAndTrackChanges("res/background2.png");
+	collisionMap = LoadImageAndTrackChangesEx("res/collision-map2.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
 	shatter = LoadSound("res/shatter.wav");
 	
 	player.position.x = 1280 / 2;
@@ -449,7 +459,7 @@ void GameInit(void)
 	playerNeutral = LoadTextureAndTrackChanges("res/player-neutral.png");
 
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
-	pinkGuy.position.x = 400;
+	pinkGuy.position.x = 700;
 	pinkGuy.position.y = 250;
 	pinkGuy.script = LoadScriptAndTrackChanges("res/example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
 	pinkGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/pink-guy-neutral.png");
@@ -461,14 +471,13 @@ void GameInit(void)
 	pinkGuy.numExpressions = 3;
 
 	greenGuy.texture = LoadTextureAndTrackChanges("res/green-guy.png");
-	greenGuy.position.x = 600;
-	greenGuy.position.y = 150;
+	greenGuy.position.x = 1000;
+	greenGuy.position.y = 250;
 	greenGuy.script = LoadScriptAndTrackChanges("res/green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
 	greenGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/green-guy-neutral.png");
 	CopyString(greenGuy.expressions[0].name, "neutral", sizeof greenGuy.expressions[0].name);
 	greenGuy.numExpressions = 1;
 
-	// teleport player
 	AddCommand("tp", &HandlePlayerTeleportCommand, "");
 	
 
