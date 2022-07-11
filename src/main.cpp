@@ -1,8 +1,6 @@
 #include "core.h"
 #include "lib/imgui/imgui.h"
-#include <iostream>
 #include <sstream>
-
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -51,7 +49,7 @@ STRUCT(Input)
 	InputButton console;
 };
 
-class Sprite
+STRUCT(Sprite)
 {
 public:
 	Sprite(const char* path)
@@ -59,33 +57,39 @@ public:
 		auto files = LoadDirectoryFiles(path);
 
 		std::stringstream ss;
-		for (int i = 0; i < files.count; i++)
+		for (unsigned int i = 0; i < files.count; i++)
 		{
 			ss << path << i << ".png";
 			auto s = ss.str();
+			if (!FileExists(s.c_str()))
+			{
+				TraceLog(LOG_ERROR, "could not load texture %s", s.c_str());
+				continue;
+			}
+
 			auto tex = LoadTextureAndTrackChanges(ss.str().c_str());
 			ListAdd(&textures, tex);
 			ss.str("");
 		}
-	} 
-	
+	}
+
 	List(Texture*) textures = NULL;
 };
 
-
-
-class SpriteManager
+STRUCT(SpriteManager)
 {
 public:
 
 	SpriteManager()
 	{
-		//Sprite spr("res/tex_player/");
-		//ListAdd(&sprites, spr);
+		_animationLength = 0;
+		_animationTime = 0;
 	}
 
 	SpriteManager(int reservedSprites)
 	{
+		_animationLength = 0;
+		_animationTime = 0;
 		ListAllocate(&sprites, reservedSprites);
 	}
 
@@ -121,7 +125,7 @@ public:
 	}
 
 	void Render(Vector2 position, float scale)
-	{		
+	{
 		if (!&sprites[_spriteIndex])
 			return;
 
@@ -130,6 +134,9 @@ public:
 
 	void AddSprite(const char* path)
 	{
+		if (!DirectoryExists(path))
+			return;
+
 		Sprite spr = Sprite(path);
 		ListAdd(&sprites, spr);
 	}
@@ -153,23 +160,38 @@ private:
 
 	int _spriteIndex = 0;
 	int _index = 0;
-	float _animationTime;
-	int _animationLength;
+	float _animationTime = 0;
+	int _animationLength = 0;
 	float _speed = 1;
 
 	List(Sprite) sprites = NULL;
 
 };
 
-class Object
+
+STRUCT(Object)
 {
 
 public:
+	Object(const char* name) : name(name)
+	{
+		position = { 1280 / 2, 720 / 2 };
+
+
+	}
 	Object()
 	{
-		position = { 200, 200 };
+		position = { 1280 / 2, 720 / 2 };
 	}
 
+	void Init()
+	{
+		// look for sprites in the name ? as in folder + name
+		// so "res/<name>/"
+		std::stringstream ss;
+		ss << "res/" << name << "/";
+		spriteMgr.AddSprite(ss.str().c_str());
+	}
 	void Update()
 	{
 		spriteMgr.Update();
@@ -180,6 +202,7 @@ public:
 		spriteMgr.Render(position, scale);
 	}
 
+	
 	SpriteManager spriteMgr;
 	const char* name;
 	Vector2 position;
@@ -189,8 +212,8 @@ public:
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 
-	
 };
+Object objects[2] = { "cauldron", "torch" };
 
 bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
@@ -206,7 +229,9 @@ Npc pinkGuy = { "Pink Guy" };
 Npc greenGuy = { "Green Guy" };
 Sound shatter;
 
-Object player2;
+
+Object player2("player2");
+Object cauldron("cauldron");
 
 float PlayerDistanceToNpc(Npc npc)
 {
@@ -342,13 +367,18 @@ void Playing_Update()
 		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
 		player.position = player.position + (newFeetPos - feetPos);
 
+
 		player2.position = player.position;
 		player2.spriteMgr.SetAnimation(player.direction);
 	}
 
 
 	player2.Update();
-
+	
+	for (int i = 0; i < 2; i++)
+	{
+		objects[i].Update();
+	}
 }
 void Playing_Render()
 {
@@ -366,6 +396,11 @@ void Playing_Render()
 		DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
 		//DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 		player2.Render();
+		
+		for (int i = 0; i < 2; i++)
+		{
+			objects[i].Render();
+		}
 	}
 	EndMode2D();
 }
@@ -612,6 +647,7 @@ void GameInit(void)
 	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
 	playerNeutral = LoadTextureAndTrackChanges("res/player-neutral.png");
 
+
 	player2.spriteMgr.AddSprite("res/player_right/");
 	player2.spriteMgr.AddSprite("res/player_up_right/");
 	player2.spriteMgr.AddSprite("res/player_up/");
@@ -622,6 +658,14 @@ void GameInit(void)
 	player2.spriteMgr.AddSprite("res/player_down/");
 	player2.spriteMgr.AddSprite("res/player_down_right/");
 
+	
+	for (int i = 0; i < 2; i++)
+	{
+		objects[i].Init();
+		objects[i].spriteMgr.SetSpeed(10);
+	}
+
+	objects[0].position = { 400, 500 };
 
 	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
 	pinkGuy.position.x = 700;

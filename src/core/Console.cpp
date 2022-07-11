@@ -43,7 +43,10 @@ class Command
 {
 public:
     Command(std::string pcmd, std::string pHelp, CommandHandler handle) : name(pcmd), help(pHelp), handler(handle) {}
-    Command() {};
+    Command()
+    {
+        handler = CommandHandler();
+    }
 
     bool Invoke(List(const char*) args) { return handler(args); }
 
