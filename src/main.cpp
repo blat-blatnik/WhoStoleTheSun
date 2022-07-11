@@ -5,7 +5,8 @@
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
 #define WINDOW_CENTER_Y (0.5f*WINDOW_HEIGHT)
-#define Y_SQUISH 0.541196100146197f // sqrt(2) * sin(PI / 8)
+#define Y_SQUISH 0.5f // sqrt(2) * sin(PI / 8)
+//#define Y_SQUISH 0.541196100146197f // sqrt(2) * sin(PI / 8)
 
 ENUM(GameState)
 {
@@ -107,22 +108,22 @@ float PlayerDistanceToNpc(Npc npc)
 
 	return Vector2Distance(playerFeet, npcFeet);
 }
-bool SampleCollisionMap(Vector2 position)
+bool CheckCollisionMap(Image map, float x, float y)
 {
-	int x = (int)position.x;
-	int y = (int)position.y;
+	int xi = (int)floorf(x);
+	int yi = (int)floorf(y);
 
-	if (x < 0)
-		return false;
-	if (x >= collisionMap->width)
-		return false;
-	if (y < 0)
-		return false;
-	if (y >= collisionMap->height)
-		return false;
+	if (xi < 0)
+		return true;
+	if (xi >= map.width)
+		return true;
+	if (yi < 0)
+		return true;
+	if (yi >= map.height)
+		return true;
 
-	Color color = GetImageColor(*collisionMap, x, y);
-	return color.r > 128;
+	Color color = GetImageColor(map, xi, yi);
+	return color.r < 128;
 }
 Vector2 MovePointWithCollisions(Vector2 position, Vector2 velocity)
 {
@@ -130,7 +131,7 @@ Vector2 MovePointWithCollisions(Vector2 position, Vector2 velocity)
 	Vector2 p1 = position + velocity;
 	
 	Vector2 newPosition = position + velocity;
-	if (SampleCollisionMap(newPosition))
+	if (not CheckCollisionMap(*collisionMap, newPosition.x, newPosition.y))
 		return newPosition;
 	else
 		return position;
@@ -431,7 +432,7 @@ void GameInit(void)
 	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
 
 	background = LoadTextureAndTrackChanges("res/background.png");
-	collisionMap = LoadImageAndTrackChanges("res/collision-map.png");
+	collisionMap = LoadImageAndTrackChangesEx("res/collision-map.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
 	shatter = LoadSound("res/shatter.wav");
 	
 	player.position.x = 1280 / 2;

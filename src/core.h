@@ -353,6 +353,9 @@ Texture *LoadTextureAndTrackChanges(const char *path);
 // Loads an image from a file. The returned image will automatically update whenever the file changes.
 Image *LoadImageAndTrackChanges(const char *path);
 
+// Loads an image from a file, and sets its pixel format. The returned image will automatically update whenever the file changes.
+Image *LoadImageAndTrackChangesEx(const char *path, PixelFormat format);
+
 // Loads a script from a file. The returned script will automatically update whenever the file changes.
 Script *LoadScriptAndTrackChanges(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
 
