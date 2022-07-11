@@ -22,23 +22,6 @@ STRUCT(Expression)
 	Texture *portrait;
 };
 
-STRUCT(Player)
-{
-	Vector2 position;
-	Direction direction; // Determines which sprite to use.
-	Texture *textures[DIRECTION_ENUM_COUNT];
-};
-
-STRUCT(Npc)
-{
-	const char *name;
-	Vector2 position;
-	Texture *texture;
-	Script *script;
-	int numExpressions;
-	Expression expressions[10]; // We might want more, but this should generally be a very small number.
-};
-
 STRUCT(Input)
 {
 	InputAxis movement;
@@ -65,20 +48,16 @@ public:
 	}
 
 };
-struct Object
+
+STRUCT(Object)
 {
-
-public:
-	Object()
-	{
-
-	}
-
-	const char* name;
+	bool isNpc : 1;
+	const char *name;
 	Vector2 position;
-	Texture* texture;
-	Script* script;
-	float scale;
+	Direction direction;
+	Texture *textures[DIRECTION_ENUM_COUNT];
+	Image *collisionMap;
+	Script *script;
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 };
@@ -91,20 +70,19 @@ Font roboto;
 Font robotoBold;
 Font robotoItalic;
 Font robotoBoldItalic;
-Player player;
-Texture *playerNeutral;
-Npc pinkGuy = { "Pink Guy" };
-Npc greenGuy = { "Green Guy" };
+Object player;
+Object objects[100];
+int numObjects;
 Sound shatter;
 
-float PlayerDistanceToNpc(Npc npc)
+float PlayerDistanceToObject(Object *object) 
 {
 	Vector2 playerFeet = player.position;
 	playerFeet.y += player.textures[player.direction]->height * 0.5f;
 	playerFeet.y *= Y_SQUISH;
 
-	Vector2 npcFeet = npc.position;
-	npcFeet.y += npc.texture->height * 0.5f;
+	Vector2 npcFeet = object->position;
+	npcFeet.y += object->textures[0]->height * 0.5f;
 	npcFeet.y *= Y_SQUISH;
 
 	return Vector2Distance(playerFeet, npcFeet);
@@ -136,6 +114,25 @@ Vector2 MovePointWithCollisions(Vector2 position, Vector2 velocity)
 		return newPosition;
 	else
 		return position;
+}
+
+Object *FindObjectByName(const char *name)
+{
+	if (StringsEqualNocase(name, "player"))
+		return &player;
+	
+	for (int i = 0; i < numObjects; ++i)
+		if (StringsEqualNocase(objects[i].name, name))
+			return &objects[i];
+
+	return NULL;
+}
+Texture GetCharacterPortrait(Object *object, const char *name)
+{
+	for (int i = 0; i < object->numExpressions; ++i)
+		if (StringsEqualNocase(object->expressions[i].name, name))
+			return *object->expressions[i].portrait;
+	return *object->expressions[0].portrait;
 }
 
 // Console commands.
@@ -188,22 +185,19 @@ void Playing_Update()
 		return;
 	}
 
-	//bool interact = IsKeyPressed(KEY_SPACE) or IsKeyPressed(KEY_E);
 	if (input.interact.wasPressed)
 	{
-		float distance = PlayerDistanceToNpc(pinkGuy);
-		if (distance < 50)
+		for (int i = 0; i < numObjects; ++i)
 		{
-			PlaySound(shatter); // @TODO Remove
-			PushGameState(GAMESTATE_TALKING, &pinkGuy);
-			return;
-		}
-		distance = PlayerDistanceToNpc(greenGuy);
-		if (distance < 50)
-		{
-			PlaySound(shatter); // @TODO Remove
-			PushGameState(GAMESTATE_TALKING, &greenGuy);
-			return;
+			Object *object = &objects[i];
+			if (not object->script)
+				continue;
+			if (PlayerDistanceToObject(object) < 50)
+			{
+				PlaySound(shatter); // @TODO Remove
+				PushGameState(GAMESTATE_TALKING, object);
+				return;
+			}
 		}
 	}
 
@@ -246,8 +240,11 @@ void Playing_Render()
 	BeginMode2D(camera);
 	{
 		DrawTexture(*background, 0, 0, WHITE);
-		DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
-		DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
+		for (int i = 0; i < numObjects; ++i)
+		{
+			Object *object = &objects[i];
+			DrawTextureCentered(*object->textures[0], object->position, WHITE);
+		}
 		DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 	}
 	EndMode2D();
@@ -258,13 +255,13 @@ REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Rende
 // Talking
 //
 
-Npc *talkingNpc;
+Object *talkingObject;
 int paragraphIndex;
 
 void Talking_Init(void *param)
 {
-	talkingNpc = (Npc *)param;
-	talkingNpc->script->commandIndex = 0;
+	talkingObject = (Object *)param;
+	talkingObject->script->commandIndex = 0;
 	paragraphIndex = 0;
 }
 void Talking_Update()
@@ -275,7 +272,7 @@ void Talking_Update()
 		return;
 	}
 
-	Script *script = talkingNpc->script;
+	Script *script = talkingObject->script;
 	int numParagraphs = ListCount(script->paragraphs);
 	if (paragraphIndex >= numParagraphs)
 		paragraphIndex = numParagraphs - 1;
@@ -320,11 +317,11 @@ void Talking_Render()
 {
 	CallPreviousGameStateRender();
 
-	Script *script = talkingNpc->script;
+	Script *script = talkingObject->script;
 	Paragraph paragraph = script->paragraphs[paragraphIndex];
 	const char *speaker = paragraph.speaker;
 	if (!speaker)
-		speaker = talkingNpc->name;
+		speaker = talkingObject->name;
 
 	float time = 20 * (float)GetTimeInCurrentGameState();
 	const char *expression = GetScriptExpression(*script, paragraphIndex, time);
@@ -349,31 +346,12 @@ void Talking_Render()
 		DrawRectangleRounded(portraitBox, 0.1f, 5, WHITE);
 		DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
 
-		Texture *portrait = NULL;
-		if (StringsEqualNocase(speaker, "player"))
-			portrait = playerNeutral;
-		else
+		Object *speakerObject = FindObjectByName(speaker);
+		if (speakerObject)
 		{
-			Npc *npc = talkingNpc;
-			if (StringsEqualNocase(speaker, "pink guy"))
-				npc = &pinkGuy;
-			else if (StringsEqualNocase(speaker, "green guy"))
-				npc = &greenGuy;
-
-			int expressionIndex = 0;
-			for (int i = 0; i < npc->numExpressions; ++i)
-			{
-				if (StringsEqualNocase(npc->expressions[i].name, expression))
-				{
-					expressionIndex = i;
-					break;
-				}
-			}
-
-			portrait = npc->expressions[expressionIndex].portrait;
+			Texture portrait = GetCharacterPortrait(speakerObject, expression);
+			DrawTextureCentered(portrait, RectangleCenter(portraitBox), WHITE);
 		}
-
-		DrawTextureCentered(*portrait, RectangleCenter(portraitBox), WHITE);
 	}
 
 	// Text
@@ -482,46 +460,50 @@ void GameInit(void)
 	collisionMap = LoadImageAndTrackChangesEx("res/collision-map2.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
 	shatter = LoadSound("res/shatter.wav");
 	
+	player.name = "Player";
 	player.position.x = 1280 / 2;
 	player.position.y = 720 / 2;
 	player.direction = DIRECTION_DOWN;
-	player.textures[DIRECTION_RIGHT]      = LoadTextureAndTrackChanges("res/player-right.png");
-	player.textures[DIRECTION_UP_RIGHT]   = LoadTextureAndTrackChanges("res/player-up-right.png");
-	player.textures[DIRECTION_UP]         = LoadTextureAndTrackChanges("res/player-up.png");
-	player.textures[DIRECTION_UP_LEFT]    = LoadTextureAndTrackChanges("res/player-up-left.png");
-	player.textures[DIRECTION_LEFT]       = LoadTextureAndTrackChanges("res/player-left.png");
-	player.textures[DIRECTION_DOWN_LEFT]  = LoadTextureAndTrackChanges("res/player-down-left.png");
-	player.textures[DIRECTION_DOWN]       = LoadTextureAndTrackChanges("res/player-down.png");
+	player.textures[DIRECTION_RIGHT     ] = LoadTextureAndTrackChanges("res/player-right.png");
+	player.textures[DIRECTION_UP_RIGHT  ] = LoadTextureAndTrackChanges("res/player-up-right.png");
+	player.textures[DIRECTION_UP        ] = LoadTextureAndTrackChanges("res/player-up.png");
+	player.textures[DIRECTION_UP_LEFT   ] = LoadTextureAndTrackChanges("res/player-up-left.png");
+	player.textures[DIRECTION_LEFT      ] = LoadTextureAndTrackChanges("res/player-left.png");
+	player.textures[DIRECTION_DOWN_LEFT ] = LoadTextureAndTrackChanges("res/player-down-left.png");
+	player.textures[DIRECTION_DOWN      ] = LoadTextureAndTrackChanges("res/player-down.png");
 	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
-	playerNeutral = LoadTextureAndTrackChanges("res/player-neutral.png");
+	player.expressions[0].portrait = LoadTextureAndTrackChanges("res/player-neutral.png");
+	CopyString(player.expressions[0].name, "neutral", sizeof player.expressions[0].name);
+	player.numExpressions = 1;
 
-	pinkGuy.texture = LoadTextureAndTrackChanges("res/pink-guy.png");
-	pinkGuy.position.x = 700;
-	pinkGuy.position.y = 250;
-	pinkGuy.script = LoadScriptAndTrackChanges("res/example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-	pinkGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/pink-guy-neutral.png");
-	pinkGuy.expressions[1].portrait = LoadTextureAndTrackChanges("res/pink-guy-happy.png");
-	pinkGuy.expressions[2].portrait = LoadTextureAndTrackChanges("res/pink-guy-sad.png");
-	CopyString(pinkGuy.expressions[0].name, "neutral", sizeof pinkGuy.expressions[0].name);
-	CopyString(pinkGuy.expressions[1].name, "happy", sizeof pinkGuy.expressions[1].name);
-	CopyString(pinkGuy.expressions[2].name, "sad", sizeof pinkGuy.expressions[2].name);
-	pinkGuy.numExpressions = 3;
+	Object *pinkGuy = &objects[numObjects++];
+	pinkGuy->name = "Pink guy";
+	pinkGuy->textures[0] = LoadTextureAndTrackChanges("res/pink-guy.png");
+	pinkGuy->position.x = 700;
+	pinkGuy->position.y = 250;
+	pinkGuy->script = LoadScriptAndTrackChanges("res/example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	pinkGuy->expressions[0].portrait = LoadTextureAndTrackChanges("res/pink-guy-neutral.png");
+	pinkGuy->expressions[1].portrait = LoadTextureAndTrackChanges("res/pink-guy-happy.png");
+	pinkGuy->expressions[2].portrait = LoadTextureAndTrackChanges("res/pink-guy-sad.png");
+	CopyString(pinkGuy->expressions[0].name, "neutral", sizeof pinkGuy->expressions[0].name);
+	CopyString(pinkGuy->expressions[1].name, "happy", sizeof pinkGuy->expressions[1].name);
+	CopyString(pinkGuy->expressions[2].name, "sad", sizeof pinkGuy->expressions[2].name);
+	pinkGuy->numExpressions = 3;
 
-	greenGuy.texture = LoadTextureAndTrackChanges("res/green-guy.png");
-	greenGuy.position.x = 1000;
-	greenGuy.position.y = 250;
-	greenGuy.script = LoadScriptAndTrackChanges("res/green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-	greenGuy.expressions[0].portrait = LoadTextureAndTrackChanges("res/green-guy-neutral.png");
-	CopyString(greenGuy.expressions[0].name, "neutral", sizeof greenGuy.expressions[0].name);
-	greenGuy.numExpressions = 1;
+	Object *greenGuy = &objects[numObjects++];
+	greenGuy->name = "Green guy";
+	greenGuy->textures[0] = LoadTextureAndTrackChanges("res/green-guy.png");
+	greenGuy->position.x = 1000;
+	greenGuy->position.y = 250;
+	greenGuy->script = LoadScriptAndTrackChanges("res/green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	greenGuy->expressions[0].portrait = LoadTextureAndTrackChanges("res/green-guy-neutral.png");
+	CopyString(greenGuy->expressions[0].name, "neutral", sizeof greenGuy->expressions[0].name);
+	greenGuy->numExpressions = 1;
 
 	AddCommand("tp", &HandlePlayerTeleportCommand, "");
 	AddCommand("dev", &HandleToggleDevModeCommand, "");
-	
 
 	Sprite spr("res/tex_player/");
-
-
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }
