@@ -227,7 +227,9 @@ void ReplaceChar(char *string, char target, char replacement);
 char *SkipLeadingWhitespace(const char *string);
 
 // SplitByWhitespace("Hello sailor\n\t1 2  3") -> ["Hello", "sailor", "1", "2", "3"]. The result is allocated from temporary storage.
-List(char *) SplitByWhitespace(const char *string);
+List(char*) SplitByWhitespace(const char* string);
+List(char *) SplitByChar(const char *string, const char* spacer);
+
 
 //
 // Temporary allocator
@@ -733,4 +735,6 @@ typedef bool(*pHandler)(List(const char*) args);
 void AddCommand(const char* command, pHandler handle, const char* help);
 void ExecuteCommand(const char* command);
 void RenderConsole();
+void AddConsoleLog(const char* log);
+void ClearConsoleLog();
 #endif

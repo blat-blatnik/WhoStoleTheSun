@@ -1,6 +1,7 @@
 #include "core.h"
 #include "lib/imgui/imgui.h"
-
+#include <iostream>
+#include <sstream>
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
@@ -49,16 +50,77 @@ class Sprite
 public:
 	Sprite(const char* path)
 	{
-		auto a = LoadDirectoryFiles(path);
+		auto files = LoadDirectoryFiles(path);
+
+		std::stringstream ss;
+		for (int i = 0; i < files.count; i++)
+		{
+
+			ss << path << i << ".png";
+			auto s = ss.str();
+			auto tex = LoadTextureAndTrackChanges(ss.str().c_str());
+			ListAdd(&textures, tex);
+			ss.str("");
+		}
 	} 
+	
+	List(Texture*) textures;
 };
+
 class SpriteManager
 {
 public:
+	SpriteManager(bool help)
+	{
+		Sprite spr("res/tex_player/");
+		ListAdd(&sprites, spr);
+	}
+
 	SpriteManager()
 	{
-
+		
 	}
+
+	void Update()
+	{
+		// say we first want to render sprite 1
+		if (!sprites)
+			return;
+
+		if (!sprites[0].textures)
+			return;
+
+		_animationLength = ListCount(sprites[0].textures);
+
+		index = int(_animationTime) % _animationLength;
+
+
+		_animationTime += 10 * FRAME_TIME;
+
+		if (_animationTime > _animationLength)
+			_animationTime = 0;
+	}
+
+	void Render(Vector2 position)
+	{
+		DrawTextureCentered(*sprites[0].textures[index], position, WHITE);
+	}
+
+	void AddSprite(Sprite spr)
+	{
+		ListAdd(&sprites, spr);
+	}
+
+	void SetAnimation(int spriteInd)
+	{
+		_spriteIndex = spriteInd;
+	}
+
+	int _spriteIndex;
+	int index;
+	float _animationTime;
+	int _animationLength;
+	List(Sprite) sprites = NULL;
 
 };
 class Object
@@ -67,7 +129,7 @@ class Object
 public:
 	Object()
 	{
-
+		
 	}
 
 	const char* name;
@@ -77,6 +139,7 @@ public:
 	float scale;
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
+	SpriteManager spriteMgr;
 };
 
 Input input;
@@ -92,6 +155,7 @@ Npc pinkGuy = { "Pink Guy" };
 Npc greenGuy = { "Green Guy" };
 Sound shatter;
 
+SpriteManager manager;
 
 extern "C" void DELETEME_ExecuteConsoleCommandFromC(char *command)
 {
@@ -183,7 +247,7 @@ void Playing_Update()
 			player.position = newPos;
 	}
 
-
+	manager.Update();
 }
 void Playing_Render()
 {
@@ -192,6 +256,8 @@ void Playing_Render()
 	DrawTextureCentered(*pinkGuy.texture, pinkGuy.position, WHITE);
 	DrawTextureCentered(*greenGuy.texture, greenGuy.position, WHITE);
 	DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
+
+	manager.Render({500, 500});
 }
 REGISTER_GAME_STATE(GAMESTATE_PLAYING, NULL, NULL, Playing_Update, Playing_Render);
 
@@ -444,9 +510,8 @@ void GameInit(void)
 	AddCommand("tp", &HandlePlayerTeleportCommand, "");
 	
 
-	Sprite spr("res/tex_player/");
 
-
+	manager = SpriteManager(true);
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include <iostream>
+
 
 #pragma once
 
@@ -303,5 +303,11 @@ void RenderConsole()
 {
     g_console.ShowConsoleWindow("Console", NULL);
 }
-
-
+void AddConsoleLog(const char* log)
+{
+    g_console.AddLog(log);
+}
+void ClearConsoleLog()
+{
+    g_console.ClearLog();
+}
