@@ -499,6 +499,9 @@ float Clamp01(float x);
 // Clamps an integer to [min, max].
 int ClampInt(int x, int min, int max);
 
+// Returns +1 if x is positive, -1 if x is negative, and 0 if x is 0.
+float Sign(float x);
+
 // Returns the center point of the rectangle.
 Vector2 RectangleCenter(Rectangle rect);
 
@@ -688,15 +691,24 @@ void MapMouseButtonToInputButton(MouseButton mouseButton, InputButton *button);
 
 void MapMouseButtonToInputAxis(MouseButton mouseButton, InputAxis *axis, float xWhenPressed, float yWhenPressed);
 
-void MapControllerButtonToInputButton(GamepadButton controllerButton, InputButton *button);
+void MapGamepadButtonToInputButton(GamepadButton gamepadButton, InputButton *button);
 
-void MapControllerButtonToInputAxis(GamepadButton controllerButton, InputAxis *axis, float xWhenPressed, float yWhenPressed);
+void MapGamepadButtonToInputAxis(GamepadButton gamepadButton, InputAxis *axis, float xWhenPressed, float yWhenPressed);
 
-void MapControllerAxisToInputButton(GamepadAxis controllerAxis, InputButton *button, float dotX, float dotY, float threshold);
+void MapGamepadAxisToInputButton(GamepadAxis gamepadAxis, InputButton *button, float dotX, float dotY, float threshold);
 
-void MapControllerAxisToInputAxis(GamepadAxis controllerAxis, InputAxis *axis);
+void MapGamepadAxisToInputAxis(GamepadAxis gamepadAxis, InputAxis *axis);
 
 void UpdateInputMappings(void);
+
+//
+// Console
+//
+
+typedef bool(*CommandHandler)(List(const char *) args);
+void AddCommand(const char *command, CommandHandler handle, const char *help);
+void ExecuteCommand(const char *command);
+void RenderConsole(void);
 
 //
 // Runtime
@@ -704,8 +716,6 @@ void UpdateInputMappings(void);
 
 // Initialize the game. This is used in runtime.cpp, but should actually be defined by the game.
 void GameInit(void);
-
-void DELETEME_ExecuteConsoleCommandFromC(char *command);
 
 #ifdef __cplusplus
 }
@@ -726,15 +736,4 @@ inline Vector2 operator -(float left, Vector2 right) { return { left - right.x, 
 inline Vector2 operator *(float left, Vector2 right) { return { left * right.x, left * right.y }; }
 inline Vector2 operator /(float left, Vector2 right) { return { left / right.x, left / right.y }; }
 inline Vector2 operator %(float left, Vector2 right) { return { fmodf(left, right.x), fmodf(left, right.y) }; }
-
-
-//
-// Console
-//
-typedef bool(*pHandler)(List(const char*) args);
-void AddCommand(const char* command, pHandler handle, const char* help);
-void ExecuteCommand(const char* command);
-void RenderConsole();
-void AddConsoleLog(const char* log);
-void ClearConsoleLog();
 #endif

@@ -358,7 +358,7 @@ void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, 
 				//@TODO: Actually run the command.
 				script->commandIndex++;
 				LogInfo("Script executing command %d: '%s'.", script->commandIndex, command);
-				DELETEME_ExecuteConsoleCommandFromC(command);
+				ExecuteCommand(command);
 			}
 		}
 		else if (codepoint == CONTROL('*'))

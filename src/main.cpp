@@ -43,6 +43,9 @@ STRUCT(Input)
 {
 	InputAxis movement;
 	InputButton interact;
+	InputButton sprint;
+	InputButton pause;
+	InputButton console;
 };
 
 class Sprite
@@ -154,14 +157,7 @@ Texture *playerNeutral;
 Npc pinkGuy = { "Pink Guy" };
 Npc greenGuy = { "Green Guy" };
 Sound shatter;
-
 SpriteManager manager;
-
-extern "C" void DELETEME_ExecuteConsoleCommandFromC(char *command)
-{
-	//console.ExecuteCommand(command);
-}
-
 float PlayerDistanceToNpc(Npc npc)
 {
 	Vector2 playerFeet = player.position;
@@ -174,6 +170,34 @@ float PlayerDistanceToNpc(Npc npc)
 
 	return Vector2Distance(playerFeet, npcFeet);
 }
+bool SampleCollisionMap(Vector2 position)
+{
+	int x = (int)position.x;
+	int y = (int)position.y;
+
+	if (x < 0)
+		return false;
+	if (x >= collisionMap->width)
+		return false;
+	if (y < 0)
+		return false;
+	if (y >= collisionMap->height)
+		return false;
+
+	Color color = GetImageColor(*collisionMap, x, y);
+	return color.r > 128;
+}
+Vector2 MovePointWithCollisions(Vector2 position, Vector2 velocity)
+{
+	Vector2 p0 = position;
+	Vector2 p1 = position + velocity;
+	
+	Vector2 newPosition = position + velocity;
+	if (SampleCollisionMap(newPosition))
+		return newPosition;
+	else
+		return position;
+}
 
 //
 // Playing
@@ -181,12 +205,12 @@ float PlayerDistanceToNpc(Npc npc)
 
 void Playing_Update()
 {
-	if (IsKeyPressed(KEY_GRAVE))
+	if (input.console.wasPressed)
 	{
 		PushGameState(GAMESTATE_EDITOR, NULL);
 		return;
 	}
-	if (IsKeyPressed(KEY_ESCAPE))
+	if (input.pause.wasPressed)
 	{
 		PushGameState(GAMESTATE_PAUSED, NULL);
 		return;
@@ -212,7 +236,7 @@ void Playing_Update()
 	}
 
 	float moveSpeed = 5;
-	if (IsKeyDown(KEY_LEFT_SHIFT) or IsKeyDown(KEY_RIGHT_SHIFT))
+	if (input.sprint.isDown)
 		moveSpeed = 10;
 
 	Vector2 move = input.movement.position;
@@ -222,10 +246,7 @@ void Playing_Update()
 		move = Vector2Normalize(move);
 		magnitude = Clamp01(Remap(magnitude, 0.2f, 0.8f, 0, 1));
 		move.x *= magnitude;
-		//move.x /= ;
-		//move.y *= magnitude * Y_SQUISH;
 		move.y *= magnitude * Y_SQUISH;
-		LogInfo("%.2f, %.2f", move.x, move.y);
 
 		Vector2 dirVector = move;
 		dirVector.y *= -1;
@@ -233,18 +254,10 @@ void Playing_Update()
 		Vector2 deltaPos = Vector2Scale(move, moveSpeed);
 
 		// In the isometric perspective, the y direction is squished down a little bit.
-		Vector2 newPos = Vector2Add(player.position, deltaPos);
-		Vector2 feetPos = newPos;
+		Vector2 feetPos = player.position;
 		feetPos.y += 0.5f * player.textures[player.direction]->height;
-
-		int footX = (int)roundf(feetPos.x);
-		int footY = (int)roundf(feetPos.y);
-		footX = ClampInt(footX, 0, collisionMap->width - 1);
-		footY = ClampInt(footY, 0, collisionMap->height - 1);
-		Color collision = GetImageColor(*collisionMap, footX, footY);
-
-		if (collision.r >= 128)
-			player.position = newPos;
+		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
+		player.position = player.position + (newFeetPos - feetPos);
 	}
 
 	manager.Update();
@@ -276,6 +289,12 @@ void Talking_Init(void *param)
 }
 void Talking_Update()
 {
+	if (input.pause.wasPressed)
+	{
+		PushGameState(GAMESTATE_PAUSED, NULL);
+		return;
+	}
+
 	Script *script = talkingNpc->script;
 	if (paragraphIndex >= ListCount(script->paragraphs))
 		paragraphIndex = ListCount(script->paragraphs) - 1;
@@ -298,11 +317,6 @@ void Talking_Update()
 			}
 			else SetFrameNumberInCurrentGameState(0);
 		}
-	}
-	if (IsKeyPressed(KEY_ESCAPE))
-	{
-		PushGameState(GAMESTATE_PAUSED, NULL);
-		return;
 	}
 }
 void Talking_Render()
@@ -391,7 +405,7 @@ REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talki
 
 void Editor_Update()
 {
-	if (IsKeyPressed(KEY_GRAVE))
+	if (input.console.wasPressed)
 	{
 		PopGameState();
 		return;
@@ -412,7 +426,7 @@ REGISTER_GAME_STATE(GAMESTATE_EDITOR, NULL, NULL, Editor_Update, Editor_Render);
 
 void Paused_Update(void)
 {
-	if (IsKeyPressed(KEY_ESCAPE))
+	if (input.pause.wasPressed)
 	{
 		PopGameState();
 		return;
@@ -435,8 +449,8 @@ bool HandlePlayerTeleportCommand(List(const char*) args)
 	int x = strtoul(args[0], NULL, 10);
 	int y = strtoul(args[1], NULL, 10);
 
-	player.position.x = x;
-	player.position.y = y;
+	player.position.x = (float)x;
+	player.position.y = (float)y;
 
 	return true;
 }
@@ -446,23 +460,35 @@ void GameInit(void)
 	InitAudioDevice();
 	SetTargetFPS(FPS);
 
-	MapKeyToInputButton(KEY_SPACE, &input.interact);
-	MapKeyToInputButton(KEY_E, &input.interact);
-	MapControllerButtonToInputButton(GAMEPAD_BUTTON_RIGHT_FACE_DOWN, &input.interact);
+	// Input mapping
+	{
+		MapKeyToInputButton(KEY_SPACE, &input.interact);
+		MapKeyToInputButton(KEY_E, &input.interact);
+		MapGamepadButtonToInputButton(GAMEPAD_BUTTON_RIGHT_FACE_DOWN, &input.interact);
 
-	MapKeyToInputAxis(KEY_W, &input.movement, 0, -1);
-	MapKeyToInputAxis(KEY_S, &input.movement, 0, +1);
-	MapKeyToInputAxis(KEY_A, &input.movement, -1, 0);
-	MapKeyToInputAxis(KEY_D, &input.movement, +1, 0);
-	MapKeyToInputAxis(KEY_UP, &input.movement, 0, -1);
-	MapKeyToInputAxis(KEY_DOWN, &input.movement, 0, +1);
-	MapKeyToInputAxis(KEY_LEFT, &input.movement, -1, 0);
-	MapKeyToInputAxis(KEY_RIGHT, &input.movement, +1, 0);
-	MapControllerButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_UP, &input.movement, 0, -1);
-	MapControllerButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_DOWN, &input.movement, 0, +1);
-	MapControllerButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_LEFT, &input.movement, -1, 0);
-	MapControllerButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_RIGHT, &input.movement, +1, 0);
-	MapControllerAxisToInputAxis(GAMEPAD_AXIS_LEFT_X, &input.movement);
+		MapKeyToInputAxis(KEY_W, &input.movement, 0, -1);
+		MapKeyToInputAxis(KEY_S, &input.movement, 0, +1);
+		MapKeyToInputAxis(KEY_A, &input.movement, -1, 0);
+		MapKeyToInputAxis(KEY_D, &input.movement, +1, 0);
+		MapKeyToInputAxis(KEY_UP, &input.movement, 0, -1);
+		MapKeyToInputAxis(KEY_DOWN, &input.movement, 0, +1);
+		MapKeyToInputAxis(KEY_LEFT, &input.movement, -1, 0);
+		MapKeyToInputAxis(KEY_RIGHT, &input.movement, +1, 0);
+		MapGamepadButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_UP, &input.movement, 0, -1);
+		MapGamepadButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_DOWN, &input.movement, 0, +1);
+		MapGamepadButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_LEFT, &input.movement, -1, 0);
+		MapGamepadButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_RIGHT, &input.movement, +1, 0);
+		MapGamepadAxisToInputAxis(GAMEPAD_AXIS_LEFT_X, &input.movement);
+
+		MapKeyToInputButton(KEY_LEFT_SHIFT, &input.sprint);
+		MapKeyToInputButton(KEY_RIGHT_SHIFT, &input.sprint);
+		MapGamepadButtonToInputButton(GAMEPAD_BUTTON_RIGHT_TRIGGER_2, &input.sprint);
+
+		MapKeyToInputButton(KEY_ESCAPE, &input.pause);
+		MapGamepadButtonToInputButton(GAMEPAD_BUTTON_MIDDLE_RIGHT, &input.pause);
+
+		MapKeyToInputButton(KEY_GRAVE, &input.console);
+	}
 
 	roboto = LoadFontAscii("res/roboto.ttf", 32);
 	robotoBold = LoadFontAscii("res/roboto-bold.ttf", 32);

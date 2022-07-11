@@ -39,12 +39,10 @@ std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
     return output;
 }
 
-typedef bool(*pHandler)(List(const char*) args);
-
 class Command
 {
 public:
-    Command(std::string pcmd, std::string pHelp, pHandler handle) : name(pcmd), help(pHelp), handler(handle) {}
+    Command(std::string pcmd, std::string pHelp, CommandHandler handle) : name(pcmd), help(pHelp), handler(handle) {}
     Command() {};
 
     bool Invoke(List(const char*) args) { return handler(args); }
@@ -57,7 +55,7 @@ private:
 
     std::string name;
     std::string help;
-    pHandler handler;
+    CommandHandler handler;
     // maybe implement later, for now useless
     std::vector<std::string> _commandArgTypes; // %s %d %f etc
 
@@ -96,7 +94,7 @@ public:
     }
 
 
-    void AddCommand(const char* cmd, pHandler handle, const char* pHelp = "")
+    void AddCommand(const char* cmd, CommandHandler handle, const char* pHelp = "")
     {
         auto words = SplitStringByCharacter(std::string(cmd), ' ');
 
@@ -259,7 +257,11 @@ public:
         ImGui::End();
     }
 
-    static int TextEditCallbackStub(ImGuiInputTextCallbackData* data) { return NULL; }
+    static int TextEditCallbackStub(ImGuiInputTextCallbackData* data)
+    {
+        UNUSED(data);
+        return NULL; 
+    }
 
     void HandleResult(CmdResult& result)
     {
@@ -290,16 +292,16 @@ public:
 
 Console g_console;
 
-void AddCommand(const char* command, pHandler handle, const char* help)
+extern "C" void AddCommand(const char *command, CommandHandler handle, const char *help)
 {
     g_console.AddCommand(command, handle, help);
 }
-void ExecuteCommand(const char* command)
+extern "C" void ExecuteCommand(const char* command)
 {
     g_console.ExecuteCommand(command);
 }
 
-void RenderConsole()
+extern "C" void RenderConsole()
 {
     g_console.ShowConsoleWindow("Console", NULL);
 }

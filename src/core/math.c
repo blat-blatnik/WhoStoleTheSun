@@ -72,6 +72,11 @@ int ClampInt(int x, int min, int max)
 	return x;
 }
 
+float Sign(float x)
+{
+	return (float)((x > 0) - (x < 0));
+}
+
 Vector2 RectangleCenter(Rectangle rect)
 {
 	return (Vector2)
