@@ -1,6 +1,8 @@
 #include "core.h"
 #include "lib/imgui/imgui.h"
 
+#define private public // [Boris] never private
+
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
@@ -164,8 +166,6 @@ STRUCT(Object)
 
 bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
-Texture *background;
-Image *collisionMap;
 Font roboto;
 Font robotoBold;
 Font robotoItalic;
@@ -187,19 +187,19 @@ float PlayerDistanceToObject(Object *object)
 
 	return Vector2Distance(playerFeet, npcFeet);
 }
-bool CheckCollisionMap(Image map, float x, float y)
+bool CheckCollisionMap(Image map, Vector2 position)
 {
-	int xi = (int)floorf(x);
-	int yi = (int)floorf(y);
+	int xi = (int)floorf(position.x);
+	int yi = (int)floorf(position.y);
 
 	if (xi < 0)
-		return true;
+		return false;
 	if (xi >= map.width)
-		return true;
+		return false;
 	if (yi < 0)
-		return true;
+		return false;
 	if (yi >= map.height)
-		return true;
+		return false;
 
 	Color color = GetImageColor(map, xi, yi);
 	return color.r < 128;
@@ -210,10 +210,28 @@ Vector2 MovePointWithCollisions(Vector2 position, Vector2 velocity)
 	Vector2 p1 = position + velocity;
 	
 	Vector2 newPosition = position + velocity;
-	if (not CheckCollisionMap(*collisionMap, newPosition.x, newPosition.y))
-		return newPosition;
-	else
-		return position;
+	for (int i = 0; i < numObjects; ++i)
+	{
+		Object *object = &objects[i];
+		if (object->collisionMap)
+		{
+			Rectangle rectangle = {
+				object->position.x - 0.5f * object->collisionMap->width,
+				object->position.y - 0.5f * object->collisionMap->height,
+				(float)object->collisionMap->width,
+				(float)object->collisionMap->height,
+			};
+			Vector2 topLeft = { rectangle.x, rectangle.y };
+			Vector2 localPosition = newPosition - topLeft;
+
+			// The CheckCollisionMap call might become more expensive in the future, so we first check
+			// the rectangle to make sure a collision can happen at all, and only then do we actually check the collision map.
+			if (CheckCollisionPointRec(newPosition, rectangle) and CheckCollisionMap(*object->collisionMap, localPosition))
+				return position;
+		}
+	}
+
+	return newPosition;
 }
 
 Object *FindObjectByName(const char *name)
@@ -321,7 +339,7 @@ void Playing_Update()
 
 		// In the isometric perspective, the y direction is squished down a little bit.
 		Vector2 feetPos = player.position;
-		feetPos.y += 0.5f * player.textures[player.direction]->height;
+		feetPos.y += 0.5f * player.spriteMgr.sprites[player.direction].textures[player.spriteMgr._index]->height;
 		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
 		player.position = player.position + (newFeetPos - feetPos);
 		player.spriteMgr.SetAnimation(player.direction);
@@ -342,7 +360,6 @@ void Playing_Render()
 	camera.zoom = 1;
 	BeginMode2D(camera);
 	{
-		DrawTexture(*background, 0, 0, WHITE);
 		for (int i = 0; i < numObjects; ++i)
 		{
 			Object *object = &objects[i];
@@ -559,9 +576,6 @@ void GameInit(void)
 	robotoBold = LoadFontAscii("res/roboto-bold.ttf", 32);
 	robotoItalic = LoadFontAscii("res/roboto-italic.ttf", 32);
 	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
-
-	background = LoadTextureAndTrackChanges("res/background2.png");
-	collisionMap = LoadImageAndTrackChangesEx("res/collision-map2.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
 	shatter = LoadSound("res/shatter.wav");
 	
 	player.name = "Player";
@@ -588,6 +602,13 @@ void GameInit(void)
 	player.spriteMgr.AddSprite("res/player_down/");
 	player.spriteMgr.AddSprite("res/player_down_right/");
 
+	Object *background = &objects[numObjects++];
+	background->name = "Background";
+	background->textures[0] = LoadTextureAndTrackChanges("res/background.png");
+	background->collisionMap = LoadImageAndTrackChangesEx("res/collision-map.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
+	background->position.x = 0.5f * background->textures[0]->width;
+	background->position.y = 0.5f * background->textures[0]->height;
+
 	Object *pinkGuy = &objects[numObjects++];
 	pinkGuy->name = "Pink guy";
 	pinkGuy->textures[0] = LoadTextureAndTrackChanges("res/pink-guy.png");
@@ -612,9 +633,14 @@ void GameInit(void)
 	CopyString(greenGuy->expressions[0].name, "neutral", sizeof greenGuy->expressions[0].name);
 	greenGuy->numExpressions = 1;
 
+	//Object *cauldron = &objects[numObjects++];
+	//cauldron->name = "Cauldron";
+	//cauldron->position.x = 1000;
+	//cauldron->position.y = 550;
+	//cauldron->spriteMgr.AddSprite("res/cauldron/");
+
 	AddCommand("tp", &HandlePlayerTeleportCommand, "");
 	AddCommand("dev", &HandleToggleDevModeCommand, "");
-	
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }
