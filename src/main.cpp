@@ -1,8 +1,6 @@
 #include "core.h"
 #include "lib/imgui/imgui.h"
 
-#define private public // [Boris] never private
-
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
@@ -33,132 +31,34 @@ STRUCT(Input)
 	InputButton console;
 };
 
-STRUCT(Sprite)
-{
-public:
-	Sprite(const char* path)
-	{
-		auto files = LoadDirectoryFiles(path);
-		for (unsigned int i = 0; i < files.count; i++)
-		{
-			auto tex = LoadTextureAndTrackChanges(files.paths[i]);
-			ListAdd(&textures, tex);
-		}
-	}
-
-	List(Texture*) textures = NULL;
-};
-
-STRUCT(SpriteManager)
-{
-public:
-
-	SpriteManager()
-	{
-		_animationLength = 0;
-		_animationTime = 0;
-	}
-
-	SpriteManager(int reservedSprites)
-	{
-		_animationLength = 0;
-		_animationTime = 0;
-		ListAllocate(&sprites, reservedSprites);
-	}
-
-	~SpriteManager()
-	{
-
-	}
-
-	void Update()
-	{
-		// say we first want to render sprite 1
-		if (!sprites)
-			return;
-
-		if (!sprites[_spriteIndex].textures)
-			return;
-
-		if (ListCount(sprites[_spriteIndex].textures) == 1)
-		{
-			_index = 0;
-			return;
-		}
-
-		_animationLength = ListCount(sprites[_spriteIndex].textures);
-
-		_index = int(_animationTime) % _animationLength;
-
-
-		_animationTime += _speed * FRAME_TIME;
-
-		if (_animationTime >= _animationLength)
-			_animationTime = 0;
-	}
-
-	void Render(Vector2 position)
-	{
-		if (!&sprites[_spriteIndex])
-			return;
-
-		DrawTextureCentered(*sprites[_spriteIndex].textures[_index], position, WHITE);
-	}
-
-	void AddSprite(const char* path)
-	{
-		if (!DirectoryExists(path))
-			return;
-
-		Sprite spr = Sprite(path);
-		ListAdd(&sprites, spr);
-	}
-	void AddSprite(Sprite spr)
-	{
-		ListAdd(&sprites, spr);
-	}
-
-	void SetSprite(Sprite spr, int index)
-	{
-		sprites[index] = spr;
-	}
-
-	void SetAnimation(int spriteInd)
-	{
-		_spriteIndex = spriteInd;
-	}
-
-	void SetSpeed(float speed) { _speed = speed; }
-private:
-
-	int _spriteIndex = 0;
-	int _index = 0;
-	float _animationTime = 0;
-	int _animationLength = 0;
-	float _speed = 1;
-
-	List(Sprite) sprites = NULL;
-
-};
-
 STRUCT(Object)
 {
 	const char *name;
 	Vector2 position;
-	Direction direction;
-	Texture *textures[DIRECTION_ENUM_COUNT];
 	Image *collisionMap;
+	Direction direction;
+	List(Texture *) sprites[DIRECTION_ENUM_COUNT];
+	int animationFrame;
 	Script *script;
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
-	SpriteManager spriteMgr;
+
 	void Update()
 	{
-		spriteMgr.Update();
+		if (ListCount(sprites[direction]) == 0)
+			return;
+
+		List(Texture *) sprite = sprites[direction];
+		animationFrame = (animationFrame + 1) % ListCount(sprite);
 	}
+
 	void Render()
 	{
-		spriteMgr.Render(position);
+		if (ListCount(sprites[direction]) == 0)
+			return;
+
+		List(Texture *) sprite = sprites[direction];
+		DrawTextureCentered(*sprite[animationFrame], position, WHITE);
 	}
 };
 
@@ -173,17 +73,16 @@ Object objects[100];
 int numObjects;
 Sound shatter;
 
-float PlayerDistanceToObject(Object *object) 
+List(Texture *) LoadAllTexturesFromDirectory(const char *path)
 {
-	Vector2 playerFeet = player.position;
-	playerFeet.y += player.textures[player.direction]->height * 0.5f;
-	playerFeet.y *= Y_SQUISH;
-
-	Vector2 npcFeet = object->position;
-	npcFeet.y += object->textures[0]->height * 0.5f;
-	npcFeet.y *= Y_SQUISH;
-
-	return Vector2Distance(playerFeet, npcFeet);
+	List(Texture *) textures = NULL;
+	FilePathList files = LoadDirectoryFiles(path);
+	{
+		for (unsigned int i = 0; i < files.count; ++i)
+			ListAdd(&textures, LoadTextureAndTrackChanges(files.paths[i]));
+	}
+	UnloadDirectoryFiles(files);
+	return textures;
 }
 bool CheckCollisionMap(Image map, Vector2 position)
 {
@@ -249,6 +148,29 @@ Texture GetCharacterPortrait(Object *object, const char *name)
 		if (StringsEqualNocase(object->expressions[i].name, name))
 			return *object->expressions[i].portrait;
 	return *object->expressions[0].portrait;
+}
+Texture *GetCurrentTexture(Object *object)
+{
+	if (ListCount(object->sprites[object->direction]) == 0)
+		return NULL;
+
+	return object->sprites[object->direction][object->animationFrame];
+}
+float PlayerDistanceToObject(Object *object)
+{
+	Vector2 playerFeet = player.position;
+	playerFeet.y += GetCurrentTexture(&player)->height * 0.5f;
+	playerFeet.y *= Y_SQUISH;
+
+	Vector2 objectPosition = object->position;
+	Texture *objectTexture = GetCurrentTexture(object);
+	if (objectTexture)
+	{
+		objectPosition.y += objectTexture->height * 0.5f;
+		objectPosition.y *= Y_SQUISH;
+	}
+
+	return Vector2Distance(playerFeet, objectPosition);
 }
 
 // Console commands.
@@ -337,10 +259,9 @@ void Playing_Update()
 
 		// In the isometric perspective, the y direction is squished down a little bit.
 		Vector2 feetPos = player.position;
-		feetPos.y += 0.5f * player.spriteMgr.sprites[player.direction].textures[player.spriteMgr._index]->height;
+		feetPos.y += 0.5f * GetCurrentTexture(&player)->height;
 		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
-		player.position = player.position + (newFeetPos - feetPos);
-		player.spriteMgr.SetAnimation(player.direction);
+		player.position = player.position + (newFeetPos - feetPos);;
 	}
 
 	player.Update();
@@ -361,7 +282,7 @@ void Playing_Render()
 		for (int i = 0; i < numObjects; ++i)
 		{
 			Object *object = &objects[i];
-			DrawTextureCentered(*object->textures[0], object->position, WHITE);
+			object->Render();
 		}
 		player.Render();
 		//DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
@@ -505,8 +426,14 @@ void Editor_Update()
 		return;
 	}
 
-	ImGui::ShowDemoWindow();
 	RenderConsole();
+
+	ImGui::ShowDemoWindow();
+	ImGui::Begin("Objects");
+	{
+		
+	}
+	ImGui::End();
 }
 void Editor_Render()
 {
@@ -537,6 +464,8 @@ REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 void GameInit(void)
 {
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
+	//ToggleFullscreen();
+
 	InitAudioDevice();
 	SetTargetFPS(FPS);
 
@@ -580,36 +509,28 @@ void GameInit(void)
 	player.position.x = 1280 / 2;
 	player.position.y = 720 / 2;
 	player.direction = DIRECTION_DOWN;
-	player.textures[DIRECTION_RIGHT     ] = LoadTextureAndTrackChanges("res/player-right.png");
-	player.textures[DIRECTION_UP_RIGHT  ] = LoadTextureAndTrackChanges("res/player-up-right.png");
-	player.textures[DIRECTION_UP        ] = LoadTextureAndTrackChanges("res/player-up.png");
-	player.textures[DIRECTION_UP_LEFT   ] = LoadTextureAndTrackChanges("res/player-up-left.png");
-	player.textures[DIRECTION_LEFT      ] = LoadTextureAndTrackChanges("res/player-left.png");
-	player.textures[DIRECTION_DOWN_LEFT ] = LoadTextureAndTrackChanges("res/player-down-left.png");
-	player.textures[DIRECTION_DOWN      ] = LoadTextureAndTrackChanges("res/player-down.png");
-	player.textures[DIRECTION_DOWN_RIGHT] = LoadTextureAndTrackChanges("res/player-down-right.png");
+	player.sprites[DIRECTION_RIGHT     ] = LoadAllTexturesFromDirectory("res/player_right/");
+	player.sprites[DIRECTION_UP_RIGHT  ] = LoadAllTexturesFromDirectory("res/player_up_right/");
+	player.sprites[DIRECTION_UP        ] = LoadAllTexturesFromDirectory("res/player_up/");
+	player.sprites[DIRECTION_UP_LEFT   ] = LoadAllTexturesFromDirectory("res/player_up_left/");
+	player.sprites[DIRECTION_LEFT      ] = LoadAllTexturesFromDirectory("res/player_left/");
+	player.sprites[DIRECTION_DOWN_LEFT ] = LoadAllTexturesFromDirectory("res/player_down_left/");
+	player.sprites[DIRECTION_DOWN      ] = LoadAllTexturesFromDirectory("res/player_down/");
+	player.sprites[DIRECTION_DOWN_RIGHT] = LoadAllTexturesFromDirectory("res/player_down_right/");
 	player.expressions[0].portrait = LoadTextureAndTrackChanges("res/player-neutral.png");
 	CopyString(player.expressions[0].name, "neutral", sizeof player.expressions[0].name);
 	player.numExpressions = 1;
-	player.spriteMgr.AddSprite("res/player_right/");
-	player.spriteMgr.AddSprite("res/player_up_right/");
-	player.spriteMgr.AddSprite("res/player_up/");
-	player.spriteMgr.AddSprite("res/player_up_left/");
-	player.spriteMgr.AddSprite("res/player_left/");
-	player.spriteMgr.AddSprite("res/player_down_left/");
-	player.spriteMgr.AddSprite("res/player_down/");
-	player.spriteMgr.AddSprite("res/player_down_right/");
 
 	Object *background = &objects[numObjects++];
 	background->name = "Background";
-	background->textures[0] = LoadTextureAndTrackChanges("res/background.png");
+	ListAdd(&background->sprites[0], LoadTextureAndTrackChanges("res/background.png"));
 	background->collisionMap = LoadImageAndTrackChangesEx("res/collision-map.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
-	background->position.x = 0.5f * background->textures[0]->width;
-	background->position.y = 0.5f * background->textures[0]->height;
+	background->position.x = 0.5f * background->sprites[0][0]->width;
+	background->position.y = 0.5f * background->sprites[0][0]->height;
 
 	Object *pinkGuy = &objects[numObjects++];
 	pinkGuy->name = "Pink guy";
-	pinkGuy->textures[0] = LoadTextureAndTrackChanges("res/pink-guy.png");
+	ListAdd(&pinkGuy->sprites[0], LoadTextureAndTrackChanges("res/pink-guy.png"));
 	pinkGuy->position.x = 700;
 	pinkGuy->position.y = 250;
 	pinkGuy->script = LoadScriptAndTrackChanges("res/example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
@@ -623,7 +544,7 @@ void GameInit(void)
 
 	Object *greenGuy = &objects[numObjects++];
 	greenGuy->name = "Green guy";
-	greenGuy->textures[0] = LoadTextureAndTrackChanges("res/green-guy.png");
+	ListAdd(&greenGuy->sprites[0], LoadTextureAndTrackChanges("res/green-guy.png"));
 	greenGuy->position.x = 1000;
 	greenGuy->position.y = 250;
 	greenGuy->script = LoadScriptAndTrackChanges("res/green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
