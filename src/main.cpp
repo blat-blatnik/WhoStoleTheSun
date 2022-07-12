@@ -1,6 +1,5 @@
 #include "core.h"
 #include "lib/imgui/imgui.h"
-#include <sstream>
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -38,21 +37,10 @@ public:
 	Sprite(const char* path)
 	{
 		auto files = LoadDirectoryFiles(path);
-
-		std::stringstream ss;
 		for (unsigned int i = 0; i < files.count; i++)
 		{
-			ss << path << i << ".png";
-			auto s = ss.str();
-			if (!FileExists(s.c_str()))
-			{
-				TraceLog(LOG_ERROR, "could not load texture %s", s.c_str());
-				continue;
-			}
-
-			auto tex = LoadTextureAndTrackChanges(ss.str().c_str());
+			auto tex = LoadTextureAndTrackChanges(files.paths[i]);
 			ListAdd(&textures, tex);
-			ss.str("");
 		}
 	}
 
@@ -162,9 +150,17 @@ STRUCT(Object)
 	Script *script;
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
-
+	SpriteManager spriteMgr;
+	float scale = 1;
+	void Update()
+	{
+		spriteMgr.Update();
+	}
+	void Render()
+	{
+		spriteMgr.Render(position, scale);
+	}
 };
-Object objects[2] = { "cauldron", "torch" };
 
 bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
@@ -328,19 +324,12 @@ void Playing_Update()
 		feetPos.y += 0.5f * player.textures[player.direction]->height;
 		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
 		player.position = player.position + (newFeetPos - feetPos);
-
-
-		player2.position = player.position;
-		player2.spriteMgr.SetAnimation(player.direction);
+		player.spriteMgr.SetAnimation(player.direction);
 	}
 
-
-	player2.Update();
-	
-	for (int i = 0; i < 2; i++)
-	{
+	player.Update();
+	for (int i = 0; i < numObjects; i++)
 		objects[i].Update();
-	}
 }
 void Playing_Render()
 {
@@ -359,7 +348,8 @@ void Playing_Render()
 			Object *object = &objects[i];
 			DrawTextureCentered(*object->textures[0], object->position, WHITE);
 		}
-		DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
+		player.Render();
+		//DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 	}
 	EndMode2D();
 }
@@ -589,6 +579,14 @@ void GameInit(void)
 	player.expressions[0].portrait = LoadTextureAndTrackChanges("res/player-neutral.png");
 	CopyString(player.expressions[0].name, "neutral", sizeof player.expressions[0].name);
 	player.numExpressions = 1;
+	player.spriteMgr.AddSprite("res/player_right/");
+	player.spriteMgr.AddSprite("res/player_up_right/");
+	player.spriteMgr.AddSprite("res/player_up/");
+	player.spriteMgr.AddSprite("res/player_up_left/");
+	player.spriteMgr.AddSprite("res/player_left/");
+	player.spriteMgr.AddSprite("res/player_down_left/");
+	player.spriteMgr.AddSprite("res/player_down/");
+	player.spriteMgr.AddSprite("res/player_down_right/");
 
 	Object *pinkGuy = &objects[numObjects++];
 	pinkGuy->name = "Pink guy";
