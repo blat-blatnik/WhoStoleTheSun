@@ -97,12 +97,12 @@ public:
 			_animationTime = 0;
 	}
 
-	void Render(Vector2 position, float scale)
+	void Render(Vector2 position)
 	{
 		if (!&sprites[_spriteIndex])
 			return;
 
-		DrawTextureCenteredScaled(*sprites[_spriteIndex].textures[_index], position, scale, WHITE);
+		DrawTextureCentered(*sprites[_spriteIndex].textures[_index], position, WHITE);
 	}
 
 	void AddSprite(const char* path)
@@ -143,7 +143,6 @@ private:
 
 STRUCT(Object)
 {
-	bool isNpc : 1;
 	const char *name;
 	Vector2 position;
 	Direction direction;
@@ -153,14 +152,13 @@ STRUCT(Object)
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 	SpriteManager spriteMgr;
-	float scale = 1;
 	void Update()
 	{
 		spriteMgr.Update();
 	}
 	void Render()
 	{
-		spriteMgr.Render(position, scale);
+		spriteMgr.Render(position);
 	}
 };
 
