@@ -86,6 +86,16 @@ char *SkipLeadingWhitespace(const char *string)
 		++string;
 	return (char *)string;
 }
+char* SkipLeadingChar(const char* string, const char* c)
+{
+	if (!string)
+		return NULL;
+
+	while ((*string) == *c)
+		++string;
+
+	return (char*)string;
+}
 
 List(char *) SplitByWhitespace(const char *string)
 {
@@ -105,6 +115,33 @@ List(char *) SplitByWhitespace(const char *string)
 		do ++i; while (string[i] and not CharIsWhitespace(string[i]));
 
 		char *run = TempAlloc(i + 1);
+		CopyBytes(run, string, i);
+		run[i] = 0;
+		ListAdd(&results, run);
+		string += i;
+	}
+
+	return results;
+}
+
+List(char*) SplitByChar(const char* string, const char* spacer)
+{
+	if (not string)
+		return NULL;
+
+	List(char*) results = NULL;
+	ListSetAllocator((void**)&results, TempRealloc, TempFree);
+
+	for (;;)
+	{
+		string = SkipLeadingChar(string, spacer);
+		if (not string[0])
+			break;
+
+		int i = 0;
+		do ++i; while (string[i] and not (string[i] == *spacer));
+
+		char* run = TempAlloc(i + 1);
 		CopyBytes(run, string, i);
 		run[i] = 0;
 		ListAdd(&results, run);

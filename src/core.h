@@ -227,7 +227,9 @@ void ReplaceChar(char *string, char target, char replacement);
 char *SkipLeadingWhitespace(const char *string);
 
 // SplitByWhitespace("Hello sailor\n\t1 2  3") -> ["Hello", "sailor", "1", "2", "3"]. The result is allocated from temporary storage.
-List(char *) SplitByWhitespace(const char *string);
+List(char*) SplitByWhitespace(const char* string);
+List(char *) SplitByChar(const char *string, const char* spacer);
+
 
 //
 // Temporary allocator
@@ -555,6 +557,8 @@ Color BlendColors(Color c0, Color c1, float t);
 
 // Draws a texture centered at the given point.
 void DrawTextureCentered(Texture texture, Vector2 position, Color tint);
+
+void DrawTextureCenteredScaled(Texture texture, Vector2 position, float scale, Color tint);
 
 //
 // Text

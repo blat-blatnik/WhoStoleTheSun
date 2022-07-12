@@ -1,5 +1,6 @@
 #include "core.h"
 #include "lib/imgui/imgui.h"
+#include <sstream>
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -31,21 +32,122 @@ STRUCT(Input)
 	InputButton console;
 };
 
-class Sprite
+STRUCT(Sprite)
 {
 public:
 	Sprite(const char* path)
 	{
-		auto a = LoadDirectoryFiles(path);
-	} 
+		auto files = LoadDirectoryFiles(path);
+
+		std::stringstream ss;
+		for (unsigned int i = 0; i < files.count; i++)
+		{
+			ss << path << i << ".png";
+			auto s = ss.str();
+			if (!FileExists(s.c_str()))
+			{
+				TraceLog(LOG_ERROR, "could not load texture %s", s.c_str());
+				continue;
+			}
+
+			auto tex = LoadTextureAndTrackChanges(ss.str().c_str());
+			ListAdd(&textures, tex);
+			ss.str("");
+		}
+	}
+
+	List(Texture*) textures = NULL;
 };
-class SpriteManager
+
+STRUCT(SpriteManager)
 {
 public:
+
 	SpriteManager()
+	{
+		_animationLength = 0;
+		_animationTime = 0;
+	}
+
+	SpriteManager(int reservedSprites)
+	{
+		_animationLength = 0;
+		_animationTime = 0;
+		ListAllocate(&sprites, reservedSprites);
+	}
+
+	~SpriteManager()
 	{
 
 	}
+
+	void Update()
+	{
+		// say we first want to render sprite 1
+		if (!sprites)
+			return;
+
+		if (!sprites[_spriteIndex].textures)
+			return;
+
+		if (ListCount(sprites[_spriteIndex].textures) == 1)
+		{
+			_index = 0;
+			return;
+		}
+
+		_animationLength = ListCount(sprites[_spriteIndex].textures);
+
+		_index = int(_animationTime) % _animationLength;
+
+
+		_animationTime += _speed * FRAME_TIME;
+
+		if (_animationTime >= _animationLength)
+			_animationTime = 0;
+	}
+
+	void Render(Vector2 position, float scale)
+	{
+		if (!&sprites[_spriteIndex])
+			return;
+
+		DrawTextureCenteredScaled(*sprites[_spriteIndex].textures[_index], position, scale, WHITE);
+	}
+
+	void AddSprite(const char* path)
+	{
+		if (!DirectoryExists(path))
+			return;
+
+		Sprite spr = Sprite(path);
+		ListAdd(&sprites, spr);
+	}
+	void AddSprite(Sprite spr)
+	{
+		ListAdd(&sprites, spr);
+	}
+
+	void SetSprite(Sprite spr, int index)
+	{
+		sprites[index] = spr;
+	}
+
+	void SetAnimation(int spriteInd)
+	{
+		_spriteIndex = spriteInd;
+	}
+
+	void SetSpeed(float speed) { _speed = speed; }
+private:
+
+	int _spriteIndex = 0;
+	int _index = 0;
+	float _animationTime = 0;
+	int _animationLength = 0;
+	float _speed = 1;
+
+	List(Sprite) sprites = NULL;
 
 };
 
@@ -60,7 +162,9 @@ STRUCT(Object)
 	Script *script;
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
+
 };
+Object objects[2] = { "cauldron", "torch" };
 
 bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
@@ -224,9 +328,19 @@ void Playing_Update()
 		feetPos.y += 0.5f * player.textures[player.direction]->height;
 		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
 		player.position = player.position + (newFeetPos - feetPos);
+
+
+		player2.position = player.position;
+		player2.spriteMgr.SetAnimation(player.direction);
 	}
 
 
+	player2.Update();
+	
+	for (int i = 0; i < 2; i++)
+	{
+		objects[i].Update();
+	}
 }
 void Playing_Render()
 {
@@ -502,8 +616,7 @@ void GameInit(void)
 
 	AddCommand("tp", &HandlePlayerTeleportCommand, "");
 	AddCommand("dev", &HandleToggleDevModeCommand, "");
-
-	Sprite spr("res/tex_player/");
+	
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

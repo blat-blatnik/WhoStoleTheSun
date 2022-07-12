@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include <iostream>
+
 
 static std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
 {
@@ -43,7 +43,10 @@ class Command
 {
 public:
     Command(std::string pcmd, std::string pHelp, CommandHandler handle) : name(pcmd), help(pHelp), handler(handle) {}
-    Command() {};
+    Command()
+    {
+        handler = CommandHandler();
+    }
 
     bool Invoke(List(const char*) args) { return handler(args); }
 
@@ -326,5 +329,11 @@ extern "C" void RenderConsole()
 {
     g_console.ShowConsoleWindow("Console", NULL);
 }
-
-
+void AddConsoleLog(const char* log)
+{
+    g_console.AddLog(log);
+}
+void ClearConsoleLog()
+{
+    g_console.ClearLog();
+}
