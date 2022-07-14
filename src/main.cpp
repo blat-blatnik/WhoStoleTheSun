@@ -482,10 +482,26 @@ void Editor_Update()
 									object = &objects[i];
 
 								bool selected = selectedObject == i;
+								if (ImGui::Button("x") and i >= 0)
+								{
+									CopyBytes(&objects[i], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
+									--numObjects;
+									selected = false;
+									object = &objects[i];
+								}
+								ImGui::SameLine();
 								if (ImGui::Selectable(object->name, &selected))
 									selectedObject = i;
 							}
 							ImGui::PopID();
+						}
+
+						if (ImGui::Button("+", ImVec2(ImGui::GetContentRegionAvail().x, 0)) and numObjects < COUNTOF(objects))
+						{
+							Object *object = &objects[numObjects++];
+							memset(object, 0, sizeof object[0]);
+							int index = numObjects;
+							FormatString(object->name, sizeof object->name, "Object%d", index);
 						}
 					}
 
@@ -510,8 +526,6 @@ void Editor_Update()
 						ImGui::SliderInt("Direction", (int *)&object->direction, 0, DIRECTION_ENUM_COUNT - 1, direction);
 						if (not directionIsValid)
 							ImGui::PopStyleColor(3);
-
-
 					}
 				}
 				ImGui::EndTable();
