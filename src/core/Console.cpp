@@ -216,7 +216,10 @@ public:
         ImGui::Separator();
 
         // Command-line
-        bool reclaim_focus = false;
+        
+        // Always maintain keyboard focus on the console.
+        ImGui::SetKeyboardFocusHere();
+
         ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
         if (ImGui::InputText("Input", InputBuf, IM_ARRAYSIZE(InputBuf), input_text_flags, &TextEditCallbackStub, (void*)this))
         {
@@ -231,15 +234,9 @@ public:
 
             CmdResult result = ExecuteCommand(s);
             strcpy(s, "");
-            reclaim_focus = true;
 
             HandleResult(result);
         }
-
-        // Auto-focus on window apparition
-        ImGui::SetItemDefaultFocus();
-        if (reclaim_focus)
-            ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
     }
 
     static int TextEditCallbackStub(ImGuiInputTextCallbackData* data)
