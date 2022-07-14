@@ -154,7 +154,6 @@
     <None Include="webshell.html" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="resource.h" />
     <ClInclude Include="src\lib\imgui\imconfig.h" />
     <ClInclude Include="src\lib\imgui\imgui.h" />
     <ClInclude Include="src\lib\imgui\imgui_impl_raylib.h" />
