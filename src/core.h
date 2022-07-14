@@ -14,13 +14,7 @@
 
 #ifdef __cplusplus
 #include "lib/imgui/imgui.h"
-#include <map>
-#include <string>
-#include <vector>
-#include <memory>
 #endif
-
-
 
 #ifdef __cplusplus
 extern "C" {

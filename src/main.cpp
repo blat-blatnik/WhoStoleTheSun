@@ -199,12 +199,8 @@ bool HandlePlayerTeleportCommand(List(const char *) args)
 	if (ListCount(args) < 2)
 		return false;
 
-	int x = strtoul(args[0], NULL, 10);
-	int y = strtoul(args[1], NULL, 10);
-
-	player.position.x = (float)x;
-	player.position.y = (float)y;
-
+	player.position.x = (float)TextToInteger(args[0]);
+	player.position.y = (float)TextToInteger(args[1]);
 	return true;
 }
 bool HandleToggleDevModeCommand(List(const char *) args)

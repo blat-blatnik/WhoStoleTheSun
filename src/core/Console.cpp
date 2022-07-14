@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <map>
 
 
 static std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
