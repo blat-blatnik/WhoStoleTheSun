@@ -720,6 +720,10 @@ typedef bool(*CommandHandler)(List(const char *) args);
 
 bool ParseCommandBoolArg(const char *string, bool *outSuccess);
 
+int ParseCommandIntArg(const char *string, bool *outSuccess);
+
+float ParseCommandFloatArg(const char *string, bool *outSuccess);
+
 void AddCommand(const char *command, CommandHandler handle, const char *help);
 
 void ExecuteCommand(const char *command);

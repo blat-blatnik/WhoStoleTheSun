@@ -289,6 +289,34 @@ extern "C" bool ParseCommandBoolArg(const char *string, bool *outSuccess)
     return false;
 }
 
+extern "C" int ParseCommandIntArg(const char *string, bool *outSuccess)
+{
+    *outSuccess = false;
+    if (not string)
+        return 0;
+
+    char *endPtr;
+    long result = strtol(string, &endPtr, 0);
+    if (endPtr != string)
+        *outSuccess = true;
+
+    return (int)result;
+}
+
+extern "C" float ParseCommandFloatArg(const char *string, bool *outSuccess)
+{
+    *outSuccess = false;
+    if (not string)
+        return 0;
+
+    char *endPtr;
+    float result = strtof(string, &endPtr);
+    if (endPtr != string)
+        *outSuccess = true;
+
+    return result;
+}
+
 extern "C" void AddCommand(const char *command, CommandHandler handle, const char *help)
 {
     g_console.AddCommand(command, handle, help);

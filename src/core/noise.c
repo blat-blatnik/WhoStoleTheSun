@@ -175,8 +175,8 @@ float PerlinNoise1(unsigned seed, float x)
 	float dx0 = x - (float)x0;
 	float dx1 = x - (float)x1;
 
-	float v0 = FloatNoise1(seed, x0) * 2 - 1;
-	float v1 = FloatNoise1(seed, x1) * 2 - 1;
+	float v0 = (BitNoise1(seed, x0) & 1) ? +1 : -1;
+	float v1 = (BitNoise1(seed, x1) & 1) ? +1 : -1;
 	
 	float d0 = dx0 * v0;
 	float d1 = dx1 * v1;

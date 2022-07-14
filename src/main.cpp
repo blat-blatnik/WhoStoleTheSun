@@ -5,7 +5,11 @@
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
 #define WINDOW_CENTER_Y (0.5f*WINDOW_HEIGHT)
-#define Y_SQUISH 0.5f
+#define MAX_SHAKE_ROTATION (6*DEG2RAD)
+#define MAX_SHAKE_TRANSLATION 50.0f
+#define DEFAULT_CAMERA_SHAKE_TRAUMA 0.5f
+#define DEFAULT_CAMERA_SHAKE_FALLOFF (0.7f * FRAME_TIME)
+#define Y_SQUISH 0.8f
 
 ENUM(GameState)
 {
@@ -55,6 +59,8 @@ Object player;
 Object objects[100];
 int numObjects;
 Camera2D camera;
+float cameraTrauma;
+float cameraTraumaFalloff;
 Sound shatter;
 
 List(Texture *) LoadAllTexturesFromDirectory(const char *path)
@@ -181,6 +187,15 @@ void ZoomCameraToScreenPoint(Vector2 screenPoint, float zoom)
 	camera.target.x -= change.x;
 	camera.target.y -= change.y;
 }
+void UpdateCameraShake()
+{
+	cameraTrauma -= cameraTraumaFalloff;
+	if (cameraTrauma <= 0)
+	{
+		cameraTrauma = 0;
+		cameraTraumaFalloff = DEFAULT_CAMERA_SHAKE_FALLOFF;
+	}
+}
 
 void Update(Object *object)
 {
@@ -213,15 +228,21 @@ void Render(Object *object)
 bool HandlePlayerTeleportCommand(List(const char *) args)
 {
 	// move x y
-	if (ListCount(args) < 2)
+	if (ListCount(args) < 2 or ListCount(args) > 2)
 		return false;
 
-	player.position.x = (float)TextToInteger(args[0]);
-	player.position.y = (float)TextToInteger(args[1]);
+	bool success1;
+	bool success2;
+	float x = ParseCommandFloatArg(args[0], &success1);
+	float y = ParseCommandFloatArg(args[1], &success2);
+	if (not success1 or not success2)
+		return false;
+
 	return true;
 }
 bool HandleToggleDevModeCommand(List(const char *) args)
 {
+	// dev [bool]
 	if (ListCount(args) == 0)
 	{
 		devMode = not devMode;
@@ -234,6 +255,29 @@ bool HandleToggleDevModeCommand(List(const char *) args)
 		return false;
 
 	devMode = arg;
+	return true;
+}
+bool HandleCameraShakeCommand(List(const char *) args)
+{
+	// shake [trauma] [falloff]
+	if (ListCount(args) > 2)
+		return false;
+
+	float trauma = DEFAULT_CAMERA_SHAKE_TRAUMA;
+	float falloff = DEFAULT_CAMERA_SHAKE_FALLOFF;
+
+	bool success1 = true;
+	bool success2 = true;
+	if (ListCount(args) >= 1)
+		trauma = ParseCommandFloatArg(args[0], &success1);
+	if (ListCount(args) >= 2)
+		falloff = ParseCommandFloatArg(args[1], &success2);
+
+	if (not success1 or not success2)
+		return false;
+
+	cameraTrauma += trauma;
+	cameraTraumaFalloff = falloff;
 	return true;
 }
 
@@ -300,12 +344,27 @@ void Playing_Update()
 		Update(&objects[i]);
 
 	CenterCameraOn(&player);
+	UpdateCameraShake();
+
+	ImGui::Begin("Shake");
+	{
+		ImGui::SliderFloat("trauma", &cameraTrauma, 0, 1);
+	}
+	ImGui::End();
 }
 void Playing_Render()
 {
 	ClearBackground(BLACK);
 	
-	BeginMode2D(camera);
+	float shake = Clamp01(cameraTrauma);
+	shake *= shake;
+
+	Camera2D shakyCam = camera;
+	static Random shakeRng = { 0 };
+	shakyCam.rotation += MAX_SHAKE_ROTATION * RAD2DEG * shake * RandomFloat(&shakeRng, -1, +1);
+	shakyCam.offset.x += MAX_SHAKE_TRANSLATION * shake * RandomFloat(&shakeRng, -1, +1);
+	shakyCam.offset.y += MAX_SHAKE_TRANSLATION * shake * RandomFloat(&shakeRng, -1, +1);
+	BeginMode2D(shakyCam);
 	{
 		for (int i = 0; i < numObjects; ++i)
 			Render(&objects[i]);
@@ -376,6 +435,8 @@ void Talking_Update()
 			else SetFrameNumberInCurrentGameState(0);
 		}
 	}
+
+	UpdateCameraShake();
 }
 void Talking_Render()
 {
@@ -684,6 +745,10 @@ void GameInit(void)
 	alex->position.y = 120;
 	alex->animationFps = 15;
 	alex->direction = DIRECTION_LEFT;
+	alex->script = LoadScriptAndTrackChanges("res/alex-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	alex->expressions[0].portrait = LoadTextureAndTrackChanges("res/alex-neutral.png");
+	CopyString(alex->expressions[0].name, "neutral", sizeof alex->expressions[0].name);
+	alex->numExpressions = 1;
 
 	//Object *cauldron = &objects[numObjects++];
 	//cauldron->name = "Cauldron";
@@ -691,8 +756,9 @@ void GameInit(void)
 	//cauldron->position.y = 550;
 	//cauldron->spriteMgr.AddSprite("res/cauldron/");
 
-	AddCommand("tp", &HandlePlayerTeleportCommand, "");
-	AddCommand("dev", &HandleToggleDevModeCommand, "");
+	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float - Teleport player.");
+	AddCommand("dev", HandleToggleDevModeCommand, "dev [value:bool] - Toggle developer mode.");
+	AddCommand("shake", HandleCameraShakeCommand, "shake [trauma:float] [falloff:float] - Trigger camera shake.");
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

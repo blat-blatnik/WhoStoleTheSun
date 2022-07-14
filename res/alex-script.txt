@@ -1,0 +1,1 @@
+{shake 0.3}I           {shake 0.6}|AM|           {shake 1}|ALEX|!!!
