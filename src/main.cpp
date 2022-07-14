@@ -5,8 +5,7 @@
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
 #define WINDOW_CENTER_Y (0.5f*WINDOW_HEIGHT)
-#define Y_SQUISH 0.5f // sqrt(2) * sin(PI / 8)
-//#define Y_SQUISH 0.541196100146197f // sqrt(2) * sin(PI / 8)
+#define Y_SQUISH 0.5f
 
 ENUM(GameState)
 {
@@ -44,46 +43,6 @@ STRUCT(Object)
 	Script *script;
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
-
-	List(Texture *) GetSpriteForDirection(Direction d)
-	{
-		List(Texture *) sprite = sprites[d];
-		if (ListCount(sprite) == 0)
-			sprite = sprites[MirrorDirectionVertically(d)];
-		return sprite;
-	}
-
-	List(Texture *) GetSprite()
-	{
-		return GetSpriteForDirection(direction);
-	}
-
-	void Update()
-	{
-		List(Texture *) sprite = GetSprite();
-		if (ListCount(sprite) == 0)
-			return;
-
-		float animationFrameTime = 1 / animationFps;
-		animationTimeAccumulator += FRAME_TIME;
-		while (animationTimeAccumulator > animationFrameTime)
-		{
-			animationTimeAccumulator -= animationFrameTime;
-			animationFrame = (animationFrame + 1) % ListCount(sprite);
-		}
-	}
-
-	void Render()
-	{
-		List(Texture *) sprite = GetSprite();
-		if (ListCount(sprite) == 0)
-			return;
-
-		if (sprite == sprites[direction])
-			DrawTextureCentered(*sprite[animationFrame], position, WHITE);
-		else
-			DrawTextureCenteredAndFlippedVertically(*sprite[animationFrame], position, WHITE);
-	}
 };
 
 bool devMode = true; // @TODO @SHIP: Disable this for release.
@@ -174,12 +133,20 @@ Texture GetCharacterPortrait(Object *object, const char *name)
 			return *object->expressions[i].portrait;
 	return *object->expressions[0].portrait;
 }
+List(Texture *) GetCurrentSprite(Object *object)
+{
+	List(Texture *) sprite = object->sprites[object->direction];
+	if (ListCount(sprite) == 0)
+		sprite = object->sprites[MirrorDirectionVertically(object->direction)];
+	return sprite;
+}
 Texture *GetCurrentTexture(Object *object)
 {
-	if (ListCount(object->sprites[object->direction]) == 0)
+	List(Texture *) sprite = GetCurrentSprite(object);
+	if (ListCount(sprite) == 0)
 		return NULL;
 
-	return object->sprites[object->direction][object->animationFrame];
+	return sprite[object->animationFrame];
 }
 float PlayerDistanceToObject(Object *object)
 {
@@ -198,9 +165,9 @@ float PlayerDistanceToObject(Object *object)
 	return Vector2Distance(playerFeet, objectPosition);
 }
 
-void CenterCameraOnPlayer()
+void CenterCameraOn(Object *object)
 {
-	camera.target = player.position;
+	camera.target = object->position;
 	camera.offset.x = WINDOW_CENTER_X;
 	camera.offset.y = WINDOW_CENTER_Y;
 	camera.zoom = 1;
@@ -213,6 +180,32 @@ void ZoomCameraToScreenPoint(Vector2 screenPoint, float zoom)
 	Vector2 change = postZoom - preZoom;
 	camera.target.x -= change.x;
 	camera.target.y -= change.y;
+}
+
+void Update(Object *object)
+{
+	List(Texture *) sprite = GetCurrentSprite(object);
+	if (ListCount(sprite) == 0)
+		return;
+
+	float animationFrameTime = 1 / object->animationFps;
+	object->animationTimeAccumulator += FRAME_TIME;
+	while (object->animationTimeAccumulator > animationFrameTime)
+	{
+		object->animationTimeAccumulator -= animationFrameTime;
+		object->animationFrame = (object->animationFrame + 1) % ListCount(sprite);
+	}
+}
+void Render(Object *object)
+{
+	List(Texture *) sprite = GetCurrentSprite(object);
+	if (ListCount(sprite) == 0)
+		return;
+
+	if (sprite == object->sprites[object->direction])
+		DrawTextureCentered(*sprite[object->animationFrame], object->position, WHITE);
+	else
+		DrawTextureCenteredAndFlippedVertically(*sprite[object->animationFrame], object->position, WHITE);
 }
 
 // Console commands.
@@ -302,11 +295,11 @@ void Playing_Update()
 		player.position = player.position + (newFeetPos - feetPos);;
 	}
 
-	player.Update();
+	Update(&player);
 	for (int i = 0; i < numObjects; i++)
-		objects[i].Update();
+		Update(&objects[i]);
 
-	CenterCameraOnPlayer();
+	CenterCameraOn(&player);
 }
 void Playing_Render()
 {
@@ -315,11 +308,8 @@ void Playing_Render()
 	BeginMode2D(camera);
 	{
 		for (int i = 0; i < numObjects; ++i)
-		{
-			Object *object = &objects[i];
-			object->Render();
-		}
-		player.Render();
+			Render(&objects[i]);
+		Render(&player);
 	}
 	EndMode2D();
 }
@@ -510,7 +500,7 @@ void Editor_Update()
 						ImGui::DragFloat2("Position", &object->position.x);
 						
 						const char *direction = GetDirectionString(object->direction);
-						bool directionIsValid = ListCount(object->GetSprite()) > 0;
+						bool directionIsValid = ListCount(GetCurrentSprite(object)) > 0;
 						if (not directionIsValid)
 						{
 							ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4{ 1, 0, 0, 1 });
@@ -553,7 +543,7 @@ void Editor_Update()
 	if (not ImGui::GetIO().WantCaptureKeyboard)
 	{
 		if (IsKeyPressed(KEY_C))
-			CenterCameraOnPlayer();
+			CenterCameraOn(&player);
 	}
 }
 void Editor_Render()
@@ -679,7 +669,7 @@ void GameInit(void)
 	alex->position.x = 915;
 	alex->position.y = 120;
 	alex->animationFps = 15;
-	alex->direction = DIRECTION_RIGHT;
+	alex->direction = DIRECTION_LEFT;
 
 	//Object *cauldron = &objects[numObjects++];
 	//cauldron->name = "Cauldron";
