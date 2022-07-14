@@ -46,6 +46,7 @@
     <ClInclude Include="src\lib\raymath.h" />
     <ClInclude Include="src\lib\rlgl.h" />
     <ClInclude Include="src\lib\rmem.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\raylib_windows_x64.lib" />
@@ -60,5 +61,11 @@
     <None Include="synchronize.bat" />
     <None Include="synchronize.sh" />
     <None Include="webshell.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WhoStoleTheSun.rc" />
   </ItemGroup>
 </Project>
