@@ -71,6 +71,7 @@ Font robotoBoldItalic;
 Object player;
 Object objects[100];
 int numObjects;
+Camera2D camera;
 Sound shatter;
 
 List(Texture *) LoadAllTexturesFromDirectory(const char *path)
@@ -267,16 +268,16 @@ void Playing_Update()
 	player.Update();
 	for (int i = 0; i < numObjects; i++)
 		objects[i].Update();
+
+	camera.target = player.position;
+	camera.offset.x = WINDOW_CENTER_X;
+	camera.offset.y = WINDOW_CENTER_Y;
+	camera.zoom = 1;
 }
 void Playing_Render()
 {
 	ClearBackground(BLACK);
 	
-	Camera2D camera = { 0 };
-	camera.target = player.position;
-	camera.offset.x = WINDOW_CENTER_X;
-	camera.offset.y = WINDOW_CENTER_Y;
-	camera.zoom = 1;
 	BeginMode2D(camera);
 	{
 		for (int i = 0; i < numObjects; ++i)
@@ -434,6 +435,18 @@ void Editor_Update()
 		
 	}
 	ImGui::End();
+
+	if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+	{
+		SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
+		Vector2 delta = GetMouseDelta();
+		camera.offset.x += delta.x;
+		camera.offset.y += delta.y;
+	}
+	else
+	{
+		SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+	}
 }
 void Editor_Render()
 {
