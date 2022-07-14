@@ -440,15 +440,13 @@ void Editor_Update()
 		return;
 	}
 
-	RenderConsole();
-
 	if (ImGui::Begin("Editor"))
 	{
 		ImGui::BeginTabBar("Tabs");
 		{
 			if (ImGui::BeginTabItem("Console"))
 			{
-				ImGui::Text("Horia can you move the console here to save space?");
+				ShowConsoleGui();
 				ImGui::EndTabItem();
 			}
 			if (ImGui::BeginTabItem("Objects"))

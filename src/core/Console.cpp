@@ -181,23 +181,8 @@ public:
         Items.push_back(Strdup(buf));
     }
 
-    void ShowConsoleWindow(const char* title, bool* p_open)
+    void ShowConsoleGui()
     {
-        ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-        if (!ImGui::Begin(title, p_open))
-        {
-            ImGui::End();
-            return;
-        }
-
-        if (ImGui::BeginPopupContextItem())
-        {
-            if (ImGui::MenuItem("Close Console"))
-                *p_open = false;
-            ImGui::EndPopup();
-        }
-
-
         // Reserve enough left-over height for 1 separator + 1 input text
         const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
         ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
@@ -220,7 +205,6 @@ public:
             if (has_color)
                 ImGui::PopStyleColor();
         }
-
 
         if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
             ImGui::SetScrollHereY(1.0f);
@@ -256,8 +240,6 @@ public:
         ImGui::SetItemDefaultFocus();
         if (reclaim_focus)
             ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
-
-        ImGui::End();
     }
 
     static int TextEditCallbackStub(ImGuiInputTextCallbackData* data)
@@ -325,9 +307,9 @@ extern "C" void ExecuteCommand(const char* command)
     g_console.ExecuteCommand(command);
 }
 
-extern "C" void RenderConsole()
+extern "C" void ShowConsoleGui()
 {
-    g_console.ShowConsoleWindow("Console", NULL);
+    g_console.ShowConsoleGui();
 }
 void AddConsoleLog(const char* log)
 {
