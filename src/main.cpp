@@ -35,10 +35,10 @@ STRUCT(Object)
 {
 	char name[50];
 	Vector2 position;
-	Image *collisionMap;
 	Direction direction;
 	List(Texture *) sprites[DIRECTION_ENUM_COUNT];
 	int animationFrame;
+	Image *collisionMap;
 	Script *script;
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
@@ -450,8 +450,8 @@ void Editor_Update()
 				// For the purposes of this list, object index -1 is the player object.
 				static int selectedObject = -1;
 
-				ImGui::BeginTable("Columns", 2, ImGuiTableFlags_BordersInner);
-				ImGui::TableSetupColumn("Objects");
+				ImGui::BeginTable("Columns", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_Resizable);
+				ImGui::TableSetupColumn("Objects", ImGuiTableColumnFlags_WidthStretch);
 				ImGui::TableSetupColumn("Properties");
 				ImGui::TableHeadersRow();
 				ImGui::TableNextRow();
@@ -484,6 +484,20 @@ void Editor_Update()
 
 						ImGui::InputText("Name", object->name, sizeof object->name);
 						ImGui::DragFloat2("Position", &object->position.x);
+						
+						const char *direction = DirectionEnumStrings[object->direction];
+						bool directionIsValid = ListCount(object->sprites[object->direction]) > 0;
+						if (not directionIsValid)
+						{
+							ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4{ 1, 0, 0, 1 });
+							ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4{ 1, 0, 0, 1 });
+							ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4{ 1, 0, 0, 1 });
+						}
+						ImGui::SliderInt("Direction", (int *)&object->direction, 0, DIRECTION_ENUM_COUNT - 1, direction);
+						if (not directionIsValid)
+							ImGui::PopStyleColor(3);
+
+
 					}
 				}
 				ImGui::EndTable();

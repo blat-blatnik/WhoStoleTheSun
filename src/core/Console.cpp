@@ -82,7 +82,7 @@ class Console
 {
 public:
 
-    std::map<std::string, std::shared_ptr<Command>>* _commandContainer = new std::map<std::string, std::shared_ptr<Command>>();
+    std::map<std::string, std::shared_ptr<Command>> _commandContainer = std::map<std::string, std::shared_ptr<Command>>();
 
     Console()
     {
@@ -107,7 +107,7 @@ public:
 
         auto command = std::make_shared<Command>(commandName, std::string(pHelp), handle);
 
-        (*_commandContainer).insert(std::pair<std::string, std::shared_ptr<Command>>(commandName, command));
+        _commandContainer.insert(std::pair<std::string, std::shared_ptr<Command>>(commandName, command));
     }
 
     CmdResult ExecuteCommand(const char* cmd)
@@ -119,7 +119,7 @@ public:
 
         CmdResult result;
 
-        if ((*_commandContainer).find(command) == (*_commandContainer).end())
+        if (_commandContainer.find(command) == _commandContainer.end())
         {
             result.state = CmdState::COMMAND_NOT_FOUND;
             return result;
@@ -128,7 +128,7 @@ public:
         if (words.size() > 0 && words[0] == "help")
         {
             result.state = CmdState::COMMAND_RESULT_HELP;
-            result.cmd = (*_commandContainer)[command];
+            result.cmd = _commandContainer[command];
             return result;
         }
 
@@ -139,25 +139,22 @@ public:
         for (int i = 0; i < words.size(); i++)
             ListAdd(&wordsList, words[i].c_str());
 
-        if ((*_commandContainer)[command]->Invoke(wordsList))
+        if (_commandContainer[command]->Invoke(wordsList))
         {
             result.state = CmdState::COMMAND_SUCCEEDED;
-            result.cmd = (*_commandContainer)[command];
+            result.cmd = _commandContainer[command];
         }
         else
         {
             result.state = CmdState::COMMAND_FOUND_BAD_ARGS;
-            result.cmd = (*_commandContainer)[command];
+            result.cmd = _commandContainer[command];
         }
 
         return result;
     }
-    const std::map<std::string, std::shared_ptr<Command>>* GetCommands() { return _commandContainer; }
-    std::shared_ptr<Command> GetCommand(std::string str) { return (*_commandContainer)[str]; }
 
     char                        InputBuf[256];
     ImVector<char*>             Items;
-    ImGuiTextFilter             Filter;
     bool                        AutoScroll;
     bool                        ScrollToBottom;
 
@@ -193,9 +190,6 @@ public:
         for (int i = 0; i < Items.Size; i++)
         {
             const char* item = Items[i];
-            if (!Filter.PassFilter(item))
-                continue;
-
             ImVec4 color;
             bool has_color = false;
 

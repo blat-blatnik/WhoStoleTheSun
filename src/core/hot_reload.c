@@ -161,6 +161,17 @@ void UnloadTrackedScript(Script **script)
 	*script = NULL;
 }
 
+const char *GetTrackedItemPath(void *item)
+{
+	if (not item)
+		return NULL;
+
+	TrackedItem *tracked = (TrackedItem *)((char *)item - offsetof(TrackedItem, texture));
+	int index = (int)(tracked - items);
+	ASSERT(index >= 0 and index < ListCount(items)); // Is this actually a tracked item?
+	return tracked->path;
+}
+
 void HotReloadAllTrackedItems(void)
 {
 	for (int i = 0; i < ListCount(items); ++i)

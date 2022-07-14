@@ -1,5 +1,17 @@
 #include "../core.h"
 
+const char *DirectionEnumStrings[DIRECTION_ENUM_COUNT] =
+{
+	[DIRECTION_RIGHT     ] = "right",
+	[DIRECTION_UP_RIGHT  ] = "up right",
+	[DIRECTION_UP        ] = "up",
+	[DIRECTION_UP_LEFT   ] = "up left",
+	[DIRECTION_LEFT      ] = "left",
+	[DIRECTION_DOWN_LEFT ] = "down left",
+	[DIRECTION_DOWN      ] = "down",
+	[DIRECTION_DOWN_RIGHT] = "down right",
+};
+
 Direction DirectionFromVector(Vector2 v)
 {
 	float angle01 = Wrap(Vector2Atan(v), 0, 2 * PI) / (2 * PI);

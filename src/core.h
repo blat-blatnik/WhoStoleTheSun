@@ -367,6 +367,9 @@ void UnloadTrackedImage(Image **image);
 // Unloads a tracked script, and stops tracking its changes.
 void UnloadTrackedScript(Script **script);
 
+// Gets the saved file path for a tracked item.
+const char *GetTrackedItemPath(void *item);
+
 // Checks all tracked items and hot-reloads any that changed. Automatically called at the start of each frame.
 void HotReloadAllTrackedItems(void);
 
@@ -462,6 +465,8 @@ ENUM(Direction)
 	DIRECTION_DOWN_RIGHT,
 	DIRECTION_ENUM_COUNT
 };
+
+extern const char *DirectionEnumStrings[DIRECTION_ENUM_COUNT];
 
 // Returns the 8-sided direction that the vector matches most closely.
 Direction DirectionFromVector(Vector2 v);
