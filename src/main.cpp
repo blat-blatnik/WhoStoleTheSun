@@ -33,7 +33,7 @@ STRUCT(Input)
 
 STRUCT(Object)
 {
-	const char *name;
+	char name[50];
 	Vector2 position;
 	Image *collisionMap;
 	Direction direction;
@@ -453,20 +453,44 @@ void Editor_Update()
 			{
 				// For the purposes of this list, object index -1 is the player object.
 				static int selectedObject = -1;
-				for (int i = -1; i < numObjects; ++i)
+
+				ImGui::BeginTable("Columns", 2, ImGuiTableFlags_BordersInner);
+				ImGui::TableSetupColumn("Objects");
+				ImGui::TableSetupColumn("Properties");
+				ImGui::TableHeadersRow();
+				ImGui::TableNextRow();
 				{
-					ImGui::PushID(i);
+					ImGui::TableNextColumn();
+					ImGui::Spacing();
+					{
+						for (int i = -1; i < numObjects; ++i)
+						{
+							ImGui::PushID(i);
+							{
+								Object *object = &player;
+								if (i >= 0)
+									object = &objects[i];
+
+								bool selected = selectedObject == i;
+								if (ImGui::Selectable(object->name, &selected))
+									selectedObject = i;
+							}
+							ImGui::PopID();
+						}
+					}
+
+					ImGui::TableNextColumn();
+					ImGui::Spacing();
 					{
 						Object *object = &player;
-						if (i >= 0)
-							object = &objects[i];
+						if (selectedObject >= 0)
+							object = &objects[selectedObject];
 
-						bool selected = selectedObject == i;
-						if (ImGui::Selectable(object->name, &selected))
-							selectedObject = i;
+						ImGui::InputText("Name", object->name, sizeof object->name);
+						ImGui::DragFloat2("Position", &object->position.x);
 					}
-					ImGui::PopID();
 				}
+				ImGui::EndTable();
 				ImGui::EndTabItem();
 			}
 		}
@@ -568,7 +592,7 @@ void GameInit(void)
 	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
 	shatter = LoadSound("res/shatter.wav");
 	
-	player.name = "Player";
+	CopyString(player.name, "Player", sizeof player.name);
 	player.position.x = 1280 / 2;
 	player.position.y = 720 / 2;
 	player.direction = DIRECTION_DOWN;
@@ -585,14 +609,14 @@ void GameInit(void)
 	player.numExpressions = 1;
 
 	Object *background = &objects[numObjects++];
-	background->name = "Background";
+	CopyString(background->name, "Background", sizeof background->name);
 	ListAdd(&background->sprites[0], LoadTextureAndTrackChanges("res/background.png"));
 	background->collisionMap = LoadImageAndTrackChangesEx("res/collision-map.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
 	background->position.x = 0.5f * background->sprites[0][0]->width;
 	background->position.y = 0.5f * background->sprites[0][0]->height;
 
 	Object *pinkGuy = &objects[numObjects++];
-	pinkGuy->name = "Pink guy";
+	CopyString(pinkGuy->name, "Pink guy", sizeof pinkGuy->name);
 	ListAdd(&pinkGuy->sprites[0], LoadTextureAndTrackChanges("res/pink-guy.png"));
 	pinkGuy->position.x = 700;
 	pinkGuy->position.y = 250;
@@ -606,7 +630,7 @@ void GameInit(void)
 	pinkGuy->numExpressions = 3;
 
 	Object *greenGuy = &objects[numObjects++];
-	greenGuy->name = "Green guy";
+	CopyString(greenGuy->name, "Green guy", sizeof greenGuy->name);
 	ListAdd(&greenGuy->sprites[0], LoadTextureAndTrackChanges("res/green-guy.png"));
 	greenGuy->position.x = 1000;
 	greenGuy->position.y = 250;
