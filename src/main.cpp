@@ -448,24 +448,27 @@ void Editor_Update()
 		
 	}
 	ImGui::End();
-
-	if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+	
+	if (not ImGui::GetIO().WantCaptureMouse)
 	{
-		SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
-		Vector2 delta = GetMouseDelta();
-		camera.target.x -= delta.x / camera.zoom;
-		camera.target.y -= delta.y / camera.zoom;
+		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+		{
+			SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
+			Vector2 delta = GetMouseDelta();
+			camera.target.x -= delta.x / camera.zoom;
+			camera.target.y -= delta.y / camera.zoom;
+		}
+		else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+
+		float wheel = GetMouseWheelMove();
+		if (wheel > 0)
+			ZoomCameraToScreenPoint(GetMousePosition(), 1.1f);
+		else if (wheel < 0)
+			ZoomCameraToScreenPoint(GetMousePosition(), 1 / 1.1f);
+
+		if (IsKeyPressed(KEY_C))
+			CenterCameraOnPlayer();
 	}
-	else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
-
-	float wheel = GetMouseWheelMove();
-	if (wheel > 0)
-		ZoomCameraToScreenPoint(GetMousePosition(), 1.1f);
-	else if (wheel < 0)
-		ZoomCameraToScreenPoint(GetMousePosition(), 1 / 1.1f);
-
-	if (IsKeyPressed(KEY_C))
-		CenterCameraOnPlayer();
 }
 void Editor_Render()
 {
