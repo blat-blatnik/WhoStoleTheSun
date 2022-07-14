@@ -45,12 +45,24 @@ STRUCT(Object)
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 
+	List(Texture *) GetSpriteForDirection(Direction d)
+	{
+		List(Texture *) sprite = sprites[d];
+		if (ListCount(sprite) == 0)
+			sprite = sprites[MirrorDirectionVertically(d)];
+		return sprite;
+	}
+
+	List(Texture *) GetSprite()
+	{
+		return GetSpriteForDirection(direction);
+	}
+
 	void Update()
 	{
-		if (ListCount(sprites[direction]) == 0)
+		List(Texture *) sprite = GetSprite();
+		if (ListCount(sprite) == 0)
 			return;
-
-		List(Texture *) sprite = sprites[direction];
 
 		float animationFrameTime = 1 / animationFps;
 		animationTimeAccumulator += FRAME_TIME;
@@ -63,11 +75,14 @@ STRUCT(Object)
 
 	void Render()
 	{
-		if (ListCount(sprites[direction]) == 0)
+		List(Texture *) sprite = GetSprite();
+		if (ListCount(sprite) == 0)
 			return;
 
-		List(Texture *) sprite = sprites[direction];
-		DrawTextureCentered(*sprite[animationFrame], position, WHITE);
+		if (sprite == sprites[direction])
+			DrawTextureCentered(*sprite[animationFrame], position, WHITE);
+		else
+			DrawTextureCenteredAndFlippedVertically(*sprite[animationFrame], position, WHITE);
 	}
 };
 
@@ -494,8 +509,8 @@ void Editor_Update()
 						ImGui::InputText("Name", object->name, sizeof object->name);
 						ImGui::DragFloat2("Position", &object->position.x);
 						
-						const char *direction = DirectionEnumStrings[object->direction];
-						bool directionIsValid = ListCount(object->sprites[object->direction]) > 0;
+						const char *direction = GetDirectionString(object->direction);
+						bool directionIsValid = ListCount(object->GetSprite()) > 0;
 						if (not directionIsValid)
 						{
 							ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4{ 1, 0, 0, 1 });
@@ -664,6 +679,7 @@ void GameInit(void)
 	alex->position.x = 915;
 	alex->position.y = 120;
 	alex->animationFps = 15;
+	alex->direction = DIRECTION_RIGHT;
 
 	//Object *cauldron = &objects[numObjects++];
 	//cauldron->name = "Cauldron";

@@ -1,16 +1,36 @@
 #include "../core.h"
 
-const char *DirectionEnumStrings[DIRECTION_ENUM_COUNT] =
+const char *GetDirectionString(Direction direction)
 {
-	[DIRECTION_RIGHT     ] = "right",
-	[DIRECTION_UP_RIGHT  ] = "up right",
-	[DIRECTION_UP        ] = "up",
-	[DIRECTION_UP_LEFT   ] = "up left",
-	[DIRECTION_LEFT      ] = "left",
-	[DIRECTION_DOWN_LEFT ] = "down left",
-	[DIRECTION_DOWN      ] = "down",
-	[DIRECTION_DOWN_RIGHT] = "down right",
-};
+	static const char *strings[DIRECTION_ENUM_COUNT] =
+	{
+		[DIRECTION_RIGHT     ] = "right",
+		[DIRECTION_UP_RIGHT  ] = "up right",
+		[DIRECTION_UP        ] = "up",
+		[DIRECTION_UP_LEFT   ] = "up left",
+		[DIRECTION_LEFT      ] = "left",
+		[DIRECTION_DOWN_LEFT ] = "down left",
+		[DIRECTION_DOWN      ] = "down",
+		[DIRECTION_DOWN_RIGHT] = "down right",
+	};
+	return strings[direction];
+}
+
+Direction MirrorDirectionVertically(Direction direction)
+{
+	static Direction map[DIRECTION_ENUM_COUNT] =
+	{
+		[DIRECTION_RIGHT     ] = DIRECTION_LEFT,
+		[DIRECTION_UP_RIGHT  ] = DIRECTION_UP_LEFT,
+		[DIRECTION_UP        ] = DIRECTION_UP,
+		[DIRECTION_UP_LEFT   ] = DIRECTION_UP_RIGHT,
+		[DIRECTION_LEFT      ] = DIRECTION_RIGHT,
+		[DIRECTION_DOWN_LEFT ] = DIRECTION_DOWN_RIGHT,
+		[DIRECTION_DOWN      ] = DIRECTION_DOWN,
+		[DIRECTION_DOWN_RIGHT] = DIRECTION_DOWN_LEFT,
+	};
+	return map[direction];
+}
 
 Direction DirectionFromVector(Vector2 v)
 {

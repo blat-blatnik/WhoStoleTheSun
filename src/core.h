@@ -466,7 +466,11 @@ ENUM(Direction)
 	DIRECTION_ENUM_COUNT
 };
 
-extern const char *DirectionEnumStrings[DIRECTION_ENUM_COUNT];
+// Returns the string name of a direction.
+const char *GetDirectionString(Direction direction);
+
+// Returns the direction but mirrored vertically. E.g. LEFT -> RIGHT, UP_LEFT -> UP_RIGHT.
+Direction MirrorDirectionVertically(Direction direction);
 
 // Returns the 8-sided direction that the vector matches most closely.
 Direction DirectionFromVector(Vector2 v);
@@ -556,6 +560,9 @@ Color BlendColors(Color c0, Color c1, float t);
 
 // Draws a texture centered at the given point.
 void DrawTextureCentered(Texture texture, Vector2 position, Color tint);
+
+// Draws a texture centered at the given point and flipped vertically.
+void DrawTextureCenteredAndFlippedVertically(Texture texture, Vector2 position, Color tint);
 
 void DrawTextureCenteredScaled(Texture texture, Vector2 position, float scale, Color tint);
 
