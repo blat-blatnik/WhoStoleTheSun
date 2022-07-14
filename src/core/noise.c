@@ -178,10 +178,11 @@ float PerlinNoise1(unsigned seed, float x)
 	float v0 = (BitNoise1(seed, x0) & 1) ? +1 : -1;
 	float v1 = (BitNoise1(seed, x1) & 1) ? +1 : -1;
 	
-	float d0 = dx0 * v0;
-	float d1 = dx1 * v1;
+	float d0 = dx1 * v0;
+	float d1 = dx0 * v1;
 	
-	return d0 + (d1 - d0) * Smootherstep01(dx0);
+	float result = d0 + (d1 - d0) * Smootherstep01(dx0);
+	return result;
 }
 float PerlinNoise2(unsigned seed, float x, float y)
 {

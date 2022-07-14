@@ -360,10 +360,10 @@ void Playing_Render()
 	shake *= shake;
 
 	Camera2D shakyCam = camera;
-	static Random shakeRng = { 0 };
-	shakyCam.rotation += MAX_SHAKE_ROTATION * RAD2DEG * shake * RandomFloat(&shakeRng, -1, +1);
-	shakyCam.offset.x += MAX_SHAKE_TRANSLATION * shake * RandomFloat(&shakeRng, -1, +1);
-	shakyCam.offset.y += MAX_SHAKE_TRANSLATION * shake * RandomFloat(&shakeRng, -1, +1);
+	float shakyTime = 100 * (float)GetTime();
+	shakyCam.rotation += MAX_SHAKE_ROTATION * RAD2DEG * shake * PerlinNoise1(0, shakyTime);
+	shakyCam.offset.x += MAX_SHAKE_TRANSLATION * shake * PerlinNoise1(1, shakyTime);
+	shakyCam.offset.y += MAX_SHAKE_TRANSLATION * shake * PerlinNoise1(2, shakyTime);
 	BeginMode2D(shakyCam);
 	{
 		for (int i = 0; i < numObjects; ++i)
