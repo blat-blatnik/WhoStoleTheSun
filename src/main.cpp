@@ -181,6 +181,15 @@ void CenterCameraOnPlayer()
 	camera.offset.y = WINDOW_CENTER_Y;
 	camera.zoom = 1;
 }
+void ZoomCameraToScreenPoint(Vector2 screenPoint, float zoom)
+{
+	Vector2 preZoom = GetScreenToWorld2D(screenPoint, camera);
+	camera.zoom *= zoom;
+	Vector2 postZoom = GetScreenToWorld2D(screenPoint, camera);
+	Vector2 change = postZoom - preZoom;
+	camera.target.x -= change.x;
+	camera.target.y -= change.y;
+}
 
 // Console commands.
 
@@ -291,7 +300,6 @@ void Playing_Render()
 			object->Render();
 		}
 		player.Render();
-		//DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 	}
 	EndMode2D();
 }
@@ -452,9 +460,9 @@ void Editor_Update()
 
 	float wheel = GetMouseWheelMove();
 	if (wheel > 0)
-		camera.zoom *= 1.1f;
+		ZoomCameraToScreenPoint(GetMousePosition(), 1.1f);
 	else if (wheel < 0)
-		camera.zoom /= 1.1f;
+		ZoomCameraToScreenPoint(GetMousePosition(), 1 / 1.1f);
 
 	if (IsKeyPressed(KEY_C))
 		CenterCameraOnPlayer();
