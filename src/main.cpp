@@ -37,6 +37,8 @@ STRUCT(Object)
 	Vector2 position;
 	Direction direction;
 	List(Texture *) sprites[DIRECTION_ENUM_COUNT];
+	float animationFps;
+	float animationTimeAccumulator;
 	int animationFrame;
 	Image *collisionMap;
 	Script *script;
@@ -49,7 +51,14 @@ STRUCT(Object)
 			return;
 
 		List(Texture *) sprite = sprites[direction];
-		animationFrame = (animationFrame + 1) % ListCount(sprite);
+
+		float animationFrameTime = 1 / animationFps;
+		animationTimeAccumulator += FRAME_TIME;
+		while (animationTimeAccumulator > animationFrameTime)
+		{
+			animationTimeAccumulator -= animationFrameTime;
+			animationFrame = (animationFrame + 1) % ListCount(sprite);
+		}
 	}
 
 	void Render()
@@ -648,6 +657,13 @@ void GameInit(void)
 	greenGuy->expressions[0].portrait = LoadTextureAndTrackChanges("res/green-guy-neutral.png");
 	CopyString(greenGuy->expressions[0].name, "neutral", sizeof greenGuy->expressions[0].name);
 	greenGuy->numExpressions = 1;
+
+	Object *alex = &objects[numObjects++];
+	CopyString(alex->name, "Alex", sizeof alex->name);
+	alex->sprites[0] = LoadAllTexturesFromDirectory("res/alex");
+	alex->position.x = 915;
+	alex->position.y = 120;
+	alex->animationFps = 15;
 
 	//Object *cauldron = &objects[numObjects++];
 	//cauldron->name = "Cauldron";
