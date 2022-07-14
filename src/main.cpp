@@ -174,6 +174,14 @@ float PlayerDistanceToObject(Object *object)
 	return Vector2Distance(playerFeet, objectPosition);
 }
 
+void CenterCameraOnPlayer()
+{
+	camera.target = player.position;
+	camera.offset.x = WINDOW_CENTER_X;
+	camera.offset.y = WINDOW_CENTER_Y;
+	camera.zoom = 1;
+}
+
 // Console commands.
 
 bool HandlePlayerTeleportCommand(List(const char *) args)
@@ -269,10 +277,7 @@ void Playing_Update()
 	for (int i = 0; i < numObjects; i++)
 		objects[i].Update();
 
-	camera.target = player.position;
-	camera.offset.x = WINDOW_CENTER_X;
-	camera.offset.y = WINDOW_CENTER_Y;
-	camera.zoom = 1;
+	CenterCameraOnPlayer();
 }
 void Playing_Render()
 {
@@ -440,13 +445,19 @@ void Editor_Update()
 	{
 		SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
 		Vector2 delta = GetMouseDelta();
-		camera.offset.x += delta.x;
-		camera.offset.y += delta.y;
+		camera.target.x -= delta.x / camera.zoom;
+		camera.target.y -= delta.y / camera.zoom;
 	}
-	else
-	{
-		SetMouseCursor(MOUSE_CURSOR_DEFAULT);
-	}
+	else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+
+	float wheel = GetMouseWheelMove();
+	if (wheel > 0)
+		camera.zoom *= 1.1f;
+	else if (wheel < 0)
+		camera.zoom /= 1.1f;
+
+	if (IsKeyPressed(KEY_C))
+		CenterCameraOnPlayer();
 }
 void Editor_Render()
 {
