@@ -442,10 +442,37 @@ void Editor_Update()
 
 	RenderConsole();
 
-	ImGui::ShowDemoWindow();
-	ImGui::Begin("Objects");
+	if (ImGui::Begin("Editor"))
 	{
-		
+		ImGui::BeginTabBar("Tabs");
+		{
+			if (ImGui::BeginTabItem("Console"))
+			{
+				ImGui::Text("Horia can you move the console here to save space?");
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Objects"))
+			{
+				// For the purposes of this list, object index -1 is the player object.
+				static int selectedObject = -1;
+				for (int i = -1; i < numObjects; ++i)
+				{
+					ImGui::PushID(i);
+					{
+						Object *object = &player;
+						if (i >= 0)
+							object = &objects[i];
+
+						bool selected = selectedObject == i;
+						if (ImGui::Selectable(object->name, &selected))
+							selectedObject = i;
+					}
+					ImGui::PopID();
+				}
+				ImGui::EndTabItem();
+			}
+		}
+		ImGui::EndTabBar();
 	}
 	ImGui::End();
 	
@@ -465,7 +492,10 @@ void Editor_Update()
 			ZoomCameraToScreenPoint(GetMousePosition(), 1.1f);
 		else if (wheel < 0)
 			ZoomCameraToScreenPoint(GetMousePosition(), 1 / 1.1f);
+	}
 
+	if (not ImGui::GetIO().WantCaptureKeyboard)
+	{
 		if (IsKeyPressed(KEY_C))
 			CenterCameraOnPlayer();
 	}
