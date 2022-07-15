@@ -178,6 +178,9 @@ void SwapBytes(void *a, void *b, int numBytes);
 // Returns true if all bytes from a and b are equal.
 bool BytesEqual(const void *a, const void *b, int numBytes);
 
+// Quick sorts items in place (non-stable).
+void Sort(void *items, int numItems, int sizeofOneItem, int(*compare)(const void *left, const void *right));
+
 //
 // Char utilities
 //

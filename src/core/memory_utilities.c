@@ -1,5 +1,6 @@
 #include "../core.h"
 #include <string.h>
+#include <stdlib.h>
 
 void ZeroBytes(void *bytes, int count)
 {
@@ -57,4 +58,15 @@ bool BytesEqual(const void *a, const void *b, int numBytes)
 	if (numBytes <= 0)
 		return true;
 	return memcmp(a, b, (size_t)numBytes) == 0;
+}
+
+void Sort(void *items, int numItems, int sizeofOneItem, int(*compare)(const void *left, const void *right))
+{
+	ASSERT(compare);
+	ASSERT(items or (numItems <= 0 or sizeofOneItem <= 0));
+
+	if (numItems <= 0 or sizeofOneItem <= 0)
+		return;
+
+	qsort(items, (size_t)numItems, (size_t)sizeofOneItem, compare);
 }

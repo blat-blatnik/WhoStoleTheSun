@@ -5,7 +5,7 @@
 #define WINDOW_HEIGHT 720
 #define WINDOW_CENTER_X (0.5f*WINDOW_WIDTH)
 #define WINDOW_CENTER_Y (0.5f*WINDOW_HEIGHT)
-#define MAX_SHAKE_ROTATION (6*DEG2RAD)
+#define MAX_SHAKE_ROTATION (5*DEG2RAD)
 #define MAX_SHAKE_TRANSLATION 50.0f
 #define DEFAULT_CAMERA_SHAKE_TRAUMA 0.5f
 #define DEFAULT_CAMERA_SHAKE_FALLOFF (0.7f * FRAME_TIME)
@@ -38,6 +38,7 @@ STRUCT(Object)
 {
 	char name[50];
 	Vector2 position;
+	float zOffset;
 	Direction direction;
 	List(Texture *) sprites[DIRECTION_ENUM_COUNT];
 	float animationFps;
@@ -132,21 +133,21 @@ Object *FindObjectByName(const char *name)
 
 	return NULL;
 }
-Texture GetCharacterPortrait(Object *object, const char *name)
+Texture GetCharacterPortrait(const Object *object, const char *name)
 {
 	for (int i = 0; i < object->numExpressions; ++i)
 		if (StringsEqualNocase(object->expressions[i].name, name))
 			return *object->expressions[i].portrait;
 	return *object->expressions[0].portrait;
 }
-List(Texture *) GetCurrentSprite(Object *object)
+List(Texture *) GetCurrentSprite(const Object *object)
 {
 	List(Texture *) sprite = object->sprites[object->direction];
 	if (ListCount(sprite) == 0)
 		sprite = object->sprites[MirrorDirectionVertically(object->direction)];
 	return sprite;
 }
-Texture *GetCurrentTexture(Object *object)
+Texture *GetCurrentTexture(const Object *object)
 {
 	List(Texture *) sprite = GetCurrentSprite(object);
 	if (ListCount(sprite) == 0)
@@ -154,21 +155,48 @@ Texture *GetCurrentTexture(Object *object)
 
 	return sprite[object->animationFrame];
 }
-float PlayerDistanceToObject(Object *object)
+Vector2 GetFootPositionInScreenSpace(const Object *object)
 {
-	Vector2 playerFeet = player.position;
-	playerFeet.y += GetCurrentTexture(&player)->height * 0.5f;
-	playerFeet.y *= Y_SQUISH;
+	Vector2 position = object->position;
 
-	Vector2 objectPosition = object->position;
 	Texture *objectTexture = GetCurrentTexture(object);
 	if (objectTexture)
-	{
-		objectPosition.y += objectTexture->height * 0.5f;
-		objectPosition.y *= Y_SQUISH;
-	}
+		position.y += objectTexture->height * 0.5f;
 
-	return Vector2Distance(playerFeet, objectPosition);
+	return position;
+}
+Vector2 GetFootPositionInWorldSpace(const Object *object)
+{
+	Vector2 position = GetFootPositionInScreenSpace(object);
+	position.y *= Y_SQUISH;
+	return position;
+}
+float DistanceBetween(const Object *a, const Object *b)
+{
+	Vector2 positionA = GetFootPositionInWorldSpace(a);
+	Vector2 positionB = GetFootPositionInWorldSpace(b);
+	return Vector2Distance(positionA, positionB);
+}
+List(Object *) GetZSortedObjects(void)
+{
+	List(Object *) result = NULL;
+	ListSetAllocator((void **)&result, TempRealloc, TempFree);
+	Object **pointers = ListAllocate(&result, numObjects + 1);
+	for (int i = 0; i < numObjects; ++i)
+		pointers[i] = &objects[i];
+	pointers[numObjects] = &player;
+
+	Sort(pointers, numObjects + 1, sizeof pointers[0], [](const void *left, const void *right)
+	{
+		Object *l = *(Object **)left;
+		Object *r = *(Object **)right;
+		float lz = GetFootPositionInScreenSpace(l).y + l->zOffset;
+		float rz = GetFootPositionInScreenSpace(r).y + r->zOffset;
+		if (lz > rz) return -1;
+		if (lz < rz) return +1;
+		return 0;
+	});
+	return result;
 }
 
 void CenterCameraOn(Object *object)
@@ -227,7 +255,7 @@ void Render(Object *object)
 
 bool HandlePlayerTeleportCommand(List(const char *) args)
 {
-	// move x y
+	// tp x y
 	if (ListCount(args) < 2 or ListCount(args) > 2)
 		return false;
 
@@ -238,6 +266,8 @@ bool HandlePlayerTeleportCommand(List(const char *) args)
 	if (not success1 or not success2)
 		return false;
 
+	player.position.x = x;
+	player.position.y = y;
 	return true;
 }
 bool HandleToggleDevModeCommand(List(const char *) args)
@@ -305,7 +335,7 @@ void Playing_Update()
 			Object *object = &objects[i];
 			if (not object->script)
 				continue;
-			if (PlayerDistanceToObject(object) < 50)
+			if (DistanceBetween(&player, object) < 50)
 			{
 				PlaySound(shatter); // @TODO Remove
 				PushGameState(GAMESTATE_TALKING, object);
@@ -366,9 +396,10 @@ void Playing_Render()
 	shakyCam.offset.y += MAX_SHAKE_TRANSLATION * shake * PerlinNoise1(2, shakyTime);
 	BeginMode2D(shakyCam);
 	{
-		for (int i = 0; i < numObjects; ++i)
-			Render(&objects[i]);
-		Render(&player);
+		// Draw objects back-to-front ordered by z ("Painter's algorithm").
+		List(Object *) sorted = GetZSortedObjects();
+		for (int i = ListCount(sorted) - 1; i >= 0; --i)
+			Render(sorted[i]);
 	}
 	EndMode2D();
 }
@@ -510,120 +541,152 @@ void Editor_Update()
 		PopGameState();
 		return;
 	}
-
-	if (ImGui::Begin("Editor"))
-	{
-		ImGui::BeginTabBar("Tabs");
-		{
-			if (ImGui::BeginTabItem("Console"))
-			{
-				ShowConsoleGui();
-				ImGui::EndTabItem();
-			}
-			if (ImGui::BeginTabItem("Objects"))
-			{
-				// For the purposes of this list, object index -1 is the player object.
-				static int selectedObject = -1;
-
-				ImGui::BeginTable("Columns", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_Resizable);
-				ImGui::TableSetupColumn("Objects", ImGuiTableColumnFlags_WidthStretch);
-				ImGui::TableSetupColumn("Properties");
-				ImGui::TableHeadersRow();
-				ImGui::TableNextRow();
-				{
-					ImGui::TableNextColumn();
-					ImGui::Spacing();
-					{
-						for (int i = -1; i < numObjects; ++i)
-						{
-							ImGui::PushID(i);
-							{
-								Object *object = &player;
-								if (i >= 0)
-									object = &objects[i];
-
-								bool selected = selectedObject == i;
-								if (ImGui::Button("x") and i >= 0)
-								{
-									CopyBytes(&objects[i], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
-									--numObjects;
-									selected = false;
-									object = &objects[i];
-								}
-								ImGui::SameLine();
-								if (ImGui::Selectable(object->name, &selected))
-									selectedObject = i;
-							}
-							ImGui::PopID();
-						}
-
-						if (ImGui::Button("+", ImVec2(ImGui::GetContentRegionAvail().x, 0)) and numObjects < COUNTOF(objects))
-						{
-							Object *object = &objects[numObjects++];
-							memset(object, 0, sizeof object[0]);
-							int index = numObjects;
-							FormatString(object->name, sizeof object->name, "Object%d", index);
-						}
-					}
-
-					ImGui::TableNextColumn();
-					ImGui::Spacing();
-					{
-						Object *object = &player;
-						if (selectedObject >= 0)
-							object = &objects[selectedObject];
-
-						ImGui::InputText("Name", object->name, sizeof object->name);
-						ImGui::DragFloat2("Position", &object->position.x);
-						
-						const char *direction = GetDirectionString(object->direction);
-						bool directionIsValid = ListCount(GetCurrentSprite(object)) > 0;
-						if (not directionIsValid)
-						{
-							ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4{ 1, 0, 0, 1 });
-							ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4{ 1, 0, 0, 1 });
-							ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4{ 1, 0, 0, 1 });
-						}
-						ImGui::SliderInt("Direction", (int *)&object->direction, 0, DIRECTION_ENUM_COUNT - 1, direction);
-						if (not directionIsValid)
-							ImGui::PopStyleColor(3);
-					}
-				}
-				ImGui::EndTable();
-				ImGui::EndTabItem();
-			}
-		}
-		ImGui::EndTabBar();
-	}
-	ImGui::End();
-	
-	if (not ImGui::GetIO().WantCaptureMouse)
-	{
-		if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-		{
-			SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
-			Vector2 delta = GetMouseDelta();
-			camera.target.x -= delta.x / camera.zoom;
-			camera.target.y -= delta.y / camera.zoom;
-		}
-		else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
-
-		float wheel = GetMouseWheelMove();
-		if (wheel > 0)
-			ZoomCameraToScreenPoint(GetMousePosition(), 1.1f);
-		else if (wheel < 0)
-			ZoomCameraToScreenPoint(GetMousePosition(), 1 / 1.1f);
-	}
-
-	if (not ImGui::GetIO().WantCaptureKeyboard)
-	{
-		if (IsKeyPressed(KEY_C))
-			CenterCameraOn(&player);
-	}
 }
 void Editor_Render()
 {
 	CallPreviousGameStateRender();
+	BeginMode2D(camera);
+	{
+		if (ImGui::Begin("Editor"))
+		{
+			ImGui::BeginTabBar("Tabs");
+			{
+				if (ImGui::BeginTabItem("Console"))
+				{
+					ShowConsoleGui();
+					ImGui::EndTabItem();
+				}
+				if (ImGui::BeginTabItem("Objects"))
+				{
+					// For the purposes of this list, object index -1 is the player object.
+					static int selectedObject = -1;
+
+					ImGui::BeginTable("Columns", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_Resizable);
+					ImGui::TableSetupColumn("Objects", ImGuiTableColumnFlags_WidthStretch);
+					ImGui::TableSetupColumn("Properties");
+					ImGui::TableHeadersRow();
+					ImGui::TableNextRow();
+					{
+						ImGui::TableNextColumn();
+						ImGui::Spacing();
+						{
+							for (int i = -1; i < numObjects; ++i)
+							{
+								ImGui::PushID(i);
+								{
+									Object *object = &player;
+									if (i >= 0)
+										object = &objects[i];
+
+									bool selected = selectedObject == i;
+									if (ImGui::Button("x") and i >= 0)
+									{
+										CopyBytes(&objects[i], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
+										--numObjects;
+										selected = false;
+										object = &objects[i];
+									}
+									ImGui::SameLine();
+									if (ImGui::Selectable(object->name, &selected))
+										selectedObject = i;
+
+									// Draw an outline around the object.
+									Texture *texture = GetCurrentTexture(object);
+									if (texture)
+									{
+										Rectangle outline = {
+											object->position.x - 0.5f * texture->width,
+											object->position.y - 0.5f * texture->height,
+											texture->width,
+											texture->height,
+										};
+
+										Color outlineColor = GrayscaleAlpha(0.5f, 0.5f);
+										float outlineThickness = 2;
+										if (i == selectedObject)
+										{
+											outlineThickness = 3;
+											outlineColor = ColorAlpha(GREEN, 0.5f);
+										}
+										outline = ExpandRectangle(outline, outlineThickness);
+										DrawRectangleLinesEx(outline, outlineThickness, outlineColor);
+										
+										float z = GetFootPositionInScreenSpace(object).y + object->zOffset;
+										Vector2 zLinePos0 = { outline.x, z };
+										Vector2 zLinePos1 = { outline.x + outline.width, z };
+										DrawLineEx(zLinePos0, zLinePos1, 2, YELLOW);
+									}
+								}
+								ImGui::PopID();
+							}
+
+							if (ImGui::Button("+", ImVec2(ImGui::GetContentRegionAvail().x, 0)) and numObjects < COUNTOF(objects))
+							{
+								Object *object = &objects[numObjects++];
+								memset(object, 0, sizeof object[0]);
+								int index = numObjects;
+								FormatString(object->name, sizeof object->name, "Object%d", index);
+							}
+						}
+
+						ImGui::TableNextColumn();
+						ImGui::Spacing();
+						{
+							Object *object = &player;
+							if (selectedObject >= 0)
+								object = &objects[selectedObject];
+
+							ImGui::InputText("Name", object->name, sizeof object->name);
+							ImGui::DragFloat2("Position", &object->position.x);
+
+							const char *direction = GetDirectionString(object->direction);
+							bool directionIsValid = ListCount(GetCurrentSprite(object)) > 0;
+							if (not directionIsValid)
+							{
+								ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4{ 1, 0, 0, 1 });
+								ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4{ 1, 0, 0, 1 });
+								ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4{ 1, 0, 0, 1 });
+							}
+							ImGui::SliderInt("Direction", (int *)&object->direction, 0, DIRECTION_ENUM_COUNT - 1, direction);
+							if (not directionIsValid)
+								ImGui::PopStyleColor(3);
+
+							ImGui::DragFloat("Z Offset", &object->zOffset);
+						}
+					}
+					ImGui::EndTable();
+					ImGui::EndTabItem();
+				}
+			}
+			ImGui::EndTabBar();
+		}
+		ImGui::End();
+
+		if (not ImGui::GetIO().WantCaptureMouse)
+		{
+			if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+			{
+				SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
+				Vector2 delta = GetMouseDelta();
+				camera.target.x -= delta.x / camera.zoom;
+				camera.target.y -= delta.y / camera.zoom;
+			}
+			else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+
+			float wheel = GetMouseWheelMove();
+			if (wheel > 0)
+				ZoomCameraToScreenPoint(GetMousePosition(), 1.1f);
+			else if (wheel < 0)
+				ZoomCameraToScreenPoint(GetMousePosition(), 1 / 1.1f);
+		}
+
+		if (not ImGui::GetIO().WantCaptureKeyboard)
+		{
+			if (IsKeyPressed(KEY_C))
+				CenterCameraOn(&player);
+		}
+	}
+	EndMode2D();
 }
 REGISTER_GAME_STATE(GAMESTATE_EDITOR, NULL, NULL, Editor_Update, Editor_Render);
 
@@ -713,6 +776,7 @@ void GameInit(void)
 	background->collisionMap = LoadImageAndTrackChangesEx("res/collision-map.png", PIXELFORMAT_UNCOMPRESSED_GRAYSCALE);
 	background->position.x = 0.5f * background->sprites[0][0]->width;
 	background->position.y = 0.5f * background->sprites[0][0]->height;
+	background->zOffset = -1080;
 
 	Object *pinkGuy = &objects[numObjects++];
 	CopyString(pinkGuy->name, "Pink guy", sizeof pinkGuy->name);
