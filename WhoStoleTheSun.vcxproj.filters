@@ -48,6 +48,7 @@
     <ClInclude Include="src\lib\raymath.h" />
     <ClInclude Include="src\lib\rlgl.h" />
     <ClInclude Include="src\lib\rmem.h" />
+    <ClInclude Include="src\lib\stb_ds.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\raylib_windows_x64.lib" />

@@ -3,6 +3,7 @@
 #include "lib/raylib.h"
 #include "lib/raymath.h"
 #include "lib/rlgl.h"
+#include "lib/stb_ds.h"
 
 #include <stdarg.h>
 #include <stddef.h>

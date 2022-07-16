@@ -1,6 +1,7 @@
 #include "../core.h"
 
 #include <unordered_map>
+#include <stdio.h>
 
 // We basically store all assets in a big table and reference count them.
 // Whenever you call AcquireXXX(path), we check if an asset with that path 

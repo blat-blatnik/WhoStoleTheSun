@@ -817,6 +817,8 @@ void Paused_Render(void)
 }
 REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 
+#include <malloc.h>
+
 void GameInit(void)
 {
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
@@ -890,6 +892,19 @@ void GameInit(void)
 	pinkGuy->position.x = 700;
 	pinkGuy->position.y = 250;
 	pinkGuy->script = AcquireScript("example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	Script pink = LoadScript("example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	for (int i = 0; i < 1000; ++i)
+	{
+		//char *memory = (char *)MemRealloc(NULL, 64);
+		//CopyBytes(memory, "Hello, sailor!!!", 16);
+		//CopyBytes(memory + 16, "Hello, sailor!!!", 16);
+		//CopyBytes(memory + 32, "Hello, sailor!!!", 16);
+		//CopyBytes(memory + 48, "Hello, sailor!!!", 16);
+
+		char *list = NULL;
+		ListReserve(&list, 64);
+	}
+
 	pinkGuy->expressions[0].portrait = AcquireTexture("pink-guy-neutral.png");
 	pinkGuy->expressions[1].portrait = AcquireTexture("pink-guy-happy.png");
 	pinkGuy->expressions[2].portrait = AcquireTexture("pink-guy-sad.png");
