@@ -484,6 +484,7 @@ void Talking_Update()
 	}
 
 	Script *script = talkingObject->script;
+	int prevParagraphIndex = paragraphIndex;
 	int numParagraphs = ListCount(script->paragraphs);
 	if (paragraphIndex >= numParagraphs)
 		paragraphIndex = numParagraphs - 1;
@@ -524,6 +525,9 @@ void Talking_Update()
 		}
 	}
 
+	if (paragraphIndex != prevParagraphIndex)
+		script->commandIndex = 0;
+
 	UpdateCameraShake();
 }
 void Talking_Render()
@@ -533,7 +537,7 @@ void Talking_Render()
 	Script *script = talkingObject->script;
 	Paragraph paragraph = script->paragraphs[paragraphIndex];
 	const char *speaker = paragraph.speaker;
-	if (!speaker)
+	if (not paragraph.speaker)
 		speaker = talkingObject->name;
 
 	float time = 20 * (float)GetTimeInCurrentGameState();
@@ -831,7 +835,7 @@ void GameInit(void)
 		MapKeyToInputButton(KEY_SPACE, &input.interact);
 		MapKeyToInputButton(KEY_E, &input.interact);
 		MapGamepadButtonToInputButton(GAMEPAD_BUTTON_RIGHT_FACE_DOWN, &input.interact);
-
+		
 		MapKeyToInputAxis(KEY_W, &input.movement, 0, -1);
 		MapKeyToInputAxis(KEY_S, &input.movement, 0, +1);
 		MapKeyToInputAxis(KEY_A, &input.movement, -1, 0);
@@ -845,14 +849,14 @@ void GameInit(void)
 		MapGamepadButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_LEFT, &input.movement, -1, 0);
 		MapGamepadButtonToInputAxis(GAMEPAD_BUTTON_LEFT_FACE_RIGHT, &input.movement, +1, 0);
 		MapGamepadAxisToInputAxis(GAMEPAD_AXIS_LEFT_X, &input.movement);
-
+		
 		MapKeyToInputButton(KEY_LEFT_SHIFT, &input.sprint);
 		MapKeyToInputButton(KEY_RIGHT_SHIFT, &input.sprint);
 		MapGamepadButtonToInputButton(GAMEPAD_BUTTON_RIGHT_TRIGGER_2, &input.sprint);
-
+		
 		MapKeyToInputButton(KEY_ESCAPE, &input.pause);
 		MapGamepadButtonToInputButton(GAMEPAD_BUTTON_MIDDLE_RIGHT, &input.pause);
-
+		
 		MapKeyToInputButton(KEY_GRAVE, &input.console);
 	}
 
@@ -877,7 +881,7 @@ void GameInit(void)
 	player->expressions[0].portrait = AcquireTexture("player-neutral.png");
 	CopyString(player->expressions[0].name, "neutral", sizeof player->expressions[0].name);
 	player->numExpressions = 1;
-
+	
 	Object *background = &objects[numObjects++];
 	CopyString(background->name, "Background", sizeof background->name);
 	ListAdd(&background->sprites[0], AcquireTexture("background.png"));
@@ -891,18 +895,22 @@ void GameInit(void)
 	ListAdd(&pinkGuy->sprites[0], AcquireTexture("pink-guy.png"));
 	pinkGuy->position.x = 700;
 	pinkGuy->position.y = 250;
-	pinkGuy->script = AcquireScript("example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+
 	Script pink = LoadScript("example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-	for (int i = 0; i < 1000; ++i)
+	pinkGuy->script = AcquireScript("example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+
+	for (int i = 0; i < 10000; ++i)
 	{
 		//char *memory = (char *)MemRealloc(NULL, 64);
 		//CopyBytes(memory, "Hello, sailor!!!", 16);
 		//CopyBytes(memory + 16, "Hello, sailor!!!", 16);
 		//CopyBytes(memory + 32, "Hello, sailor!!!", 16);
 		//CopyBytes(memory + 48, "Hello, sailor!!!", 16);
-
-		char *list = NULL;
-		ListReserve(&list, 64);
+	
+		char *list1 = NULL;
+		char *list2 = NULL;
+		ListReserve(&list1, 64);
+		ListReserve(&list2, 256);
 	}
 
 	pinkGuy->expressions[0].portrait = AcquireTexture("pink-guy-neutral.png");

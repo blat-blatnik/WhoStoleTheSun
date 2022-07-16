@@ -3,7 +3,6 @@
 #include "lib/raylib.h"
 #include "lib/raymath.h"
 #include "lib/rlgl.h"
-#include "lib/stb_ds.h"
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -231,7 +230,6 @@ unsigned HashString(const char *string);
 List(char*) SplitByWhitespace(const char* string);
 List(char *) SplitByChar(const char *string, const char* spacer);
 
-
 //
 // Temporary allocator
 //
@@ -305,7 +303,7 @@ void AppendFormatVa(StringBuilder *builder, FORMAT_STRING format, va_list args);
 
 STRUCT(Paragraph)
 {
-	char *speaker;
+	char *speaker; // Index into the string pool.
 	char *text; // [textLength] NOT 0 TERMINATED!
 	int textLength;
 	float duration;
