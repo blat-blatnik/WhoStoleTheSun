@@ -620,7 +620,7 @@ void Editor_Render()
 									ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(180, 20, 20, 255));
 									ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(240, 20, 20, 255));
 									ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(150, 20, 20, 255));
-									if (ImGui::Button("x"))
+									if (ImGui::Button("x") or (i > 0 and selected and IsKeyPressed(KEY_DELETE)))
 									{
 										CopyBytes(&objects[i], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
 										--numObjects;
