@@ -351,11 +351,14 @@ Sprite LoadSprite(const char *path);
 void UnloadSprite(Sprite sprite);
 
 //
-// Temporary sounds
+// Sounds
 //
 
 // Plays a sound immediately, the lifetime of the sound resource is managed automatically.
 void PlayTemporarySound(const char *path);
+
+// Plays a temporary sound with a given volume and pitch. 1 is the default for both.
+void PlayTemporarySoundEx(const char *path, float volume, float pitch);
 
 // Releases all temporary sounds that finished playing. Called once at the end of every frame.
 void UpdateTemporarySounds(void);

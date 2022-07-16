@@ -1,4 +1,4 @@
-This is a line of text.
+{sound res/shatter.wav}This is a line of text.
 
 Every paragraph, separated by an empty line, starts a new speech bubble.
 

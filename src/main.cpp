@@ -62,7 +62,6 @@ int numObjects;
 Camera2D camera;
 float cameraTrauma;
 float cameraTraumaFalloff;
-Sound shatter;
 
 List(Texture *) LoadAllTexturesFromDirectory(const char *path)
 {
@@ -347,6 +346,29 @@ bool HandleCameraShakeCommand(List(const char *) args)
 	cameraTraumaFalloff = falloff;
 	return true;
 }
+bool HandleSoundCommand(List(const char *) args)
+{
+	// sound filename:string [volume:float] [pitch:float]
+	if (ListCount(args) > 3)
+		return false;
+
+	const char *path = args[0];
+	float volume = 1;
+	float pitch = 1;
+
+	bool success1 = true;
+	bool success2 = true;
+	if (ListCount(args) >= 2)
+		volume = ParseCommandFloatArg(args[1], &success1);
+	if (ListCount(args) >= 3)
+		pitch = ParseCommandFloatArg(args[2], &success2);
+
+	if (not success1 or not success2)
+		return false;
+
+	PlayTemporarySoundEx(path, volume, pitch);
+	return true;
+}
 
 //
 // Playing
@@ -374,7 +396,6 @@ void Playing_Update()
 				continue;
 			if (DistanceBetween(player, object) < 50)
 			{
-				PlaySound(shatter); // @TODO Remove
 				PushGameState(GAMESTATE_TALKING, object);
 				return;
 			}
@@ -799,7 +820,6 @@ REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 void GameInit(void)
 {
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
-	//ToggleFullscreen();
 
 	InitAudioDevice();
 	SetTargetFPS(FPS);
@@ -838,7 +858,6 @@ void GameInit(void)
 	robotoBold = LoadFontAscii("res/roboto-bold.ttf", 32);
 	robotoItalic = LoadFontAscii("res/roboto-italic.ttf", 32);
 	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
-	shatter = LoadSound("res/shatter.wav");
 	
 	player = &objects[numObjects++];
 	CopyString(player->name, "Player", sizeof player->name);
@@ -910,6 +929,7 @@ void GameInit(void)
 	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float - Teleport player->");
 	AddCommand("dev", HandleToggleDevModeCommand, "dev [value:bool] - Toggle developer mode.");
 	AddCommand("shake", HandleCameraShakeCommand, "shake [trauma:float] [falloff:float] - Trigger camera shake.");
+	AddCommand("sound", HandleSoundCommand, "sound filename:string [volume:float] [pitch:float] - Play a sound.");
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

@@ -147,7 +147,17 @@ extern "C"
 
 	Music *AcquireMusic(const char *path);
 
-	Sound *AcquireSound(const char *path);
+	Sound *AcquireSound(const char *path)
+	{
+		Asset *asset;
+		if (AcquireAsset(path, SOUND, &asset))
+			return &asset->sound;
+		if (not asset)
+			return NULL;
+
+		asset->sound = LoadSound(path);
+		return &asset->sound;
+	}
 
 	void ReleaseAsset(void *asset)
 	{
@@ -166,17 +176,10 @@ extern "C"
 
 		switch (a->kind)
 		{
-			case COLLISION_MAP:
-				UnloadImage(a->collisionMap);
-				break;
-
-			case TEXTURE:
-				UnloadTexture(a->texture);
-				break;
-
-			case SCRIPT:
-				UnloadScript(&a->script);
-				break;
+			case COLLISION_MAP: UnloadImage(a->collisionMap); break;
+			case TEXTURE:       UnloadTexture(a->texture);    break;
+			case SCRIPT:        UnloadScript(&a->script);     break;
+			case SOUND:         UnloadSound(a->sound);        break;
 		}
 
 		table.erase(a->path);

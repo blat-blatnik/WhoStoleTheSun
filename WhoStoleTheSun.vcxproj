@@ -114,6 +114,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\core\sound.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\core\sprite.c">
       <SubType>
       </SubType>

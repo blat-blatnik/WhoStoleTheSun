@@ -28,6 +28,7 @@ static void DoOneFrame()
 	ImGui::Render();
 	ImGui_ImplRaylib_Render(ImGui::GetDrawData());
 	EndDrawing();
+	UpdateTemporarySounds();
 }
 
 int main()

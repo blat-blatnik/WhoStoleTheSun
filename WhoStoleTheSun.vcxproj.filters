@@ -32,6 +32,7 @@
     <ClCompile Include="src\core\input.c" />
     <ClCompile Include="src\core\asset_manager.cpp" />
     <ClCompile Include="src\core\sprite.c" />
+    <ClCompile Include="src\core\sound.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\imgui\imconfig.h" />
