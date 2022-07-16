@@ -14,7 +14,7 @@ extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 
 static void DoOneFrame()
 {
-	HotReloadAllTrackedItems();
+	UpdateAllChangedAssets();
 	TempReset(0);
 	BeginDrawing();
 	UpdateInputMappings();
