@@ -854,45 +854,45 @@ void GameInit(void)
 		MapKeyToInputButton(KEY_GRAVE, &input.console);
 	}
 
-	roboto = LoadFontAscii("res/roboto.ttf", 32);
-	robotoBold = LoadFontAscii("res/roboto-bold.ttf", 32);
-	robotoItalic = LoadFontAscii("res/roboto-italic.ttf", 32);
-	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
+	roboto = LoadFontAscii("roboto.ttf", 32);
+	robotoBold = LoadFontAscii("roboto-bold.ttf", 32);
+	robotoItalic = LoadFontAscii("roboto-italic.ttf", 32);
+	robotoBoldItalic = LoadFontAscii("roboto-bold-italic.ttf", 32);
 	
 	player = &objects[numObjects++];
 	CopyString(player->name, "Player", sizeof player->name);
 	player->position.x = 1280 / 2;
 	player->position.y = 720 / 2;
 	player->direction = DIRECTION_DOWN;
-	player->sprites[DIRECTION_RIGHT     ] = LoadAllTexturesFromDirectory("res/player_right");
-	player->sprites[DIRECTION_UP_RIGHT  ] = LoadAllTexturesFromDirectory("res/player_up_right");
-	player->sprites[DIRECTION_UP        ] = LoadAllTexturesFromDirectory("res/player_up");
-	player->sprites[DIRECTION_UP_LEFT   ] = LoadAllTexturesFromDirectory("res/player_up_left");
-	player->sprites[DIRECTION_LEFT      ] = LoadAllTexturesFromDirectory("res/player_left");
-	player->sprites[DIRECTION_DOWN_LEFT ] = LoadAllTexturesFromDirectory("res/player_down_left");
-	player->sprites[DIRECTION_DOWN      ] = LoadAllTexturesFromDirectory("res/player_down");
-	player->sprites[DIRECTION_DOWN_RIGHT] = LoadAllTexturesFromDirectory("res/player_down_right");
-	player->expressions[0].portrait = AcquireTexture("res/player-neutral.png");
+	player->sprites[DIRECTION_RIGHT     ] = LoadAllTexturesFromDirectory("player_right");
+	player->sprites[DIRECTION_UP_RIGHT  ] = LoadAllTexturesFromDirectory("player_up_right");
+	player->sprites[DIRECTION_UP        ] = LoadAllTexturesFromDirectory("player_up");
+	player->sprites[DIRECTION_UP_LEFT   ] = LoadAllTexturesFromDirectory("player_up_left");
+	player->sprites[DIRECTION_LEFT      ] = LoadAllTexturesFromDirectory("player_left");
+	player->sprites[DIRECTION_DOWN_LEFT ] = LoadAllTexturesFromDirectory("player_down_left");
+	player->sprites[DIRECTION_DOWN      ] = LoadAllTexturesFromDirectory("player_down");
+	player->sprites[DIRECTION_DOWN_RIGHT] = LoadAllTexturesFromDirectory("player_down_right");
+	player->expressions[0].portrait = AcquireTexture("player-neutral.png");
 	CopyString(player->expressions[0].name, "neutral", sizeof player->expressions[0].name);
 	player->numExpressions = 1;
 
 	Object *background = &objects[numObjects++];
 	CopyString(background->name, "Background", sizeof background->name);
-	ListAdd(&background->sprites[0], AcquireTexture("res/background.png"));
-	background->collisionMap = AcquireCollisionMap("res/collision-map.png");
+	ListAdd(&background->sprites[0], AcquireTexture("background.png"));
+	background->collisionMap = AcquireCollisionMap("collision-map.png");
 	background->position.x = 0.5f * background->sprites[0][0]->width;
 	background->position.y = 0.5f * background->sprites[0][0]->height;
 	background->zOffset = -1080;
 
 	Object *pinkGuy = &objects[numObjects++];
 	CopyString(pinkGuy->name, "Pink guy", sizeof pinkGuy->name);
-	ListAdd(&pinkGuy->sprites[0], AcquireTexture("res/pink-guy.png"));
+	ListAdd(&pinkGuy->sprites[0], AcquireTexture("pink-guy.png"));
 	pinkGuy->position.x = 700;
 	pinkGuy->position.y = 250;
-	pinkGuy->script = AcquireScript("res/example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-	pinkGuy->expressions[0].portrait = AcquireTexture("res/pink-guy-neutral.png");
-	pinkGuy->expressions[1].portrait = AcquireTexture("res/pink-guy-happy.png");
-	pinkGuy->expressions[2].portrait = AcquireTexture("res/pink-guy-sad.png");
+	pinkGuy->script = AcquireScript("example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	pinkGuy->expressions[0].portrait = AcquireTexture("pink-guy-neutral.png");
+	pinkGuy->expressions[1].portrait = AcquireTexture("pink-guy-happy.png");
+	pinkGuy->expressions[2].portrait = AcquireTexture("pink-guy-sad.png");
 	CopyString(pinkGuy->expressions[0].name, "neutral", sizeof pinkGuy->expressions[0].name);
 	CopyString(pinkGuy->expressions[1].name, "happy", sizeof pinkGuy->expressions[1].name);
 	CopyString(pinkGuy->expressions[2].name, "sad", sizeof pinkGuy->expressions[2].name);
@@ -900,23 +900,23 @@ void GameInit(void)
 
 	Object *greenGuy = &objects[numObjects++];
 	CopyString(greenGuy->name, "Green guy", sizeof greenGuy->name);
-	ListAdd(&greenGuy->sprites[0], AcquireTexture("res/green-guy.png"));
+	ListAdd(&greenGuy->sprites[0], AcquireTexture("green-guy.png"));
 	greenGuy->position.x = 1000;
 	greenGuy->position.y = 250;
-	greenGuy->script = AcquireScript("res/green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-	greenGuy->expressions[0].portrait = AcquireTexture("res/green-guy-neutral.png");
+	greenGuy->script = AcquireScript("green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	greenGuy->expressions[0].portrait = AcquireTexture("green-guy-neutral.png");
 	CopyString(greenGuy->expressions[0].name, "neutral", sizeof greenGuy->expressions[0].name);
 	greenGuy->numExpressions = 1;
 
 	Object *alex = &objects[numObjects++];
 	CopyString(alex->name, "Alex", sizeof alex->name);
-	alex->sprites[0] = LoadAllTexturesFromDirectory("res/alex");
+	alex->sprites[0] = LoadAllTexturesFromDirectory("alex");
 	alex->position.x = 915;
 	alex->position.y = 120;
 	alex->animationFps = 15;
 	alex->direction = DIRECTION_LEFT;
-	alex->script = AcquireScript("res/alex-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-	alex->expressions[0].portrait = AcquireTexture("res/alex-neutral.png");
+	alex->script = AcquireScript("alex-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
+	alex->expressions[0].portrait = AcquireTexture("alex-neutral.png");
 	CopyString(alex->expressions[0].name, "neutral", sizeof alex->expressions[0].name);
 	alex->numExpressions = 1;
 
