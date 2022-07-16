@@ -56,8 +56,8 @@ Font roboto;
 Font robotoBold;
 Font robotoItalic;
 Font robotoBoldItalic;
-Object player;
 Object objects[100];
+Object *player; // Always the first object, i.e. player == &objects[0].
 int numObjects;
 Camera2D camera;
 float cameraTrauma;
@@ -124,9 +124,6 @@ Vector2 MovePointWithCollisions(Vector2 position, Vector2 velocity)
 
 Object *FindObjectByName(const char *name)
 {
-	if (StringsEqualNocase(name, "player"))
-		return &player;
-	
 	for (int i = 0; i < numObjects; ++i)
 		if (StringsEqualNocase(objects[i].name, name))
 			return &objects[i];
@@ -189,8 +186,8 @@ Rectangle GetOutline(const Object *object)
 	Rectangle outline = {
 		object->position.x - 0.5f * texture->width,
 		object->position.y - 0.5f * texture->height,
-		texture->width,
-		texture->height,
+		(float)texture->width,
+		(float)texture->height,
 	};
 	return outline;
 }
@@ -198,12 +195,11 @@ List(Object *) GetZSortedObjects(void)
 {
 	List(Object *) result = NULL;
 	ListSetAllocator((void **)&result, TempRealloc, TempFree);
-	Object **pointers = ListAllocate(&result, numObjects + 1);
+	Object **pointers = ListAllocate(&result, numObjects);
 	for (int i = 0; i < numObjects; ++i)
 		pointers[i] = &objects[i];
-	pointers[numObjects] = &player;
 
-	Sort(pointers, numObjects + 1, sizeof pointers[0], [](const void *left, const void *right)
+	Sort(pointers, numObjects, sizeof pointers[0], [](const void *left, const void *right)
 	{
 		Object *l = *(Object **)left;
 		Object *r = *(Object **)right;
@@ -215,7 +211,31 @@ List(Object *) GetZSortedObjects(void)
 	});
 	return result;
 }
+Object *FindObjectAtPosition(Vector2 position)
+{
+	Object *result = NULL;
+	int mark = TempMark();
+	{
+		List(Object *) sorted = GetZSortedObjects();
+		for (int i = 0; i < ListCount(sorted); ++i)
+		{
+			Object *object = sorted[i];
+			Rectangle outline = GetOutline(object);
+			if (CheckCollisionPointRec(position, outline))
+			{
+				result = object;
+				break;
+			}
+		}
+	}
+	TempReset(mark);
+	return result;
+}
 
+Vector2 GetMouseWorldPosition(void)
+{
+	return GetWorldToScreen2D(GetMousePosition(), camera);
+}
 void CenterCameraOn(Object *object)
 {
 	camera.target = object->position;
@@ -283,8 +303,8 @@ bool HandlePlayerTeleportCommand(List(const char *) args)
 	if (not success1 or not success2)
 		return false;
 
-	player.position.x = x;
-	player.position.y = y;
+	player->position.x = x;
+	player->position.y = y;
 	return true;
 }
 bool HandleToggleDevModeCommand(List(const char *) args)
@@ -352,7 +372,7 @@ void Playing_Update()
 			Object *object = &objects[i];
 			if (not object->script)
 				continue;
-			if (DistanceBetween(&player, object) < 50)
+			if (DistanceBetween(player, object) < 50)
 			{
 				PlaySound(shatter); // @TODO Remove
 				PushGameState(GAMESTATE_TALKING, object);
@@ -376,21 +396,20 @@ void Playing_Update()
 
 		Vector2 dirVector = move;
 		dirVector.y *= -1;
-		player.direction = DirectionFromVector(dirVector);
+		player->direction = DirectionFromVector(dirVector);
 		Vector2 deltaPos = Vector2Scale(move, moveSpeed);
 
 		// In the isometric perspective, the y direction is squished down a little bit.
-		Vector2 feetPos = player.position;
-		feetPos.y += 0.5f * GetCurrentTexture(&player)->height;
+		Vector2 feetPos = player->position;
+		feetPos.y += 0.5f * GetCurrentTexture(player)->height;
 		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
-		player.position = player.position + (newFeetPos - feetPos);;
+		player->position = player->position + (newFeetPos - feetPos);;
 	}
 
-	Update(&player);
 	for (int i = 0; i < numObjects; i++)
 		Update(&objects[i]);
 
-	CenterCameraOn(&player);
+	CenterCameraOn(player);
 	UpdateCameraShake();
 
 	ImGui::Begin("Shake");
@@ -564,8 +583,7 @@ void Editor_Render()
 	CallPreviousGameStateRender();
 	BeginMode2D(camera);
 	{
-		// For the purposes of the editor, object index -1 is the player object.
-		static int selectedObject = -1;
+		static Object *selectedObject = NULL;
 
 		if (ImGui::Begin("Editor"))
 		{
@@ -587,32 +605,35 @@ void Editor_Render()
 						ImGui::TableNextColumn();
 						ImGui::Spacing();
 						{
-							for (int i = -1; i < numObjects; ++i)
+							for (int i = 0; i < numObjects; ++i)
 							{
 								ImGui::PushID(i);
 								{
-									Object *object = &player;
-									if (i >= 0)
-										object = &objects[i];
-
-									bool selected = selectedObject == i;
-									if (ImGui::Button("x") and i >= 0)
+									Object *object = &objects[i];
+									bool selected = selectedObject == &objects[i];
+									
+									if (i == 0)
+										ImGui::BeginDisabled();
+									if (ImGui::Button("x"))
 									{
 										CopyBytes(&objects[i], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
 										--numObjects;
 										selected = false;
 										object = &objects[i];
 									}
+									if (i == 0)
+										ImGui::EndDisabled();
+									
 									ImGui::SameLine();
 									if (ImGui::Selectable(object->name, &selected))
-										selectedObject = i;
+										selectedObject = object;
 
 									// Draw an outline around the object.
 									Rectangle outline = GetOutline(object);
 
 									Color outlineColor = GrayscaleAlpha(0.5f, 0.5f);
 									float outlineThickness = 2;
-									if (i == selectedObject)
+									if (selected)
 									{
 										outlineThickness = 3;
 										outlineColor = ColorAlpha(GREEN, 0.5f);
@@ -640,26 +661,25 @@ void Editor_Render()
 						ImGui::TableNextColumn();
 						ImGui::Spacing();
 						{
-							Object *object = &player;
-							if (selectedObject >= 0)
-								object = &objects[selectedObject];
-
-							ImGui::InputText("Name", object->name, sizeof object->name);
-							ImGui::DragFloat2("Position", &object->position.x);
-
-							const char *direction = GetDirectionString(object->direction);
-							bool directionIsValid = ListCount(GetCurrentSprite(object)) > 0;
-							if (not directionIsValid)
+							if (selectedObject)
 							{
-								ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4{ 1, 0, 0, 1 });
-								ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4{ 1, 0, 0, 1 });
-								ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4{ 1, 0, 0, 1 });
-							}
-							ImGui::SliderInt("Direction", (int *)&object->direction, 0, DIRECTION_ENUM_COUNT - 1, direction);
-							if (not directionIsValid)
-								ImGui::PopStyleColor(3);
+								ImGui::InputText("Name", selectedObject->name, sizeof selectedObject->name);
+								ImGui::DragFloat2("Position", &selectedObject->position.x);
 
-							ImGui::DragFloat("Z Offset", &object->zOffset);
+								const char *direction = GetDirectionString(selectedObject->direction);
+								bool directionIsValid = ListCount(GetCurrentSprite(selectedObject)) > 0;
+								if (not directionIsValid)
+								{
+									ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4{ 1, 0, 0, 1 });
+									ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4{ 1, 0, 0, 1 });
+									ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4{ 1, 0, 0, 1 });
+								}
+								ImGui::SliderInt("Direction", (int *)&selectedObject->direction, 0, DIRECTION_ENUM_COUNT - 1, direction);
+								if (not directionIsValid)
+									ImGui::PopStyleColor(3);
+
+								ImGui::DragFloat("Z Offset", &selectedObject->zOffset);
+							}
 						}
 					}
 					ImGui::EndTable();
@@ -674,32 +694,41 @@ void Editor_Render()
 		{
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				Vector2 position = GetScreenToWorld2D(GetMousePosition(), camera);
+				int x = 123;
+			}
 
-				List(Object *) sorted = GetZSortedObjects();
-				for (int i = 0; i < ListCount(sorted); ++i)
-				{
-					Object *object = sorted[i];
-					Rectangle outline = GetOutline(object);
-					if (CheckCollisionPointRec(position, outline))
-					{
-						if (object == &player)
-							selectedObject = -1;
-						else
-							selectedObject = (int)(object - objects);
-						break;
-					}
-				}
+			bool specialCursor = false;
+			Object *hoveredObject = FindObjectAtPosition(GetMouseWorldPosition());
+			static Object *draggedObject = NULL;
+
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				selectedObject = hoveredObject;
+				draggedObject = hoveredObject;
+			}
+			if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+				draggedObject = NULL;
+
+			if (draggedObject)
+			{
+				specialCursor = true;
+				SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
+				Vector2 delta = GetMouseDelta();
+				hoveredObject->position.x += delta.x * camera.zoom;
+				hoveredObject->position.y += delta.y * camera.zoom;
 			}
 
 			if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 			{
+				specialCursor = true;
 				SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
 				Vector2 delta = GetMouseDelta();
 				camera.target.x -= delta.x / camera.zoom;
 				camera.target.y -= delta.y / camera.zoom;
 			}
-			else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+
+			if (not specialCursor)
+				SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
 			float wheel = GetMouseWheelMove();
 			if (wheel > 0)
@@ -711,7 +740,7 @@ void Editor_Render()
 		if (not ImGui::GetIO().WantCaptureKeyboard)
 		{
 			if (IsKeyPressed(KEY_C))
-				CenterCameraOn(&player);
+				CenterCameraOn(player);
 		}
 	}
 	EndMode2D();
@@ -782,21 +811,22 @@ void GameInit(void)
 	robotoBoldItalic = LoadFontAscii("res/roboto-bold-italic.ttf", 32);
 	shatter = LoadSound("res/shatter.wav");
 	
-	CopyString(player.name, "Player", sizeof player.name);
-	player.position.x = 1280 / 2;
-	player.position.y = 720 / 2;
-	player.direction = DIRECTION_DOWN;
-	player.sprites[DIRECTION_RIGHT     ] = LoadAllTexturesFromDirectory("res/player_right/");
-	player.sprites[DIRECTION_UP_RIGHT  ] = LoadAllTexturesFromDirectory("res/player_up_right/");
-	player.sprites[DIRECTION_UP        ] = LoadAllTexturesFromDirectory("res/player_up/");
-	player.sprites[DIRECTION_UP_LEFT   ] = LoadAllTexturesFromDirectory("res/player_up_left/");
-	player.sprites[DIRECTION_LEFT      ] = LoadAllTexturesFromDirectory("res/player_left/");
-	player.sprites[DIRECTION_DOWN_LEFT ] = LoadAllTexturesFromDirectory("res/player_down_left/");
-	player.sprites[DIRECTION_DOWN      ] = LoadAllTexturesFromDirectory("res/player_down/");
-	player.sprites[DIRECTION_DOWN_RIGHT] = LoadAllTexturesFromDirectory("res/player_down_right/");
-	player.expressions[0].portrait = LoadTextureAndTrackChanges("res/player-neutral.png");
-	CopyString(player.expressions[0].name, "neutral", sizeof player.expressions[0].name);
-	player.numExpressions = 1;
+	player = &objects[numObjects++];
+	CopyString(player->name, "Player", sizeof player->name);
+	player->position.x = 1280 / 2;
+	player->position.y = 720 / 2;
+	player->direction = DIRECTION_DOWN;
+	player->sprites[DIRECTION_RIGHT     ] = LoadAllTexturesFromDirectory("res/player_right/");
+	player->sprites[DIRECTION_UP_RIGHT  ] = LoadAllTexturesFromDirectory("res/player_up_right/");
+	player->sprites[DIRECTION_UP        ] = LoadAllTexturesFromDirectory("res/player_up/");
+	player->sprites[DIRECTION_UP_LEFT   ] = LoadAllTexturesFromDirectory("res/player_up_left/");
+	player->sprites[DIRECTION_LEFT      ] = LoadAllTexturesFromDirectory("res/player_left/");
+	player->sprites[DIRECTION_DOWN_LEFT ] = LoadAllTexturesFromDirectory("res/player_down_left/");
+	player->sprites[DIRECTION_DOWN      ] = LoadAllTexturesFromDirectory("res/player_down/");
+	player->sprites[DIRECTION_DOWN_RIGHT] = LoadAllTexturesFromDirectory("res/player_down_right/");
+	player->expressions[0].portrait = LoadTextureAndTrackChanges("res/player-neutral.png");
+	CopyString(player->expressions[0].name, "neutral", sizeof player->expressions[0].name);
+	player->numExpressions = 1;
 
 	Object *background = &objects[numObjects++];
 	CopyString(background->name, "Background", sizeof background->name);
@@ -848,7 +878,7 @@ void GameInit(void)
 	//cauldron->position.y = 550;
 	//cauldron->spriteMgr.AddSprite("res/cauldron/");
 
-	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float - Teleport player.");
+	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float - Teleport player->");
 	AddCommand("dev", HandleToggleDevModeCommand, "dev [value:bool] - Toggle developer mode.");
 	AddCommand("shake", HandleCameraShakeCommand, "shake [trauma:float] [falloff:float] - Trigger camera shake.");
 
