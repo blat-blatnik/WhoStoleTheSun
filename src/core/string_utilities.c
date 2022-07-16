@@ -86,6 +86,15 @@ char *SkipLeadingWhitespace(const char *string)
 		++string;
 	return (char *)string;
 }
+
+unsigned HashString(const char *string)
+{
+	unsigned hash = 2166136261u;
+	for (int i = 0; string[i]; ++i)
+		hash = (hash ^ string[i]) * 16777619;
+	return hash;
+}
+
 char* SkipLeadingChar(const char* string, const char* c)
 {
 	if (!string)

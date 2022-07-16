@@ -223,6 +223,9 @@ void ReplaceChar(char *string, char target, char replacement);
 // Skips all leading whitespace in a string.
 char *SkipLeadingWhitespace(const char *string);
 
+// Hashes a string using 32-bit FNV-1a.
+unsigned HashString(const char *string);
+
 // SplitByWhitespace("Hello sailor\n\t1 2  3") -> ["Hello", "sailor", "1", "2", "3"]. The result is allocated from temporary storage.
 List(char*) SplitByWhitespace(const char* string);
 List(char *) SplitByChar(const char *string, const char* spacer);
@@ -375,6 +378,40 @@ const char *GetTrackedItemPath(void *item);
 
 // Checks all tracked items and hot-reloads any that changed. Automatically called at the start of each frame.
 void HotReloadAllTrackedItems(void);
+
+//
+// Sprite
+//
+
+STRUCT(Sprite)
+{
+	int numFrames;
+	Texture *frames;
+};
+
+//
+// Asset manager
+//
+
+FileData *AcquireFile(const char *path);
+
+Image *AcquireCollisionMap(const char *path);
+
+Texture *AcquireTexture(const char *path);
+
+Sprite *AcquireSprite(const char *path);
+
+Script *AcquireScript(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
+
+Music *AcquireMusic(const char *path);
+
+Sound *AcquireSound(const char *path);
+
+void ReleaseAsset(void *asset);
+
+const char *GetAssetPath(const void *asset);
+
+void UpdateAllChangedAssets(void);
 
 //
 // Random
