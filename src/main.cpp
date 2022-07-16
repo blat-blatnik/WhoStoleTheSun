@@ -232,9 +232,9 @@ Object *FindObjectAtPosition(Vector2 position)
 	return result;
 }
 
-Vector2 GetMouseWorldPosition(void)
+Vector2 GetMousePositionInWorld(void)
 {
-	return GetWorldToScreen2D(GetMousePosition(), camera);
+	return GetScreenToWorld2D(GetMousePosition(), camera);
 }
 void CenterCameraOn(Object *object)
 {
@@ -584,6 +584,7 @@ void Editor_Render()
 	BeginMode2D(camera);
 	{
 		static Object *selectedObject = NULL;
+		static Object *draggedObject = NULL;
 
 		if (ImGui::Begin("Editor"))
 		{
@@ -692,14 +693,8 @@ void Editor_Render()
 
 		if (not ImGui::GetIO().WantCaptureMouse)
 		{
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-			{
-				int x = 123;
-			}
-
 			bool specialCursor = false;
-			Object *hoveredObject = FindObjectAtPosition(GetMouseWorldPosition());
-			static Object *draggedObject = NULL;
+			Object *hoveredObject = FindObjectAtPosition(GetMousePositionInWorld());
 
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
@@ -714,8 +709,8 @@ void Editor_Render()
 				specialCursor = true;
 				SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
 				Vector2 delta = GetMouseDelta();
-				hoveredObject->position.x += delta.x * camera.zoom;
-				hoveredObject->position.y += delta.y * camera.zoom;
+				draggedObject->position.x += delta.x / camera.zoom;
+				draggedObject->position.y += delta.y / camera.zoom;
 			}
 
 			if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
