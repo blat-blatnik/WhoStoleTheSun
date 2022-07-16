@@ -617,6 +617,9 @@ void Editor_Render()
 									
 									if (i == 0)
 										ImGui::BeginDisabled();
+									ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(180, 20, 20, 255));
+									ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(240, 20, 20, 255));
+									ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(150, 20, 20, 255));
 									if (ImGui::Button("x"))
 									{
 										CopyBytes(&objects[i], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
@@ -624,6 +627,7 @@ void Editor_Render()
 										selected = false;
 										object = &objects[i];
 									}
+									ImGui::PopStyleColor(3);
 									if (i == 0)
 										ImGui::EndDisabled();
 									
@@ -735,6 +739,8 @@ void Editor_Render()
 
 		if (not ImGui::GetIO().WantCaptureKeyboard)
 		{
+			if (IsKeyPressed(KEY_D) and (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL)))
+				selectedObject = NULL;
 			if (IsKeyPressed(KEY_C))
 				CenterCameraOn(player);
 		}
