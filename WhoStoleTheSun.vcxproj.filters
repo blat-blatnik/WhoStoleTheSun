@@ -18,7 +18,6 @@
     <ClCompile Include="src\core\slab_allocator.c" />
     <ClCompile Include="src\core\char_utilities.c" />
     <ClCompile Include="src\core\color.c" />
-    <ClCompile Include="src\core\hot_reload.c" />
     <ClCompile Include="src\core\logging.c" />
     <ClCompile Include="src\core\math.c" />
     <ClCompile Include="src\core\memory_utilities.c" />

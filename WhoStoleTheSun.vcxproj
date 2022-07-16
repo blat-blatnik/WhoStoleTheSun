@@ -127,7 +127,6 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\core\hot_reload.c" />
     <ClCompile Include="src\core\logging.c" />
     <ClCompile Include="src\core\math.c" />
     <ClCompile Include="src\core\memory_utilities.c" />

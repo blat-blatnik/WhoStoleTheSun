@@ -337,49 +337,6 @@ void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, 
 const char *GetScriptExpression(Script script, int paragraphIndex, float time);
 
 //
-// Hot-reload
-//
-
-STRUCT(FileData)
-{
-	void *bytes; // Note that this is NOT 0 terminated. So you can't use it as a string.
-	int size;
-};
-
-// Load the entire file as bytes. The returned image will automatically update whenever the file changes.
-FileData *LoadFileAndTrackChanges(const char *path);
-
-// Loads a texture from a file. The returned image will automatically update whenever the file changes.
-Texture *LoadTextureAndTrackChanges(const char *path);
-
-// Loads an image from a file. The returned image will automatically update whenever the file changes.
-Image *LoadImageAndTrackChanges(const char *path);
-
-// Loads an image from a file, and sets its pixel format. The returned image will automatically update whenever the file changes.
-Image *LoadImageAndTrackChangesEx(const char *path, PixelFormat format);
-
-// Loads a script from a file. The returned script will automatically update whenever the file changes.
-Script *LoadScriptAndTrackChanges(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
-
-// Unloads a tracked file, and stops tracking its changes.
-void UnloadTrackedFile(FileData **data);
-
-// Unloads a tracked texture, and stops tracking its changes.
-void UnloadTrackedTexture(Texture **texture);
-
-// Unloads a tracked image, and stops tracking its changes.
-void UnloadTrackedImage(Image **image);
-
-// Unloads a tracked script, and stops tracking its changes.
-void UnloadTrackedScript(Script **script);
-
-// Gets the saved file path for a tracked item.
-const char *GetTrackedItemPath(void *item);
-
-// Checks all tracked items and hot-reloads any that changed. Automatically called at the start of each frame.
-void HotReloadAllTrackedItems(void);
-
-//
 // Sprite
 //
 
@@ -392,6 +349,12 @@ STRUCT(Sprite)
 //
 // Asset manager
 //
+
+STRUCT(FileData)
+{
+	void *bytes; // Note that this is NOT 0 terminated. So you can't use it as a string.
+	int size;
+};
 
 FileData *AcquireFile(const char *path);
 
