@@ -346,34 +346,49 @@ STRUCT(Sprite)
 	Texture *frames;
 };
 
+Sprite LoadSprite(const char *path);
+
+void UnloadSprite(Sprite sprite);
+
+//
+// Temporary sounds
+//
+
+// Plays a sound immediately, the lifetime of the sound resource is managed automatically.
+void PlayTemporarySound(const char *path);
+
+// Releases all temporary sounds that finished playing. Called once at the end of every frame.
+void UpdateTemporarySounds(void);
+
 //
 // Asset manager
 //
 
-STRUCT(FileData)
-{
-	void *bytes; // Note that this is NOT 0 terminated. So you can't use it as a string.
-	int size;
-};
-
-FileData *AcquireFile(const char *path);
-
+// Loads a collision map asset - currently a grayscale image.
 Image *AcquireCollisionMap(const char *path);
 
+// Loads a texture asset - we might remove this later and just use sprites.
 Texture *AcquireTexture(const char *path);
 
 Sprite *AcquireSprite(const char *path);
 
+// Loads a script asset.
 Script *AcquireScript(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
 
 Music *AcquireMusic(const char *path);
 
 Sound *AcquireSound(const char *path);
 
+// Releases any asset.
 void ReleaseAsset(void *asset);
 
+// Completely clones an asset, as if you has acquired it from scratch.
+void *CloneAsset(void *asset);
+
+// Returns the file/directory path of an asset.
 const char *GetAssetPath(const void *asset);
 
+// Hot-reloads any changed assets. This called once at the end of every frame.
 void UpdateAllChangedAssets(void);
 
 //

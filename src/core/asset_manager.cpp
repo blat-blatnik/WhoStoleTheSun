@@ -2,9 +2,17 @@
 
 #include <unordered_map>
 
+// We basically store all assets in a big table and reference count them.
+// Whenever you call AcquireXXX(path), we check if an asset with that path 
+// already exists in the table, and only load it if it's not already there.
+// When you call ReleaseAsset(), we decrease the reference count, and only
+// when that reaches 0, the asset gets unloaded from memory.
+//
+// This allows us to have a powerful editor where you can change the sprites
+// and scripts of all objects without any performance loss / asset duplication.
+
 ENUM(AssetKind)
 {
-	FILE_DATA,
 	COLLISION_MAP,
 	TEXTURE,
 	SPRITE,
@@ -18,7 +26,6 @@ STRUCT(Asset)
 {
 	union
 	{
-		FileData file;
 		Image collisionMap;
 		Texture texture;
 		Sprite sprite;
@@ -99,21 +106,6 @@ static bool IsAsset(Asset *asset)
 
 extern "C"
 {
-	FileData *AcquireFile(const char *path)
-	{
-		Asset *asset;
-		if (AcquireAsset(path, FILE_DATA, &asset))
-			return &asset->file;
-		if (not asset)
-			return NULL;
-
-		unsigned bytesRead;
-		void *data = LoadFileData(path, &bytesRead);
-		asset->file.bytes = data;
-		asset->file.size = (int)bytesRead;
-		return &asset->file;
-	}
-
 	Image *AcquireCollisionMap(const char *path)
 	{
 		Asset *asset;
@@ -159,6 +151,9 @@ extern "C"
 
 	void ReleaseAsset(void *asset)
 	{
+		if (not asset)
+			return;
+
 		Asset *a = (Asset *)asset;
 		ASSERT(IsAsset(a));
 
@@ -171,10 +166,6 @@ extern "C"
 
 		switch (a->kind)
 		{
-			case FILE_DATA:
-				UnloadFileData((unsigned char *)a->file.bytes);
-				break;
-
 			case COLLISION_MAP:
 				UnloadImage(a->collisionMap);
 				break;
@@ -192,10 +183,20 @@ extern "C"
 		delete a;
 	}
 
+	void *CloneAsset(void *asset)
+	{
+		Asset *a = (Asset *)asset;
+		if (not IsAsset(a))
+			return NULL;
+		++a->referenceCount;
+		return a;
+	}
+
 	const char *GetAssetPath(const void *asset)
 	{
 		Asset *a = (Asset *)asset;
-		ASSERT(IsAsset(a));
+		if (!IsAsset(a))
+			return NULL;
 		return a->path;
 	}
 
@@ -204,6 +205,9 @@ extern "C"
 		for (auto &keyval : table)
 		{
 			Asset *asset = keyval.second;
+			if (asset->kind == SOUND or asset->kind == MUSIC)
+				continue; // We don't hot reload these.
+
 			if (not FileExists(asset->path))
 				continue;
 
@@ -220,14 +224,6 @@ extern "C"
 
 			switch (asset->kind)
 			{
-				case FILE_DATA:
-				{
-					UnloadFileData((unsigned char *)asset->file.bytes);
-					unsigned size;
-					asset->file.bytes = LoadFileData(asset->path, &size);
-					asset->file.size = (int)size;
-				} break;
-
 				case COLLISION_MAP:
 				{
 					UnloadImage(asset->collisionMap);
