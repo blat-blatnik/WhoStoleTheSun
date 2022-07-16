@@ -586,6 +586,7 @@ void Editor_Render()
 		static Object *selectedObject = NULL;
 		static Object *draggedObject = NULL;
 
+		bool isInObjectsTab = false;
 		if (ImGui::Begin("Editor"))
 		{
 			ImGui::BeginTabBar("Tabs");
@@ -597,6 +598,7 @@ void Editor_Render()
 				}
 				if (ImGui::BeginTabItem("Objects"))
 				{
+					isInObjectsTab = true;
 					ImGui::BeginTable("Columns", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_Resizable);
 					ImGui::TableSetupColumn("Objects", ImGuiTableColumnFlags_WidthStretch);
 					ImGui::TableSetupColumn("Properties");
@@ -693,36 +695,35 @@ void Editor_Render()
 
 		if (not ImGui::GetIO().WantCaptureMouse)
 		{
-			bool specialCursor = false;
 			Object *hoveredObject = FindObjectAtPosition(GetMousePositionInWorld());
-
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			if (isInObjectsTab)
 			{
-				selectedObject = hoveredObject;
-				draggedObject = hoveredObject;
-			}
-			if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
-				draggedObject = NULL;
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+				{
+					selectedObject = hoveredObject;
+					draggedObject = hoveredObject;
+				}
+				if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+					draggedObject = NULL;
 
-			if (draggedObject)
-			{
-				specialCursor = true;
-				SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
-				Vector2 delta = GetMouseDelta();
-				draggedObject->position.x += delta.x / camera.zoom;
-				draggedObject->position.y += delta.y / camera.zoom;
+				if (draggedObject)
+				{
+					Vector2 delta = GetMouseDelta();
+					draggedObject->position.x += delta.x / camera.zoom;
+					draggedObject->position.y += delta.y / camera.zoom;
+				}
 			}
-
+			
 			if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 			{
-				specialCursor = true;
-				SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
 				Vector2 delta = GetMouseDelta();
 				camera.target.x -= delta.x / camera.zoom;
 				camera.target.y -= delta.y / camera.zoom;
 			}
 
-			if (not specialCursor)
+			if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) or selectedObject == hoveredObject or draggedObject)
+				SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
+			else
 				SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
 			float wheel = GetMouseWheelMove();
