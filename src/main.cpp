@@ -600,7 +600,7 @@ void Editor_Render()
 				{
 					isInObjectsTab = true;
 					ImGui::BeginTable("Columns", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_Resizable);
-					ImGui::TableSetupColumn("Objects", ImGuiTableColumnFlags_WidthStretch);
+					ImGui::TableSetupColumn(TempFormat("Objects %d/%d", numObjects, (int)COUNTOF(objects)));
 					ImGui::TableSetupColumn("Properties");
 					ImGui::TableHeadersRow();
 					ImGui::TableNextRow();
@@ -608,61 +608,87 @@ void Editor_Render()
 						ImGui::TableNextColumn();
 						ImGui::Spacing();
 						{
-							for (int i = 0; i < numObjects; ++i)
+							ImGui::BeginTable("Controls", 3, ImGuiTableFlags_SizingStretchProp);
 							{
-								ImGui::PushID(i);
+								for (int i = 0; i < numObjects; ++i)
 								{
-									Object *object = &objects[i];
-									bool selected = selectedObject == &objects[i];
-									
-									if (i == 0)
-										ImGui::BeginDisabled();
-									ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(180, 20, 20, 255));
-									ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(240, 20, 20, 255));
-									ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(150, 20, 20, 255));
-									if (ImGui::Button("x") or (i > 0 and selected and IsKeyPressed(KEY_DELETE)))
+									ImGui::TableNextRow();
+									ImGui::PushID(i);
 									{
-										CopyBytes(&objects[i], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
-										--numObjects;
-										selected = false;
-										object = &objects[i];
+										Object *object = &objects[i];
+										bool selected = selectedObject == &objects[i];
+
+										ImGui::TableNextColumn();
+										if (i == 0)
+											ImGui::BeginDisabled();
+										ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(180, 20, 20, 255));
+										ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(240, 20, 20, 255));
+										ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(150, 20, 20, 255));
+										if (ImGui::Button("x") or (i > 0 and selected and IsKeyPressed(KEY_DELETE)))
+										{
+											CopyBytes(&objects[i], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
+											--numObjects;
+											selected = false;
+											object = &objects[i];
+										}
+										ImGui::PopStyleColor(3);
+										if (i == 0)
+											ImGui::EndDisabled();
+
+										ImGui::TableNextColumn();
+										if (ImGui::Selectable(object->name, &selected))
+											selectedObject = object;
+
+										ImGui::TableNextColumn();
+										if (ImGui::Button("Clone"))
+										{
+											if (numObjects < COUNTOF(objects))
+											{
+												char cloneName[sizeof object->name];
+												CopyString(cloneName, object->name, sizeof cloneName);
+												for (int suffix = 2; suffix < 100 and FindObjectByName(cloneName); ++suffix)
+													FormatString(cloneName, sizeof cloneName, "%s%d", object->name, suffix);
+
+												CopyBytes(&objects[i + 2], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
+												++numObjects;
+												CopyBytes(&objects[i + 1], &objects[i], sizeof objects[0]);
+												CopyString(objects[i + 1].name, cloneName, sizeof objects[i + 1].name);
+											}
+										}
+
+										// Draw an outline around the object.
+										Rectangle outline = GetOutline(object);
+
+										Color outlineColor = GrayscaleAlpha(0.5f, 0.5f);
+										float outlineThickness = 2;
+										if (selected)
+										{
+											outlineThickness = 3;
+											outlineColor = ColorAlpha(GREEN, 0.5f);
+										}
+										outline = ExpandRectangle(outline, outlineThickness);
+										DrawRectangleLinesEx(outline, outlineThickness, outlineColor);
+
+										float z = GetFootPositionInScreenSpace(object).y + object->zOffset;
+										Vector2 zLinePos0 = { outline.x, z };
+										Vector2 zLinePos1 = { outline.x + outline.width, z };
+										DrawLineEx(zLinePos0, zLinePos1, 2, YELLOW);
 									}
-									ImGui::PopStyleColor(3);
-									if (i == 0)
-										ImGui::EndDisabled();
-									
-									ImGui::SameLine();
-									if (ImGui::Selectable(object->name, &selected))
-										selectedObject = object;
-
-									// Draw an outline around the object.
-									Rectangle outline = GetOutline(object);
-
-									Color outlineColor = GrayscaleAlpha(0.5f, 0.5f);
-									float outlineThickness = 2;
-									if (selected)
-									{
-										outlineThickness = 3;
-										outlineColor = ColorAlpha(GREEN, 0.5f);
-									}
-									outline = ExpandRectangle(outline, outlineThickness);
-									DrawRectangleLinesEx(outline, outlineThickness, outlineColor);
-
-									float z = GetFootPositionInScreenSpace(object).y + object->zOffset;
-									Vector2 zLinePos0 = { outline.x, z };
-									Vector2 zLinePos1 = { outline.x + outline.width, z };
-									DrawLineEx(zLinePos0, zLinePos1, 2, YELLOW);
+									ImGui::PopID();
 								}
-								ImGui::PopID();
-							}
 
-							if (ImGui::Button("+", ImVec2(ImGui::GetContentRegionAvail().x, 0)) and numObjects < COUNTOF(objects))
-							{
-								Object *object = &objects[numObjects++];
-								memset(object, 0, sizeof object[0]);
-								int index = numObjects;
-								FormatString(object->name, sizeof object->name, "Object%d", index);
+								ImGui::TableNextRow();
+								ImGui::TableNextColumn();
+								ImGui::TableNextColumn();
+								if (ImGui::Button("+", ImVec2(ImGui::GetContentRegionAvail().x, 0)) and numObjects < COUNTOF(objects))
+								{
+									Object *object = &objects[numObjects++];
+									memset(object, 0, sizeof object[0]);
+									int index = numObjects;
+									FormatString(object->name, sizeof object->name, "Object%d", index);
+								}
 							}
+							ImGui::EndTable();
 						}
 
 						ImGui::TableNextColumn();
@@ -717,7 +743,7 @@ void Editor_Render()
 					draggedObject->position.y += delta.y / camera.zoom;
 				}
 			}
-			
+
 			if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 			{
 				Vector2 delta = GetMouseDelta();
@@ -736,6 +762,7 @@ void Editor_Render()
 			else if (wheel < 0)
 				ZoomCameraToScreenPoint(GetMousePosition(), 1 / 1.1f);
 		}
+		else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
 		if (not ImGui::GetIO().WantCaptureKeyboard)
 		{
