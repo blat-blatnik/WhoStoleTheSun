@@ -177,6 +177,23 @@ float DistanceBetween(const Object *a, const Object *b)
 	Vector2 positionB = GetFootPositionInWorldSpace(b);
 	return Vector2Distance(positionA, positionB);
 }
+Rectangle GetOutline(const Object *object)
+{
+	Texture *texture = GetCurrentTexture(object);
+	if (not texture)
+	{
+		Rectangle empty = { 0 };
+		return empty;
+	}
+
+	Rectangle outline = {
+		object->position.x - 0.5f * texture->width,
+		object->position.y - 0.5f * texture->height,
+		texture->width,
+		texture->height,
+	};
+	return outline;
+}
 List(Object *) GetZSortedObjects(void)
 {
 	List(Object *) result = NULL;
@@ -547,6 +564,9 @@ void Editor_Render()
 	CallPreviousGameStateRender();
 	BeginMode2D(camera);
 	{
+		// For the purposes of the editor, object index -1 is the player object.
+		static int selectedObject = -1;
+
 		if (ImGui::Begin("Editor"))
 		{
 			ImGui::BeginTabBar("Tabs");
@@ -558,9 +578,6 @@ void Editor_Render()
 				}
 				if (ImGui::BeginTabItem("Objects"))
 				{
-					// For the purposes of this list, object index -1 is the player object.
-					static int selectedObject = -1;
-
 					ImGui::BeginTable("Columns", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_Resizable);
 					ImGui::TableSetupColumn("Objects", ImGuiTableColumnFlags_WidthStretch);
 					ImGui::TableSetupColumn("Properties");
@@ -591,31 +608,22 @@ void Editor_Render()
 										selectedObject = i;
 
 									// Draw an outline around the object.
-									Texture *texture = GetCurrentTexture(object);
-									if (texture)
-									{
-										Rectangle outline = {
-											object->position.x - 0.5f * texture->width,
-											object->position.y - 0.5f * texture->height,
-											texture->width,
-											texture->height,
-										};
+									Rectangle outline = GetOutline(object);
 
-										Color outlineColor = GrayscaleAlpha(0.5f, 0.5f);
-										float outlineThickness = 2;
-										if (i == selectedObject)
-										{
-											outlineThickness = 3;
-											outlineColor = ColorAlpha(GREEN, 0.5f);
-										}
-										outline = ExpandRectangle(outline, outlineThickness);
-										DrawRectangleLinesEx(outline, outlineThickness, outlineColor);
-										
-										float z = GetFootPositionInScreenSpace(object).y + object->zOffset;
-										Vector2 zLinePos0 = { outline.x, z };
-										Vector2 zLinePos1 = { outline.x + outline.width, z };
-										DrawLineEx(zLinePos0, zLinePos1, 2, YELLOW);
+									Color outlineColor = GrayscaleAlpha(0.5f, 0.5f);
+									float outlineThickness = 2;
+									if (i == selectedObject)
+									{
+										outlineThickness = 3;
+										outlineColor = ColorAlpha(GREEN, 0.5f);
 									}
+									outline = ExpandRectangle(outline, outlineThickness);
+									DrawRectangleLinesEx(outline, outlineThickness, outlineColor);
+
+									float z = GetFootPositionInScreenSpace(object).y + object->zOffset;
+									Vector2 zLinePos0 = { outline.x, z };
+									Vector2 zLinePos1 = { outline.x + outline.width, z };
+									DrawLineEx(zLinePos0, zLinePos1, 2, YELLOW);
 								}
 								ImGui::PopID();
 							}
@@ -664,6 +672,26 @@ void Editor_Render()
 
 		if (not ImGui::GetIO().WantCaptureMouse)
 		{
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				Vector2 position = GetScreenToWorld2D(GetMousePosition(), camera);
+
+				List(Object *) sorted = GetZSortedObjects();
+				for (int i = 0; i < ListCount(sorted); ++i)
+				{
+					Object *object = sorted[i];
+					Rectangle outline = GetOutline(object);
+					if (CheckCollisionPointRec(position, outline))
+					{
+						if (object == &player)
+							selectedObject = -1;
+						else
+							selectedObject = (int)(object - objects);
+						break;
+					}
+				}
+			}
+
 			if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 			{
 				SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
