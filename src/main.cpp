@@ -8,7 +8,7 @@
 #define WINDOW_CENTER_Y (0.5f*WINDOW_HEIGHT)
 #define Y_SQUISH 0.5f // sqrt(2) * sin(PI / 8)
 //#define Y_SQUISH 0.541196100146197f // sqrt(2) * sin(PI / 8)
-
+#define MAX_OBJECTS 3
 ENUM(GameState)
 {
 	GAMESTATE_PLAYING,
@@ -213,7 +213,7 @@ public:
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 
 };
-Object objects[2] = { "cauldron", "torch" };
+Object objects[MAX_OBJECTS] = { "cauldron", "torch", "potion"};
 
 bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
@@ -375,7 +375,7 @@ void Playing_Update()
 
 	player2.Update();
 	
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < MAX_OBJECTS; i++)
 	{
 		objects[i].Update();
 	}
@@ -397,7 +397,7 @@ void Playing_Render()
 		//DrawTextureCentered(*player.textures[player.direction], player.position, WHITE);
 		player2.Render();
 		
-		for (int i = 0; i < 2; i++)
+		for (int i = 0; i < MAX_OBJECTS; i++)
 		{
 			objects[i].Render();
 		}
@@ -659,7 +659,7 @@ void GameInit(void)
 	player2.spriteMgr.AddSprite("res/player_down_right/");
 
 	
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		objects[i].Init();
 		objects[i].spriteMgr.SetSpeed(10);
