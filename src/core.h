@@ -355,7 +355,7 @@ void UnloadScript(Script *script);
 void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, float fontSize, Color color, Color shadowColor, float time);
 
 // Gets the current speaker expression at the given time in the paragraph.
-const char *GetScriptExpression(Script script, int paragraphIndex, float time);
+const char *GetScriptExpression(Script script, int paragratphIndex, float time);
 
 //
 // Sprite
@@ -772,6 +772,7 @@ void ExecuteCommand(const char *command);
 
 void ShowConsoleGui(void);
 
+void ResetConsole(void);
 //
 // Runtime
 //

@@ -493,9 +493,9 @@ bool HandleSoundCommand(List(const char *) args)
 		return false;
 
 	PlayTemporarySoundEx(path, volume, pitch);
+
 	return true;
 }
-
 bool HandleMoveTo(List(const char*) args)
 {
 	if (ListCount(args) != 2)
@@ -752,8 +752,14 @@ REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talki
 
 void Editor_Update()
 {
+	// prevent console to close when still typing (even special characters)
+	if (ImGui::GetIO().WantCaptureKeyboard)
+		return;
+
 	if (input.console.wasPressed)
 	{
+		// resets the "FocusOnLoad" bool
+		ResetConsole();
 		PopGameState();
 		return;
 	}

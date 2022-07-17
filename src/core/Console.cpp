@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <algorithm>
 #include <map>
 
 
@@ -135,7 +136,11 @@ public:
 
 
         for (int i = 0; i < words.size(); i++)
+        {          
+            std::replace(words[i].begin(), words[i].end(), '`', ' ');
+
             ListAdd(&wordsList, words[i].c_str());
+        }
 
         if (_commandContainer[command]->Invoke(wordsList))
         {
@@ -155,6 +160,7 @@ public:
     ImVector<char*>             Items;
     bool                        AutoScroll;
     bool                        ScrollToBottom;
+    bool                        FocusOnLoad = true;
 
     static char* Strdup(const char* s) { IM_ASSERT(s); size_t len = strlen(s) + 1; void* buf = malloc(len); IM_ASSERT(buf); return (char*)memcpy(buf, (const void*)s, len); }
 
@@ -211,7 +217,11 @@ public:
         // Command-line
         
         // Always maintain keyboard focus on the console.
-        ImGui::SetKeyboardFocusHere();
+        if (FocusOnLoad)
+        {
+            ImGui::SetKeyboardFocusHere();
+            FocusOnLoad = false;
+        }
 
         ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
         if (ImGui::InputText("Input", InputBuf, IM_ARRAYSIZE(InputBuf), input_text_flags, &TextEditCallbackStub, (void*)this))
@@ -230,6 +240,11 @@ public:
 
             HandleResult(result);
         }
+    }
+
+    void Reset()
+    {
+        FocusOnLoad = true;
     }
 
     static int TextEditCallbackStub(ImGuiInputTextCallbackData* data)
@@ -328,6 +343,11 @@ extern "C" void ExecuteCommand(const char* command)
 extern "C" void ShowConsoleGui()
 {
     g_console.ShowConsoleGui();
+}
+
+extern "C" void ResetConsole()
+{
+    g_console.Reset();
 }
 void AddConsoleLog(const char* log)
 {
