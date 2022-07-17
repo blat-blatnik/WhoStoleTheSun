@@ -298,6 +298,29 @@ void AppendFormatVa(StringBuilder *builder, FORMAT_STRING format, va_list args);
 #define STRING_BUILDER_ON_STACK(capacity) CreateStringBuilder((char[capacity]){0}, (capacity))
 
 //
+// Binary Reader
+//
+
+STRUCT(BinaryReader)
+{
+	const void *buffer;
+	int cursor;
+	int size;
+};
+
+// Reads a 32-bit integer from the binary stream and advances the cursor by 4 bytes.
+int ReadInt(BinaryReader *reader);
+
+// Reads a 32-bit float from the binary stream and advances the cursor by 4 bytes.
+float ReadFloat(BinaryReader *reader);
+
+// Reads a 0-terminated string from the binary stream and advances the cursor by however many bytes were read.
+const char *ReadCString(BinaryReader *reader);
+
+// Reads a fixed number of bytes from the binary stream and advances the cursor by that many bytes.
+void ReadBytes(BinaryReader *reader, void *buffer, int numBytesToRead);
+
+//
 // Script
 //
 

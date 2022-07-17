@@ -49,6 +49,20 @@ STRUCT(Object)
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 };
 
+STRUCT(SerializedObject)
+{
+	const char *name;
+	float positionX;
+	float positionY;
+	float zOffset;
+	float animationFps;
+	const char *spritePaths[DIRECTION_ENUM_COUNT];
+	const char *collisionPath;
+	const char *scriptPath;
+	const char *expressionNames[10];
+	const char *expressionPaths[10];
+};
+
 bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
 Font roboto;
