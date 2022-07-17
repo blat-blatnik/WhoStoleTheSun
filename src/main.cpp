@@ -59,8 +59,11 @@ Object objects[100];
 Object *player; // Always the first object, i.e. player == &objects[0].
 int numObjects;
 Camera2D camera;
-float cameraTrauma;
-float cameraTraumaFalloff;
+float cameraTrauma; // Amount of camera shake. Will slowly decrease over time.
+float cameraTraumaFalloff; // How quickly the camera shake stops.
+float cameraOffsetFactor = 25; // How far ahead the camera goes in the direction of player movement.
+float cameraAcceleration = 0.03f; // How quickly the camera converges on it's desired offset.
+Vector2 cameraOffset;
 
 List(Texture *) LoadAllTexturesFromDirectory(const char *path)
 {
@@ -425,6 +428,7 @@ void Playing_Update()
 	if (input.sprint.isDown)
 		moveSpeed = 10;
 
+	Vector2 playerVelocity = { 0, 0 };
 	Vector2 move = input.movement.position;
 	float magnitude = Vector2Length(move);
 	if (magnitude > 0.2f)
@@ -438,23 +442,31 @@ void Playing_Update()
 		dirVector.y *= -1;
 		player->direction = DirectionFromVector(dirVector);
 		Vector2 deltaPos = Vector2Scale(move, moveSpeed);
+		playerVelocity = deltaPos;
 
 		// In the isometric perspective, the y direction is squished down a little bit.
 		Vector2 feetPos = player->position;
 		feetPos.y += 0.5f * GetCurrentTexture(player)->height;
 		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
-		player->position = player->position + (newFeetPos - feetPos);;
+		player->position = player->position + (newFeetPos - feetPos);
 	}
 
 	for (int i = 0; i < numObjects; i++)
 		Update(&objects[i]);
 
-	CenterCameraOn(player);
+	Vector2 targetCameraOffset = cameraOffsetFactor * playerVelocity;
+	cameraOffset = Vector2Lerp(cameraOffset, targetCameraOffset, cameraAcceleration);
+	camera.target = player->position + cameraOffset;
+	camera.offset.x = WINDOW_CENTER_X;
+	camera.offset.y = WINDOW_CENTER_Y;
+	camera.zoom = 1;
 	UpdateCameraShake();
 
-	ImGui::Begin("Shake");
+	ImGui::Begin("Camera");
 	{
 		ImGui::SliderFloat("trauma", &cameraTrauma, 0, 1);
+		ImGui::SliderFloat("acceleration", &cameraAcceleration, 0, 0.2f);
+		ImGui::SliderFloat("offset", &cameraOffsetFactor, 10, 50);
 	}
 	ImGui::End();
 }

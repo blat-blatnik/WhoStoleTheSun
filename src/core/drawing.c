@@ -19,14 +19,6 @@ void DrawTextureCenteredAndFlippedVertically(Texture texture, Vector2 position, 
 
 	Vector2 origin = { 0, 0 };
 	DrawTexturePro(texture, source, destination, origin, 0, tint);
-	
-	//Rectangle source = {
-	//	(float)(texture.width - 1),
-	//	(float)(0),
-	//	(float)(-texture.width),
-	//	(float)(texture.height)
-	//};
-	//DrawTextureRec(texture, source, position, tint);
 }
 
 void DrawTextureCenteredScaled(Texture texture, Vector2 position, float scale, Color tint)
