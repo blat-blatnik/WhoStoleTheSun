@@ -227,10 +227,11 @@ public:
         }
 
         ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
-        if (ImGui::InputText("Input", InputBuf, IM_ARRAYSIZE(InputBuf), input_text_flags, &TextEditCallbackStub, (void*)this))
+        if (ImGui::InputTextWithHint("Input", "type 'help' to see all commands", InputBuf, IM_ARRAYSIZE(InputBuf), input_text_flags, &TextEditCallbackStub, (void *)this))
         {
             // here run the commands
             char* s = InputBuf;
+            AddLog("%s", s);
 
             if ((s != NULL) && (s[0] == '\0'))
             {
