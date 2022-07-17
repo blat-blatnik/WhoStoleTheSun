@@ -18,7 +18,6 @@
     <ClCompile Include="src\core\slab_allocator.c" />
     <ClCompile Include="src\core\char_utilities.c" />
     <ClCompile Include="src\core\color.c" />
-    <ClCompile Include="src\core\hot_reload.c" />
     <ClCompile Include="src\core\logging.c" />
     <ClCompile Include="src\core\math.c" />
     <ClCompile Include="src\core\memory_utilities.c" />
@@ -31,6 +30,9 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\core\text.c" />
     <ClCompile Include="src\core\input.c" />
+    <ClCompile Include="src\core\asset_manager.cpp" />
+    <ClCompile Include="src\core\sprite.c" />
+    <ClCompile Include="src\core\sound.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lib\imgui\imconfig.h" />
@@ -60,5 +62,11 @@
     <None Include="synchronize.bat" />
     <None Include="synchronize.sh" />
     <None Include="webshell.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WhoStoleTheSun.rc" />
   </ItemGroup>
 </Project>

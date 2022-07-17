@@ -262,7 +262,8 @@ Script LoadScript(const char *path, Font regular, Font bold, Font italic, Font b
 				int nameLength = speakerEnd - speakerStart;
 				if (nameLength > 0)
 				{
-					paragraph.speaker = ListAllocate(&script.stringPool, nameLength + 1);
+					//paragraph.speaker = ListAllocate(&script.stringPool, nameLength + 1);
+					paragraph.speaker = MemAlloc(nameLength + 1);
 					CopyBytes(paragraph.speaker, text + speakerStart, nameLength);
 					paragraph.speaker[nameLength] = 0;
 				}
@@ -283,7 +284,8 @@ Script LoadScript(const char *path, Font regular, Font bold, Font italic, Font b
 			if (previousName)
 			{
 				int nameLength = StringLength(previousName);
-				paragraph.speaker = ListAllocate(&script.stringPool, nameLength + 1);
+				//paragraph.speaker = ListAllocate(&script.stringPool, nameLength + 1);
+				paragraph.speaker = MemAlloc(nameLength + 1);
 				CopyBytes(paragraph.speaker, previousName, nameLength);
 				paragraph.speaker[nameLength] = 0;
 			}
@@ -309,8 +311,9 @@ void UnloadScript(Script *script)
 
 	for (int i = 0; i < ListCount(script->paragraphs); ++i)
 	{
-		ListDestroy(&script->paragraphs[i].codepoints);
-		ListDestroy((void **)&script->paragraphs[i].expressions);
+		Paragraph *paragraph = &script->paragraphs[i];
+		ListDestroy(&paragraph->codepoints);
+		MemFree(paragraph->speaker);
 	}
 	ListDestroy(&script->paragraphs);
 	ListDestroy(&script->stringPool);
@@ -355,7 +358,6 @@ void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, 
 			char *command = &script->stringPool[stringIndex];
 			if (++commandIndex > script->commandIndex)
 			{
-				//@TODO: Actually run the command.
 				script->commandIndex++;
 				LogInfo("Script executing command %d: '%s'.", script->commandIndex, command);
 				ExecuteCommand(command);

@@ -175,13 +175,14 @@ float PerlinNoise1(unsigned seed, float x)
 	float dx0 = x - (float)x0;
 	float dx1 = x - (float)x1;
 
-	float v0 = FloatNoise1(seed, x0) * 2 - 1;
-	float v1 = FloatNoise1(seed, x1) * 2 - 1;
+	float v0 = (BitNoise1(seed, x0) & 1) ? +1.0f : -1.0f;
+	float v1 = (BitNoise1(seed, x1) & 1) ? +1.0f : -1.0f;
 	
 	float d0 = dx0 * v0;
 	float d1 = dx1 * v1;
 	
-	return d0 + (d1 - d0) * Smootherstep01(dx0);
+	float result = d0 + (d1 - d0) * Smootherstep01(dx0);
+	return 2 * result; // No idea why, but we get [-0.5, +0.5] instead of [-1, +1] 
 }
 float PerlinNoise2(unsigned seed, float x, float y)
 {

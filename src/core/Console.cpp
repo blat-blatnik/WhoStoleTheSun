@@ -1,9 +1,8 @@
-#pragma once
-
 #include "../core.h"
 #include <vector>
 #include <string>
 #include <sstream>
+#include <map>
 
 
 static std::vector<std::string> SplitStringByCharacter(std::string string, char spacer)
@@ -81,7 +80,7 @@ class Console
 {
 public:
 
-    std::map<std::string, std::shared_ptr<Command>>* _commandContainer = new std::map<std::string, std::shared_ptr<Command>>();
+    std::map<std::string, std::shared_ptr<Command>> _commandContainer = std::map<std::string, std::shared_ptr<Command>>();
 
     Console()
     {
@@ -106,7 +105,7 @@ public:
 
         auto command = std::make_shared<Command>(commandName, std::string(pHelp), handle);
 
-        (*_commandContainer).insert(std::pair<std::string, std::shared_ptr<Command>>(commandName, command));
+        _commandContainer.insert(std::pair<std::string, std::shared_ptr<Command>>(commandName, command));
     }
 
     CmdResult ExecuteCommand(const char* cmd)
@@ -118,7 +117,7 @@ public:
 
         CmdResult result;
 
-        if ((*_commandContainer).find(command) == (*_commandContainer).end())
+        if (_commandContainer.find(command) == _commandContainer.end())
         {
             result.state = CmdState::COMMAND_NOT_FOUND;
             return result;
@@ -127,7 +126,7 @@ public:
         if (words.size() > 0 && words[0] == "help")
         {
             result.state = CmdState::COMMAND_RESULT_HELP;
-            result.cmd = (*_commandContainer)[command];
+            result.cmd = _commandContainer[command];
             return result;
         }
 
@@ -138,25 +137,22 @@ public:
         for (int i = 0; i < words.size(); i++)
             ListAdd(&wordsList, words[i].c_str());
 
-        if ((*_commandContainer)[command]->Invoke(wordsList))
+        if (_commandContainer[command]->Invoke(wordsList))
         {
             result.state = CmdState::COMMAND_SUCCEEDED;
-            result.cmd = (*_commandContainer)[command];
+            result.cmd = _commandContainer[command];
         }
         else
         {
             result.state = CmdState::COMMAND_FOUND_BAD_ARGS;
-            result.cmd = (*_commandContainer)[command];
+            result.cmd = _commandContainer[command];
         }
 
         return result;
     }
-    const std::map<std::string, std::shared_ptr<Command>>* GetCommands() { return _commandContainer; }
-    std::shared_ptr<Command> GetCommand(std::string str) { return (*_commandContainer)[str]; }
 
     char                        InputBuf[256];
     ImVector<char*>             Items;
-    ImGuiTextFilter             Filter;
     bool                        AutoScroll;
     bool                        ScrollToBottom;
 
@@ -181,23 +177,8 @@ public:
         Items.push_back(Strdup(buf));
     }
 
-    void ShowConsoleWindow(const char* title, bool* p_open)
+    void ShowConsoleGui()
     {
-        ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-        if (!ImGui::Begin(title, p_open))
-        {
-            ImGui::End();
-            return;
-        }
-
-        if (ImGui::BeginPopupContextItem())
-        {
-            if (ImGui::MenuItem("Close Console"))
-                *p_open = false;
-            ImGui::EndPopup();
-        }
-
-
         // Reserve enough left-over height for 1 separator + 1 input text
         const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
         ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
@@ -207,9 +188,6 @@ public:
         for (int i = 0; i < Items.Size; i++)
         {
             const char* item = Items[i];
-            if (!Filter.PassFilter(item))
-                continue;
-
             ImVec4 color;
             bool has_color = false;
 
@@ -221,7 +199,6 @@ public:
                 ImGui::PopStyleColor();
         }
 
-
         if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
             ImGui::SetScrollHereY(1.0f);
 
@@ -232,7 +209,10 @@ public:
         ImGui::Separator();
 
         // Command-line
-        bool reclaim_focus = false;
+        
+        // Always maintain keyboard focus on the console.
+        ImGui::SetKeyboardFocusHere();
+
         ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
         if (ImGui::InputText("Input", InputBuf, IM_ARRAYSIZE(InputBuf), input_text_flags, &TextEditCallbackStub, (void*)this))
         {
@@ -247,17 +227,9 @@ public:
 
             CmdResult result = ExecuteCommand(s);
             strcpy(s, "");
-            reclaim_focus = true;
 
             HandleResult(result);
         }
-
-        // Auto-focus on window apparition
-        ImGui::SetItemDefaultFocus();
-        if (reclaim_focus)
-            ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
-
-        ImGui::End();
     }
 
     static int TextEditCallbackStub(ImGuiInputTextCallbackData* data)
@@ -315,6 +287,34 @@ extern "C" bool ParseCommandBoolArg(const char *string, bool *outSuccess)
     return false;
 }
 
+extern "C" int ParseCommandIntArg(const char *string, bool *outSuccess)
+{
+    *outSuccess = false;
+    if (not string)
+        return 0;
+
+    char *endPtr;
+    long result = strtol(string, &endPtr, 0);
+    if (endPtr != string)
+        *outSuccess = true;
+
+    return (int)result;
+}
+
+extern "C" float ParseCommandFloatArg(const char *string, bool *outSuccess)
+{
+    *outSuccess = false;
+    if (not string)
+        return 0;
+
+    char *endPtr;
+    float result = strtof(string, &endPtr);
+    if (endPtr != string)
+        *outSuccess = true;
+
+    return result;
+}
+
 extern "C" void AddCommand(const char *command, CommandHandler handle, const char *help)
 {
     g_console.AddCommand(command, handle, help);
@@ -325,9 +325,9 @@ extern "C" void ExecuteCommand(const char* command)
     g_console.ExecuteCommand(command);
 }
 
-extern "C" void RenderConsole()
+extern "C" void ShowConsoleGui()
 {
-    g_console.ShowConsoleWindow("Console", NULL);
+    g_console.ShowConsoleGui();
 }
 void AddConsoleLog(const char* log)
 {

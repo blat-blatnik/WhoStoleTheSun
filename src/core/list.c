@@ -1,4 +1,15 @@
 #include "../core.h"
+#include <stdlib.h>
+
+static void *FooRealloc(void *pointer, int size)
+{
+	ASSERT(size >= 0);
+	return realloc(pointer, (int)size);
+}
+static void FooFree(void *pointer)
+{
+	free(pointer);
+}
 
 STRUCT(Header)
 {
@@ -61,9 +72,9 @@ void private_ListReserve(List(void) *listPointer, int neededCapacity, int sizeOf
 
 	if (not *listPointer)
 	{
-		Header *header = MemRealloc(NULL, sizeof(Header) + capacity * sizeOfOneItem);
-		header->realloc = MemRealloc;
-		header->free = MemFree;
+		Header *header = FooRealloc(NULL, sizeof(Header) + capacity * sizeOfOneItem);
+		header->realloc = FooRealloc;
+		header->free = FooFree;
 		header->capacity = capacity;
 		header->count = 0;
 		*listPointer = header + 1;

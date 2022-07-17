@@ -14,13 +14,7 @@
 
 #ifdef __cplusplus
 #include "lib/imgui/imgui.h"
-#include <map>
-#include <string>
-#include <vector>
-#include <memory>
 #endif
-
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -184,6 +178,9 @@ void SwapBytes(void *a, void *b, int numBytes);
 // Returns true if all bytes from a and b are equal.
 bool BytesEqual(const void *a, const void *b, int numBytes);
 
+// Quick sorts items in place (non-stable).
+void Sort(void *items, int numItems, int sizeofOneItem, int(*compare)(const void *left, const void *right));
+
 //
 // Char utilities
 //
@@ -226,10 +223,12 @@ void ReplaceChar(char *string, char target, char replacement);
 // Skips all leading whitespace in a string.
 char *SkipLeadingWhitespace(const char *string);
 
+// Hashes a string using 32-bit FNV-1a.
+unsigned HashString(const char *string);
+
 // SplitByWhitespace("Hello sailor\n\t1 2  3") -> ["Hello", "sailor", "1", "2", "3"]. The result is allocated from temporary storage.
 List(char*) SplitByWhitespace(const char* string);
 List(char *) SplitByChar(const char *string, const char* spacer);
-
 
 //
 // Temporary allocator
@@ -308,7 +307,6 @@ STRUCT(Paragraph)
 	char *text; // [textLength] NOT 0 TERMINATED!
 	int textLength;
 	float duration;
-	List(char *) expressions;
 	List(int) codepoints;
 };
 
@@ -337,44 +335,62 @@ void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, 
 const char *GetScriptExpression(Script script, int paragraphIndex, float time);
 
 //
-// Hot-reload
+// Sprite
 //
 
-STRUCT(FileData)
+STRUCT(Sprite)
 {
-	void *bytes; // Note that this is NOT 0 terminated. So you can't use it as a string.
-	int size;
+	int numFrames;
+	Texture *frames;
 };
 
-// Load the entire file as bytes. The returned image will automatically update whenever the file changes.
-FileData *LoadFileAndTrackChanges(const char *path);
+Sprite LoadSprite(const char *path);
 
-// Loads a texture from a file. The returned image will automatically update whenever the file changes.
-Texture *LoadTextureAndTrackChanges(const char *path);
+void UnloadSprite(Sprite sprite);
 
-// Loads an image from a file. The returned image will automatically update whenever the file changes.
-Image *LoadImageAndTrackChanges(const char *path);
+//
+// Sounds
+//
 
-// Loads an image from a file, and sets its pixel format. The returned image will automatically update whenever the file changes.
-Image *LoadImageAndTrackChangesEx(const char *path, PixelFormat format);
+// Plays a sound immediately, the lifetime of the sound resource is managed automatically.
+void PlayTemporarySound(const char *path);
 
-// Loads a script from a file. The returned script will automatically update whenever the file changes.
-Script *LoadScriptAndTrackChanges(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
+// Plays a temporary sound with a given volume and pitch. 1 is the default for both.
+void PlayTemporarySoundEx(const char *path, float volume, float pitch);
 
-// Unloads a tracked file, and stops tracking its changes.
-void UnloadTrackedFile(FileData **data);
+// Releases all temporary sounds that finished playing. Called once at the end of every frame.
+void UpdateTemporarySounds(void);
 
-// Unloads a tracked texture, and stops tracking its changes.
-void UnloadTrackedTexture(Texture **texture);
+//
+// Asset manager
+//
 
-// Unloads a tracked image, and stops tracking its changes.
-void UnloadTrackedImage(Image **image);
+// Loads a collision map asset - currently a grayscale image.
+Image *AcquireCollisionMap(const char *path);
 
-// Unloads a tracked script, and stops tracking its changes.
-void UnloadTrackedScript(Script **script);
+// Loads a texture asset - we might remove this later and just use sprites.
+Texture *AcquireTexture(const char *path);
 
-// Checks all tracked items and hot-reloads any that changed. Automatically called at the start of each frame.
-void HotReloadAllTrackedItems(void);
+Sprite *AcquireSprite(const char *path);
+
+// Loads a script asset.
+Script *AcquireScript(const char *path, Font regular, Font bold, Font italic, Font boldItalic);
+
+Music *AcquireMusic(const char *path);
+
+Sound *AcquireSound(const char *path);
+
+// Releases any asset.
+void ReleaseAsset(void *asset);
+
+// Completely clones an asset, as if you has acquired it from scratch.
+void *CloneAsset(void *asset);
+
+// Returns the file/directory path of an asset.
+const char *GetAssetPath(const void *asset);
+
+// Hot-reloads any changed assets. This called once at the end of every frame.
+void UpdateAllChangedAssets(void);
 
 //
 // Random
@@ -469,6 +485,12 @@ ENUM(Direction)
 	DIRECTION_ENUM_COUNT
 };
 
+// Returns the string name of a direction.
+const char *GetDirectionString(Direction direction);
+
+// Returns the direction but mirrored vertically. E.g. LEFT -> RIGHT, UP_LEFT -> UP_RIGHT.
+Direction MirrorDirectionVertically(Direction direction);
+
 // Returns the 8-sided direction that the vector matches most closely.
 Direction DirectionFromVector(Vector2 v);
 
@@ -557,6 +579,9 @@ Color BlendColors(Color c0, Color c1, float t);
 
 // Draws a texture centered at the given point.
 void DrawTextureCentered(Texture texture, Vector2 position, Color tint);
+
+// Draws a texture centered at the given point and flipped vertically.
+void DrawTextureCenteredAndFlippedVertically(Texture texture, Vector2 position, Color tint);
 
 void DrawTextureCenteredScaled(Texture texture, Vector2 position, float scale, Color tint);
 
@@ -714,11 +739,15 @@ typedef bool(*CommandHandler)(List(const char *) args);
 
 bool ParseCommandBoolArg(const char *string, bool *outSuccess);
 
+int ParseCommandIntArg(const char *string, bool *outSuccess);
+
+float ParseCommandFloatArg(const char *string, bool *outSuccess);
+
 void AddCommand(const char *command, CommandHandler handle, const char *help);
 
 void ExecuteCommand(const char *command);
 
-void RenderConsole(void);
+void ShowConsoleGui(void);
 
 //
 // Runtime

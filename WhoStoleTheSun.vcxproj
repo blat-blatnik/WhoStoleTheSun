@@ -96,6 +96,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\core\asset_manager.cpp" />
     <ClCompile Include="src\core\Console.cpp" />
     <ClCompile Include="src\core\drawing.c">
       <SubType>
@@ -113,6 +114,14 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="src\core\sound.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="src\core\sprite.c">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="src\lib\imgui\imgui.cpp" />
     <ClCompile Include="src\lib\imgui\imgui_demo.cpp" />
     <ClCompile Include="src\lib\imgui\imgui_draw.cpp" />
@@ -126,7 +135,6 @@
       <SubType>
       </SubType>
     </ClCompile>
-    <ClCompile Include="src\core\hot_reload.c" />
     <ClCompile Include="src\core\logging.c" />
     <ClCompile Include="src\core\math.c" />
     <ClCompile Include="src\core\memory_utilities.c" />
@@ -173,6 +181,12 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\raylib_windows_x64.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WhoStoleTheSun.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

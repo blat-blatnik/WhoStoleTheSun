@@ -18,7 +18,7 @@ rem # Compile and link
 call emcc -o bin/web/index.html -Os -flto -Wall -L./lib -lraylib_web -s USE_GLFW=3 -s TOTAL_MEMORY=268435456 --shell-file webshell.html --preload-file res %input%
 
 rem # Copy the favicon
-rem copy /y "Pictomage.ico" "bin/web/favicon.ico"
+copy /y "icon.ico" "bin/web/favicon.ico"
 
 pause
 rem # Run with: $ emrun bin/web/index.html

@@ -14,7 +14,7 @@ extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 
 static void DoOneFrame()
 {
-	HotReloadAllTrackedItems();
+	UpdateAllChangedAssets();
 	TempReset(0);
 	BeginDrawing();
 	UpdateInputMappings();
@@ -28,6 +28,7 @@ static void DoOneFrame()
 	ImGui::Render();
 	ImGui_ImplRaylib_Render(ImGui::GetDrawData());
 	EndDrawing();
+	UpdateTemporarySounds();
 }
 
 int main()
@@ -51,6 +52,7 @@ int main()
 		}
 	}
 	#endif
+	ChangeDirectory("res");
 
 	GameInit();
 	rlDisableBackfaceCulling(); // It's a 2D game we don't need this..
@@ -60,7 +62,7 @@ int main()
 	ImGui::StyleColorsDark();
 	ImGui_ImplRaylib_Init();
 	auto &io = ImGui::GetIO();
-	io.Fonts->AddFontFromFileTTF("res/Roboto.ttf", 18);
+	io.Fonts->AddFontFromFileTTF("roboto.ttf", 18);
 	ImGui_ImplRaylib_LoadDefaultFontAtlas();
 
 	// On the web, the browser wants to drive the main loop. On other platforms, we drive it.
