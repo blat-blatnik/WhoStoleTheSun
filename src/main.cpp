@@ -766,16 +766,12 @@ void Editor_Render()
 
 								ImGui::DragFloat("Z Offset", &selectedObject->zOffset);
 
-								for (int dir = 0; dir < DIRECTION_ENUM_COUNT; ++dir)
+								char scriptPath[256];
+								CopyString(scriptPath, GetAssetPath(selectedObject->script), sizeof scriptPath);
+								if (ImGui::InputText("Script", scriptPath, sizeof scriptPath, ImGuiInputTextFlags_EnterReturnsTrue))
 								{
-									char spritePath[256];
-									CopyString(spritePath, GetAssetPath(selectedObject->sprites[dir]), sizeof spritePath);
-
-									if (ImGui::InputText(TempFormat("Sprite %s", GetDirectionString((Direction)dir)), spritePath, sizeof spritePath, ImGuiInputTextFlags_EnterReturnsTrue))
-									{
-										ReleaseAsset(selectedObject->sprites[dir]);
-										selectedObject->sprites[dir] = AcquireSprite(spritePath);
-									}
+									ReleaseAsset(selectedObject->script);
+									selectedObject->script = AcquireScript(scriptPath, roboto, robotoBold, robotoItalic, robotoBoldItalic);
 								}
 
 								char collisionMapPath[256];
@@ -786,12 +782,52 @@ void Editor_Render()
 									selectedObject->collisionMap = AcquireCollisionMap(collisionMapPath);
 								}
 
-								char scriptPath[256];
-								CopyString(scriptPath, GetAssetPath(selectedObject->script), sizeof scriptPath);
-								if (ImGui::InputText("Script", scriptPath, sizeof scriptPath, ImGuiInputTextFlags_EnterReturnsTrue))
+								if (ImGui::CollapsingHeader("Sprites"))
 								{
-									ReleaseAsset(selectedObject->script);
-									selectedObject->script = AcquireScript(scriptPath, roboto, robotoBold, robotoItalic, robotoBoldItalic);
+									for (int dir = 0; dir < DIRECTION_ENUM_COUNT; ++dir)
+									{
+										char spritePath[256];
+										CopyString(spritePath, GetAssetPath(selectedObject->sprites[dir]), sizeof spritePath);
+
+										if (ImGui::InputText(TempFormat("%s", GetDirectionString((Direction)dir)), spritePath, sizeof spritePath, ImGuiInputTextFlags_EnterReturnsTrue))
+										{
+											ReleaseAsset(selectedObject->sprites[dir]);
+											selectedObject->sprites[dir] = AcquireSprite(spritePath);
+										}
+									}
+								}
+
+								int numExpressions = selectedObject->numExpressions;
+								int maxExpressions = COUNTOF(selectedObject->expressions);
+								if (ImGui::CollapsingHeader(TempFormat("Expressions %d/%d###Expressions", numExpressions, maxExpressions)))
+								{
+									for (int i = 0; i < numExpressions; ++i)
+									{
+										ImGui::PushID(i);
+										ImGui::BeginTable("ExpressionTable", 2);
+										ImGui::TableNextRow();
+										{
+											Expression *expression = &selectedObject->expressions[i];
+											ImGui::TableNextColumn();
+											ImGui::InputText("Name", expression->name, sizeof expression->name);
+
+											char portraitPath[256];
+											CopyString(portraitPath, GetAssetPath(expression->portrait), sizeof portraitPath);
+											ImGui::TableNextColumn();
+											if (ImGui::InputText("Portrait", portraitPath, sizeof portraitPath, ImGuiInputTextFlags_EnterReturnsTrue))
+											{
+												ReleaseAsset(expression->portrait);
+												expression->portrait = AcquireTexture(portraitPath);
+											}
+										}
+										ImGui::EndTable();
+										ImGui::PopID();
+									}
+
+									if (numExpressions < maxExpressions and ImGui::Button("+"))
+									{
+										++selectedObject->numExpressions;
+									}
 								}
 							}
 						}
