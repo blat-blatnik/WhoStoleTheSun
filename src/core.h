@@ -775,4 +775,5 @@ inline Vector2 operator -(float left, Vector2 right) { return { left - right.x, 
 inline Vector2 operator *(float left, Vector2 right) { return { left * right.x, left * right.y }; }
 inline Vector2 operator /(float left, Vector2 right) { return { left / right.x, left / right.y }; }
 inline Vector2 operator %(float left, Vector2 right) { return { fmodf(left, right.x), fmodf(left, right.y) }; }
+inline bool operator ==(Vector2 v1, Vector2 v2) { if (v1.x == v2.x && v1.y == v2.y) return true; return false; }
 #endif

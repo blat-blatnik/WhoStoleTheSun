@@ -33,6 +33,76 @@ STRUCT(Input)
 	InputButton console;
 };
 
+STRUCT(MotionMaster)
+{
+	void MoveToPoint(Vector2 start, Vector2 end)
+	{
+		if (start == end)
+			return;
+
+		startPoint = start;
+		endPoint = end;
+		
+		arrivalTime = Vector2Distance(startPoint, endPoint) / speed;
+		isMoving = true;
+	}
+
+
+	void Update()
+	{
+		if (!isMoving)
+			return;
+
+		if (motionTime + FRAME_TIME * speed <= arrivalTime)
+		{
+			motionTime += FRAME_TIME * speed;
+			currentPoint.x = Lerp(startPoint.x, endPoint.x, motionTime / arrivalTime);
+			currentPoint.y = Lerp(startPoint.y, endPoint.y, motionTime / arrivalTime);
+		}
+		else
+		{
+			currentPoint = endPoint;
+			
+			Reset();
+		}	
+	}
+
+	void SetSpeed(float speed)
+	{
+		speed = speed;
+	}
+
+	Vector2 GetDirection()
+	{
+		
+		auto subtract = Vector2Subtract(endPoint, startPoint);
+		subtract.y = -subtract.y;
+		return Vector2Normalize(subtract);
+	}
+
+	Vector2 currentPoint;
+	bool isMoving = false;
+
+private:
+
+	void Reset()
+	{
+		endPoint = Vector2Zero();
+		startPoint = Vector2Zero();
+		isMoving = false;
+		motionTime = 0;
+		arrivalTime = 0;
+		speed = 10;
+	}
+	Vector2 startPoint;
+	Vector2 endPoint;
+
+
+	float motionTime = 0;
+	float arrivalTime = 0;
+	float speed = 10;
+};
+
 STRUCT(Object)
 {
 	char name[50];
@@ -47,6 +117,7 @@ STRUCT(Object)
 	Script *script;
 	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
+	MotionMaster motionMaster;
 };
 
 bool devMode = true; // @TODO @SHIP: Disable this for release.
@@ -282,17 +353,29 @@ void Destroy(Object *object)
 }
 void Update(Object *object)
 {
+	// update sprites
 	Sprite *sprite = GetCurrentSprite(object);
-	if (not sprite)
-		return;
-
-	float animationFrameTime = 1 / object->animationFps;
-	object->animationTimeAccumulator += FRAME_TIME;
-	while (object->animationTimeAccumulator > animationFrameTime)
+	if (sprite)
 	{
-		object->animationTimeAccumulator -= animationFrameTime;
-		object->animationFrame = (object->animationFrame + 1) % sprite->numFrames;
+		float animationFrameTime = 1 / object->animationFps;
+		object->animationTimeAccumulator += FRAME_TIME;
+		while (object->animationTimeAccumulator > animationFrameTime)
+		{
+			object->animationTimeAccumulator -= animationFrameTime;
+			object->animationFrame = (object->animationFrame + 1) % sprite->numFrames;
+		}
 	}
+
+	// update motion
+
+	object->motionMaster.Update();
+	if (object->motionMaster.isMoving)
+	{
+		object->position = object->motionMaster.currentPoint;
+		auto dirVector = object->motionMaster.GetDirection();
+		object->direction = DirectionFromVector(dirVector);
+	}
+
 }
 void Render(Object *object)
 {
@@ -304,6 +387,13 @@ void Render(Object *object)
 		DrawTextureCentered(sprite->frames[object->animationFrame], object->position, WHITE);
 	else
 		DrawTextureCenteredAndFlippedVertically(sprite->frames[object->animationFrame], object->position, WHITE);
+}
+
+// Motion
+void MoveToPoint(Object* object, Vector2 point)
+{
+	Vector2 end = Vector2Add(object->position, point);
+	object->motionMaster.MoveToPoint(object->position, end);
 }
 
 // Console commands.
@@ -386,6 +476,26 @@ bool HandleSoundCommand(List(const char *) args)
 		return false;
 
 	PlayTemporarySoundEx(path, volume, pitch);
+	return true;
+}
+
+bool HandleMoveTo(List(const char*) args)
+{
+	if (ListCount(args) != 2)
+		return false;
+	Vector2 pos;
+	bool success1 = true;
+	bool success2 = true;
+
+	pos.x = ParseCommandFloatArg(args[0], &success1);
+
+	pos.y = ParseCommandFloatArg(args[1], &success2);
+
+	if (not success1 or not success2)
+		return false;
+
+	MoveToPoint(&objects[0], pos);
+
 	return true;
 }
 
@@ -1080,6 +1190,7 @@ void GameInit(void)
 	AddCommand("dev", HandleToggleDevModeCommand, "dev [value:bool] - Toggle developer mode.");
 	AddCommand("shake", HandleCameraShakeCommand, "shake [trauma:float] [falloff:float] - Trigger camera shake.");
 	AddCommand("sound", HandleSoundCommand, "sound filename:string [volume:float] [pitch:float] - Play a sound.");
+	AddCommand("move", HandleMoveTo, "help pls");
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }
