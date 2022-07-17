@@ -298,27 +298,39 @@ void AppendFormatVa(StringBuilder *builder, FORMAT_STRING format, va_list args);
 #define STRING_BUILDER_ON_STACK(capacity) CreateStringBuilder((char[capacity]){0}, (capacity))
 
 //
-// Binary Reader
+// Binary Stream
 //
 
-STRUCT(BinaryReader)
+STRUCT(BinaryStream)
 {
-	const void *buffer;
-	int cursor;
-	int size;
+	void *buffer;
+	int size;   // Size of the buffer.
+	int cursor; // Read/write cursor.
 };
 
-// Reads a 32-bit integer from the binary stream and advances the cursor by 4 bytes.
-int ReadInt(BinaryReader *reader);
+// Reads a 32-bit integer from the stream and advances the cursor by 4 bytes.
+int ReadInt(BinaryStream *stream);
 
-// Reads a 32-bit float from the binary stream and advances the cursor by 4 bytes.
-float ReadFloat(BinaryReader *reader);
+// Reads a 32-bit float from the stream and advances the cursor by 4 bytes.
+float ReadFloat(BinaryStream *stream);
 
-// Reads a 0-terminated string from the binary stream and advances the cursor by however many bytes were read.
-const char *ReadCString(BinaryReader *reader);
+// Reads a 0-terminated string from the stream and returns a pointer to it, then advances the cursor by however many bytes were read.
+const char *ReadString(BinaryStream *stream);
 
-// Reads a fixed number of bytes from the binary stream and advances the cursor by that many bytes.
-void ReadBytes(BinaryReader *reader, void *buffer, int numBytesToRead);
+// Reads a fixed number of bytes from the stream and returns a pointer to them, then advances the cursor by that many bytes.
+const void *ReadBytes(BinaryStream *stream, int numBytesToRead);
+
+// Writes a 32-bit integer to the stream and advances the cursor by 4 bytes.
+void WriteInt(BinaryStream *stream, int i);
+
+// Writes a 32-bit float to the stream and advances the cursor by 4 bytes.
+void WriteFloat(BinaryStream *stream, float f);
+
+// Writes a 0-terminated string to the stream and advances the cursor by however many bytes were written.
+void WriteString(BinaryStream *stream, const char *s);
+
+// Writes a fixed number of bytes to the stream and advances the cursor by however many bytes were written.
+void WriteBytes(BinaryStream *stream, const void *bytes, int numBytesToWrite);
 
 //
 // Script

@@ -69,6 +69,8 @@ static long GetFileOrDirectoryModTime(const char *path)
 static bool AcquireAsset(const char *path, AssetKind kind, Asset **outResult)
 {
 	*outResult = NULL;
+	if (not path or not path[0])
+		return false;
 
 	auto iterator = table.find(path);
 	if (iterator != table.end())

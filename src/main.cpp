@@ -114,20 +114,6 @@ STRUCT(Object)
 	MotionMaster motionMaster;
 };
 
-STRUCT(SerializedObject)
-{
-	const char *name;
-	float positionX;
-	float positionY;
-	float zOffset;
-	float animationFps;
-	const char *spritePaths[DIRECTION_ENUM_COUNT];
-	const char *collisionPath;
-	const char *scriptPath;
-	const char *expressionNames[10];
-	const char *expressionPaths[10];
-};
-
 bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
 Font roboto;
@@ -135,7 +121,7 @@ Font robotoBold;
 Font robotoItalic;
 Font robotoBoldItalic;
 Object objects[100];
-Object *player; // Always the first object, i.e. player == &objects[0].
+Object *player = &objects[0]; // The player is ALWAYS the first object.
 int numObjects;
 Camera2D camera;
 float cameraTrauma; // Amount of camera shake. Will slowly decrease over time.
@@ -402,29 +388,95 @@ void LoadScene(const char *path)
 		return;
 	}
 
-	BinaryReader reader = { 0 };
-	reader.buffer = data;
-	reader.size = (int)dataSize;
-	reader.cursor = 0;
+	BinaryStream stream = { 0 };
+	stream.buffer = data;
+	stream.size = (int)dataSize;
+	stream.cursor = 0;
 
-	char magic[4];
-	ReadBytes(&reader, magic, sizeof magic);
-	if (not BytesEqual(magic, SCENE_MAGIC, sizeof magic))
+	const void *magic = ReadBytes(&stream, 4);
+	if (not BytesEqual(magic, SCENE_MAGIC, 4))
 	{
 		UnloadFileData(data);
 		LogError("Couldn't load scene from '%s' because it isn't a scene file.", path);
 		return;
 	}
 
+	int version = ReadInt(&stream);
+	if (version != SCENE_VERSION)
+	{
+		UnloadFileData(data);
+		LogError("Couldn't load scene from '%s' because it's version is %d, but we only handle version %d.", path, version, SCENE_VERSION);
+		return;
+	}
+
 	for (int i = 0; i < numObjects; ++i)
 		Destroy(&objects[i]);
 
-	numObjects = ReadInt(&reader);
+	numObjects = ReadInt(&stream);
+	for (int i = 0; i < numObjects; ++i)
+	{
+		Object *object = &objects[i];
+		const char *name = ReadString(&stream);
+		CopyString(object->name, name, sizeof object->name);
+		
+		object->position.x = ReadFloat(&stream);
+		object->position.y = ReadFloat(&stream);
+		object->zOffset = ReadFloat(&stream);
+		object->animationFps = ReadFloat(&stream);
+		
+		object->script = AcquireScript(ReadString(&stream), roboto, robotoBold, robotoItalic, robotoBoldItalic);
+		object->collisionMap = AcquireCollisionMap(ReadString(&stream));
+		for (int dir = 0; dir < DIRECTION_ENUM_COUNT; ++dir)
+			object->sprites[dir] = AcquireSprite(ReadString(&stream));
+		for (int j = 0; j < COUNTOF(object->expressions); ++j)
+		{
+			Expression *expression = &object->expressions[j];
+			const char *expressionName = ReadString(&stream);
+			CopyString(expression->name, expressionName, sizeof expression->name);
+			expression->portrait = AcquireTexture(ReadString(&stream));
+		}
+	}
 
+	UnloadFileData(data);
+	LogInfo("Successfully loaded scene '%s'.", path);
 }
 void SaveScene(const char *path)
 {
+	int maxBytes = 32 * 1024; // 32kB should be plenty!
+	void *data = TempAlloc(maxBytes);
 
+	BinaryStream stream = { 0 };
+	stream.buffer = data;
+	stream.size = maxBytes;
+
+	WriteBytes(&stream, SCENE_MAGIC, 4);
+	WriteInt(&stream, SCENE_VERSION);
+	WriteInt(&stream, numObjects);
+	for (int i = 0; i < numObjects; ++i)
+	{
+		Object *object = &objects[i];
+		
+		WriteString(&stream, object->name);
+		WriteFloat(&stream, object->position.x);
+		WriteFloat(&stream, object->position.y);
+		WriteFloat(&stream, object->zOffset);
+		WriteFloat(&stream, object->animationFps);
+		WriteString(&stream, GetAssetPath(object->script));
+		WriteString(&stream, GetAssetPath(object->collisionMap));
+		for (int dir = 0; dir < DIRECTION_ENUM_COUNT; ++dir)
+			WriteString(&stream, GetAssetPath(object->sprites[dir]));
+		for (int j = 0; j < COUNTOF(object->expressions); ++j)
+		{
+			Expression *expression = &object->expressions[j];
+			WriteString(&stream, expression->name);
+			WriteString(&stream, GetAssetPath(expression->portrait));
+		}
+	}
+
+	if (SaveFileData(path, stream.buffer, (unsigned)stream.cursor))
+		LogInfo("Successfully saved current scene to '%s'.", path);
+	else
+		LogInfo("Couldn't save current scene to '%s'.", path);
 }
 
 // Motion
@@ -534,6 +586,26 @@ bool HandleMoveTo(List(const char*) args)
 
 	MoveToPoint(&objects[0], pos);
 
+	return true;
+}
+bool HandleSaveCommand(List(const char *) args)
+{
+	// save filename:string
+	if (ListCount(args) != 1)
+		return false;
+
+	const char *path = args[0];
+	SaveScene(path);
+	return true;
+}
+bool HandleLoadCommand(List(const char *) args)
+{
+	// load filename:string
+	if (ListCount(args) != 1)
+		return false;
+
+	const char *path = args[0];
+	LoadScene(path);
 	return true;
 }
 
@@ -1130,7 +1202,8 @@ void GameInit(void)
 	robotoBold = LoadFontAscii("roboto-bold.ttf", 32);
 	robotoItalic = LoadFontAscii("roboto-italic.ttf", 32);
 	robotoBoldItalic = LoadFontAscii("roboto-bold-italic.ttf", 32);
-	
+
+	/* Backup of the test scene. Just in case...
 	player = &objects[numObjects++];
 	CopyString(player->name, "Player", sizeof player->name);
 	player->position.x = 1280 / 2;
@@ -1185,24 +1258,7 @@ void GameInit(void)
 	pinkGuy->sprites[0] = AcquireSprite("pink-guy.png");
 	pinkGuy->position.x = 700;
 	pinkGuy->position.y = 250;
-
-	Script pink = LoadScript("example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
 	pinkGuy->script = AcquireScript("example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-
-	for (int i = 0; i < 10000; ++i)
-	{
-		//char *memory = (char *)MemRealloc(NULL, 64);
-		//CopyBytes(memory, "Hello, sailor!!!", 16);
-		//CopyBytes(memory + 16, "Hello, sailor!!!", 16);
-		//CopyBytes(memory + 32, "Hello, sailor!!!", 16);
-		//CopyBytes(memory + 48, "Hello, sailor!!!", 16);
-	
-		char *list1 = NULL;
-		char *list2 = NULL;
-		ListReserve(&list1, 64);
-		ListReserve(&list2, 256);
-	}
-
 	pinkGuy->expressions[0].portrait = AcquireTexture("pink-guy-neutral.png");
 	pinkGuy->expressions[1].portrait = AcquireTexture("pink-guy-happy.png");
 	pinkGuy->expressions[2].portrait = AcquireTexture("pink-guy-sad.png");
@@ -1232,18 +1288,17 @@ void GameInit(void)
 	alex->expressions[0].portrait = AcquireTexture("alex-neutral.png");
 	CopyString(alex->expressions[0].name, "neutral", sizeof alex->expressions[0].name);
 	alex->numExpressions = 1;
+	*/
 
-	//Object *cauldron = &objects[numObjects++];
-	//cauldron->name = "Cauldron";
-	//cauldron->position.x = 1000;
-	//cauldron->position.y = 550;
-	//cauldron->spriteMgr.AddSprite("res/cauldron/");
+	LoadScene("test.scene");
 
 	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float - Teleport player->");
 	AddCommand("dev", HandleToggleDevModeCommand, "dev [value:bool] - Toggle developer mode.");
 	AddCommand("shake", HandleCameraShakeCommand, "shake [trauma:float] [falloff:float] - Trigger camera shake.");
 	AddCommand("sound", HandleSoundCommand, "sound filename:string [volume:float] [pitch:float] - Play a sound.");
 	AddCommand("move", HandleMoveTo, "help pls");
+	AddCommand("save", HandleSaveCommand, "save filename:string - Saves current scene to a file.");
+	AddCommand("load", HandleLoadCommand, "load filename:string - Load a scene file.");
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

@@ -97,7 +97,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\core\asset_manager.cpp" />
-    <ClCompile Include="src\core\binary_reader.c" />
+    <ClCompile Include="src\core\binary_stream.c" />
     <ClCompile Include="src\core\Console.cpp" />
     <ClCompile Include="src\core\drawing.c">
       <SubType>
