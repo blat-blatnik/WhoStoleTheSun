@@ -358,7 +358,6 @@ void DrawScriptParagraph(Script *script, int paragraphIndex, Rectangle textBox, 
 			char *command = &script->stringPool[stringIndex];
 			if (++commandIndex > script->commandIndex)
 			{
-				//@TODO: Actually run the command.
 				script->commandIndex++;
 				LogInfo("Script executing command %d: '%s'.", script->commandIndex, command);
 				ExecuteCommand(command);

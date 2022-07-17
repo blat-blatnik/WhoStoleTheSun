@@ -100,6 +100,7 @@ static bool AcquireAsset(const char *path, AssetKind kind, Asset **outResult)
 static bool IsAsset(Asset *asset)
 {
 	return
+		asset and
 		asset->kind >= 0 and asset->kind < ASSET_KIND_ENUM_COUNT and
 		asset->referenceCount >= 0 and
 		table.find(asset->path) != table.end();

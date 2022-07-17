@@ -57,3 +57,5 @@ These are useful if you actually want to a draw control character.
 
 You can also run console commands from within scripts.
 Executing command "tp 600 600":               3               2               1               {tp 600 600}|go!|
+
+Playing some sounds.```.```.``` {sound shatter.wav 0.2}1.```.```.``` {sound shatter.wav 0.5}2.```.```.``` {sound shatter.wav 1}3.

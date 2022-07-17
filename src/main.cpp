@@ -261,6 +261,26 @@ void UpdateCameraShake()
 	}
 }
 
+void Clone(Object *from, Object *to)
+{
+	CopyBytes(to, from, sizeof to[0]);
+	to->script = (Script *)CloneAsset(from->script);
+	to->collisionMap = (Image *)CloneAsset(from->collisionMap);
+	for (int i = 0; i < from->numExpressions; ++i)
+		to->expressions[i].portrait = (Texture *)CloneAsset(from->expressions[i].portrait);
+	for (int direction = 0; direction < DIRECTION_ENUM_COUNT; ++direction)
+		to->sprites[direction] = (Sprite *)CloneAsset(from->sprites[direction]);
+}
+void Destroy(Object *object)
+{
+	ReleaseAsset(object->script);
+	ReleaseAsset(object->collisionMap);
+	for (int i = 0; i < object->numExpressions; ++i)
+		ReleaseAsset(object->expressions[i].portrait);
+	for (int direction = 0; direction < DIRECTION_ENUM_COUNT; ++direction)
+		ReleaseAsset(object->sprites[direction]);
+	ZeroBytes(object, sizeof object[0]);
+}
 void Update(Object *object)
 {
 	Sprite *sprite = GetCurrentSprite(object);
@@ -651,6 +671,15 @@ void Editor_Render()
 										ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(150, 20, 20, 255));
 										if (ImGui::Button("x") or (i > 0 and selected and IsKeyPressed(KEY_DELETE)))
 										{
+											if (i == numObjects - 1)
+											{
+												if (numObjects <= 1)
+													selectedObject = NULL;
+												else
+													selectedObject = &objects[i - 1];
+											}
+
+											Destroy(&objects[i]);
 											CopyBytes(&objects[i], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
 											--numObjects;
 											selected = false;
@@ -676,8 +705,7 @@ void Editor_Render()
 
 												CopyBytes(&objects[i + 2], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
 												++numObjects;
-												CopyBytes(&objects[i + 1], &objects[i], sizeof objects[0]);
-												CopyString(objects[i + 1].name, cloneName, sizeof objects[i + 1].name);
+												Clone(&objects[i], &objects[i + 1]);
 											}
 										}
 
@@ -725,7 +753,7 @@ void Editor_Render()
 								ImGui::DragFloat2("Position", &selectedObject->position.x);
 
 								const char *direction = GetDirectionString(selectedObject->direction);
-								bool directionIsValid = ListCount(GetCurrentSprite(selectedObject)) > 0;
+								bool directionIsValid = GetCurrentSprite(selectedObject) != NULL;
 								if (not directionIsValid)
 								{
 									ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4{ 1, 0, 0, 1 });
