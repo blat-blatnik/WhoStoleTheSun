@@ -1,5 +1,4 @@
 #include "core.h"
-#include "lib/imgui/imgui.h"
 
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
@@ -927,8 +926,6 @@ void Paused_Render(void)
 }
 REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 
-#include <malloc.h>
-
 void GameInit(void)
 {
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
@@ -991,10 +988,34 @@ void GameInit(void)
 	Object *background = &objects[numObjects++];
 	CopyString(background->name, "Background", sizeof background->name);
 	background->sprites[0] = AcquireSprite("background.png");
-	background->collisionMap = AcquireCollisionMap("collision-map.png");
+	background->collisionMap = AcquireCollisionMap("background-collision.png");
 	background->position.x = 0.5f * background->sprites[0]->frames[0].width;
 	background->position.y = 0.5f * background->sprites[0]->frames[0].height;
 	background->zOffset = -1080;
+
+	Object *vase1 = &objects[numObjects++];
+	CopyString(vase1->name, "Vase1", sizeof vase1->name);
+	vase1->sprites[0] = AcquireSprite("vase.png");
+	vase1->collisionMap = AcquireCollisionMap("vase-collision.png");
+	vase1->position.x = 800;
+	vase1->position.y = 560;
+	vase1->zOffset = -34;
+
+	Object *vase2 = &objects[numObjects++];
+	CopyString(vase2->name, "Vase2", sizeof vase2->name);
+	vase2->sprites[0] = AcquireSprite("vase.png");
+	vase2->collisionMap = AcquireCollisionMap("vase-collision.png");
+	vase2->position.x = 960;
+	vase2->position.y = 490;
+	vase2->zOffset = -34;
+
+	Object *vase3 = &objects[numObjects++];
+	CopyString(vase3->name, "Vase3", sizeof vase3->name);
+	vase3->sprites[0] = AcquireSprite("vase.png");
+	vase3->collisionMap = AcquireCollisionMap("vase-collision.png");
+	vase3->position.x = 1120;
+	vase3->position.y = 420;
+	vase3->zOffset = -34;
 
 	Object *pinkGuy = &objects[numObjects++];
 	CopyString(pinkGuy->name, "Pink guy", sizeof pinkGuy->name);
