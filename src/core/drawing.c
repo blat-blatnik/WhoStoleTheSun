@@ -9,7 +9,7 @@ void DrawTextureCentered(Texture texture, Vector2 position, Color tint)
 
 void DrawTextureCenteredAndFlippedVertically(Texture texture, Vector2 position, Color tint)
 {
-	Rectangle source = { 0, 0, -texture.width, texture.height };
+	Rectangle source = { 0, 0, -(float)texture.width, (float)texture.height };
 	Rectangle destination = {
 		position.x - 0.5f * texture.width,
 		position.y - 0.5f * texture.height,

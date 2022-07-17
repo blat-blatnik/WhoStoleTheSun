@@ -8,6 +8,8 @@
 #define MAX_SHAKE_TRANSLATION 50.0f
 #define DEFAULT_CAMERA_SHAKE_TRAUMA 0.5f
 #define DEFAULT_CAMERA_SHAKE_FALLOFF (0.7f * FRAME_TIME)
+#define SCENE_MAGIC "KEKW"
+#define SCENE_VERSION 1 // You need to increase this every time the scene binary format changes!
 #define Y_SQUISH 0.5f
 
 ENUM(GameState)
@@ -150,17 +152,6 @@ float cameraOffsetFactor = 25; // How far ahead the camera goes in the direction
 float cameraAcceleration = 0.03f; // How quickly the camera converges on it's desired offset.
 Vector2 cameraOffset;
 
-List(Texture *) LoadAllTexturesFromDirectory(const char *path)
-{
-	List(Texture *) textures = NULL;
-	FilePathList files = LoadDirectoryFiles(path);
-	{
-		for (unsigned int i = 0; i < files.count; ++i)
-			ListAdd(&textures, AcquireTexture(files.paths[i]));
-	}
-	UnloadDirectoryFiles(files);
-	return textures;
-}
 bool CheckCollisionMap(Image map, Vector2 position)
 {
 	int xi = (int)floorf(position.x);
@@ -404,6 +395,44 @@ void Render(Object *object)
 		DrawTextureCentered(sprite->frames[object->animationFrame], object->position, WHITE);
 	else
 		DrawTextureCenteredAndFlippedVertically(sprite->frames[object->animationFrame], object->position, WHITE);
+}
+
+void LoadScene(const char *path)
+{
+	unsigned dataSize;
+	unsigned char *data = LoadFileData(path, &dataSize);
+	if (not data)
+	{
+		if (not FileExists(path))
+			LogError("Couldn't load scene from '%s' because that file doesn't exist.", path);
+		else
+			LogError("Couldn't load scene from '%s' because we failed to load the file contents.", path);
+		return;
+	}
+
+	BinaryReader reader = { 0 };
+	reader.buffer = data;
+	reader.size = (int)dataSize;
+	reader.cursor = 0;
+
+	char magic[4];
+	ReadBytes(&reader, magic, sizeof magic);
+	if (not BytesEqual(magic, SCENE_MAGIC, sizeof magic))
+	{
+		UnloadFileData(data);
+		LogError("Couldn't load scene from '%s' because it isn't a scene file.", path);
+		return;
+	}
+
+	for (int i = 0; i < numObjects; ++i)
+		Destroy(&objects[i]);
+
+	numObjects = ReadInt(&reader);
+
+}
+void SaveScene(const char *path)
+{
+
 }
 
 // Motion
