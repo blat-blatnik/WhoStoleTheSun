@@ -765,6 +765,14 @@ void Editor_Render()
 									ImGui::PopStyleColor(3);
 
 								ImGui::DragFloat("Z Offset", &selectedObject->zOffset);
+
+								char scriptPath[256];
+								CopyString(scriptPath, GetAssetPath(selectedObject->script), sizeof scriptPath);
+								if (ImGui::InputText("Script", scriptPath, sizeof scriptPath, ImGuiInputTextFlags_EnterReturnsTrue))
+								{
+									ReleaseAsset(selectedObject->script);
+									selectedObject->script = AcquireScript(scriptPath, roboto, robotoBold, robotoItalic, robotoBoldItalic);
+								}
 							}
 						}
 					}
