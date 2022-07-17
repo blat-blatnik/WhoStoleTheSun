@@ -375,6 +375,7 @@ void Render(Object *object)
 		DrawTextureCenteredAndFlippedVertically(sprite->frames[object->animationFrame], object->position, WHITE);
 }
 
+char lastSavedOrLoadedScene[256];
 void LoadScene(const char *path)
 {
 	unsigned dataSize;
@@ -423,7 +424,6 @@ void LoadScene(const char *path)
 		object->position.y = ReadFloat(&stream);
 		object->zOffset = ReadFloat(&stream);
 		object->animationFps = ReadFloat(&stream);
-		
 		object->script = AcquireScript(ReadString(&stream), roboto, robotoBold, robotoItalic, robotoBoldItalic);
 		object->collisionMap = AcquireCollisionMap(ReadString(&stream));
 		for (int dir = 0; dir < DIRECTION_ENUM_COUNT; ++dir)
@@ -439,6 +439,7 @@ void LoadScene(const char *path)
 
 	UnloadFileData(data);
 	LogInfo("Successfully loaded scene '%s'.", path);
+	CopyString(lastSavedOrLoadedScene, path, sizeof lastSavedOrLoadedScene);
 }
 void SaveScene(const char *path)
 {
@@ -474,7 +475,10 @@ void SaveScene(const char *path)
 	}
 
 	if (SaveFileData(path, stream.buffer, (unsigned)stream.cursor))
+	{
 		LogInfo("Successfully saved current scene to '%s'.", path);
+		CopyString(lastSavedOrLoadedScene, path, sizeof lastSavedOrLoadedScene);
+	}
 	else
 		LogInfo("Couldn't save current scene to '%s'.", path);
 }
@@ -590,21 +594,25 @@ bool HandleMoveTo(List(const char*) args)
 }
 bool HandleSaveCommand(List(const char *) args)
 {
-	// save filename:string
-	if (ListCount(args) != 1)
+	// save [filename:string]
+	if (ListCount(args) > 1)
 		return false;
 
-	const char *path = args[0];
+	const char *path = lastSavedOrLoadedScene;
+	if (ListCount(args) == 1)
+		path = args[0];
 	SaveScene(path);
 	return true;
 }
 bool HandleLoadCommand(List(const char *) args)
 {
-	// load filename:string
-	if (ListCount(args) != 1)
+	// load [filename:string]
+	if (ListCount(args) > 1)
 		return false;
 
-	const char *path = args[0];
+	const char *path = lastSavedOrLoadedScene;
+	if (ListCount(args) == 1)
+		path = args[0];
 	LoadScene(path);
 	return true;
 }
@@ -1297,8 +1305,8 @@ void GameInit(void)
 	AddCommand("shake", HandleCameraShakeCommand, "shake [trauma:float] [falloff:float] - Trigger camera shake.");
 	AddCommand("sound", HandleSoundCommand, "sound filename:string [volume:float] [pitch:float] - Play a sound.");
 	AddCommand("move", HandleMoveTo, "help pls");
-	AddCommand("save", HandleSaveCommand, "save filename:string - Saves current scene to a file.");
-	AddCommand("load", HandleLoadCommand, "load filename:string - Load a scene file.");
+	AddCommand("save", HandleSaveCommand, "save [filename:string] - Saves current scene to a file.");
+	AddCommand("load", HandleLoadCommand, "load [filename:string] - Load a scene file.");
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }
