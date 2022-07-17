@@ -40,7 +40,7 @@ STRUCT(Object)
 	Vector2 position;
 	float zOffset;
 	Direction direction;
-	List(Texture *) sprites[DIRECTION_ENUM_COUNT];
+	Sprite *sprites[DIRECTION_ENUM_COUNT];
 	float animationFps;
 	float animationTimeAccumulator;
 	int animationFrame;
@@ -136,20 +136,20 @@ Texture GetCharacterPortrait(const Object *object, const char *name)
 			return *object->expressions[i].portrait;
 	return *object->expressions[0].portrait;
 }
-List(Texture *) GetCurrentSprite(const Object *object)
+Sprite *GetCurrentSprite(const Object *object)
 {
-	List(Texture *) sprite = object->sprites[object->direction];
-	if (ListCount(sprite) == 0)
+	Sprite *sprite = object->sprites[object->direction];
+	if (not sprite)
 		sprite = object->sprites[MirrorDirectionVertically(object->direction)];
 	return sprite;
 }
 Texture *GetCurrentTexture(const Object *object)
 {
-	List(Texture *) sprite = GetCurrentSprite(object);
-	if (ListCount(sprite) == 0)
+	Sprite *sprite = GetCurrentSprite(object);
+	if (not sprite)
 		return NULL;
 
-	return sprite[object->animationFrame];
+	return &sprite->frames[object->animationFrame];
 }
 Vector2 GetFootPositionInScreenSpace(const Object *object)
 {
@@ -263,8 +263,8 @@ void UpdateCameraShake()
 
 void Update(Object *object)
 {
-	List(Texture *) sprite = GetCurrentSprite(object);
-	if (ListCount(sprite) == 0)
+	Sprite *sprite = GetCurrentSprite(object);
+	if (not sprite)
 		return;
 
 	float animationFrameTime = 1 / object->animationFps;
@@ -272,19 +272,19 @@ void Update(Object *object)
 	while (object->animationTimeAccumulator > animationFrameTime)
 	{
 		object->animationTimeAccumulator -= animationFrameTime;
-		object->animationFrame = (object->animationFrame + 1) % ListCount(sprite);
+		object->animationFrame = (object->animationFrame + 1) % sprite->numFrames;
 	}
 }
 void Render(Object *object)
 {
-	List(Texture *) sprite = GetCurrentSprite(object);
-	if (ListCount(sprite) == 0)
+	Sprite *sprite = GetCurrentSprite(object);
+	if (not sprite)
 		return;
 
 	if (sprite == object->sprites[object->direction])
-		DrawTextureCentered(*sprite[object->animationFrame], object->position, WHITE);
+		DrawTextureCentered(sprite->frames[object->animationFrame], object->position, WHITE);
 	else
-		DrawTextureCenteredAndFlippedVertically(*sprite[object->animationFrame], object->position, WHITE);
+		DrawTextureCenteredAndFlippedVertically(sprite->frames[object->animationFrame], object->position, WHITE);
 }
 
 // Console commands.
@@ -870,29 +870,29 @@ void GameInit(void)
 	player->position.x = 1280 / 2;
 	player->position.y = 720 / 2;
 	player->direction = DIRECTION_DOWN;
-	player->sprites[DIRECTION_RIGHT     ] = LoadAllTexturesFromDirectory("player_right");
-	player->sprites[DIRECTION_UP_RIGHT  ] = LoadAllTexturesFromDirectory("player_up_right");
-	player->sprites[DIRECTION_UP        ] = LoadAllTexturesFromDirectory("player_up");
-	player->sprites[DIRECTION_UP_LEFT   ] = LoadAllTexturesFromDirectory("player_up_left");
-	player->sprites[DIRECTION_LEFT      ] = LoadAllTexturesFromDirectory("player_left");
-	player->sprites[DIRECTION_DOWN_LEFT ] = LoadAllTexturesFromDirectory("player_down_left");
-	player->sprites[DIRECTION_DOWN      ] = LoadAllTexturesFromDirectory("player_down");
-	player->sprites[DIRECTION_DOWN_RIGHT] = LoadAllTexturesFromDirectory("player_down_right");
+	player->sprites[DIRECTION_RIGHT     ] = AcquireSprite("player_right");
+	player->sprites[DIRECTION_UP_RIGHT  ] = AcquireSprite("player_up_right");
+	player->sprites[DIRECTION_UP        ] = AcquireSprite("player_up");
+	player->sprites[DIRECTION_UP_LEFT   ] = AcquireSprite("player_up_left");
+	player->sprites[DIRECTION_LEFT      ] = AcquireSprite("player_left");
+	player->sprites[DIRECTION_DOWN_LEFT ] = AcquireSprite("player_down_left");
+	player->sprites[DIRECTION_DOWN      ] = AcquireSprite("player_down");
+	player->sprites[DIRECTION_DOWN_RIGHT] = AcquireSprite("player_down_right");
 	player->expressions[0].portrait = AcquireTexture("player-neutral.png");
 	CopyString(player->expressions[0].name, "neutral", sizeof player->expressions[0].name);
 	player->numExpressions = 1;
 	
 	Object *background = &objects[numObjects++];
 	CopyString(background->name, "Background", sizeof background->name);
-	ListAdd(&background->sprites[0], AcquireTexture("background.png"));
+	background->sprites[0] = AcquireSprite("background.png");
 	background->collisionMap = AcquireCollisionMap("collision-map.png");
-	background->position.x = 0.5f * background->sprites[0][0]->width;
-	background->position.y = 0.5f * background->sprites[0][0]->height;
+	background->position.x = 0.5f * background->sprites[0]->frames[0].width;
+	background->position.y = 0.5f * background->sprites[0]->frames[0].height;
 	background->zOffset = -1080;
 
 	Object *pinkGuy = &objects[numObjects++];
 	CopyString(pinkGuy->name, "Pink guy", sizeof pinkGuy->name);
-	ListAdd(&pinkGuy->sprites[0], AcquireTexture("pink-guy.png"));
+	pinkGuy->sprites[0] = AcquireSprite("pink-guy.png");
 	pinkGuy->position.x = 700;
 	pinkGuy->position.y = 250;
 
@@ -923,7 +923,7 @@ void GameInit(void)
 
 	Object *greenGuy = &objects[numObjects++];
 	CopyString(greenGuy->name, "Green guy", sizeof greenGuy->name);
-	ListAdd(&greenGuy->sprites[0], AcquireTexture("green-guy.png"));
+	greenGuy->sprites[0] = AcquireSprite("green-guy.png");
 	greenGuy->position.x = 1000;
 	greenGuy->position.y = 250;
 	greenGuy->script = AcquireScript("green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
@@ -933,7 +933,7 @@ void GameInit(void)
 
 	Object *alex = &objects[numObjects++];
 	CopyString(alex->name, "Alex", sizeof alex->name);
-	alex->sprites[0] = LoadAllTexturesFromDirectory("alex");
+	alex->sprites[0] = AcquireSprite("alex");
 	alex->position.x = 915;
 	alex->position.y = 120;
 	alex->animationFps = 15;

@@ -120,7 +120,17 @@ extern "C"
 		return &asset->collisionMap;
 	}
 
-	Sprite *AcquireSprite(const char *path);
+	Sprite *AcquireSprite(const char *path)
+	{
+		Asset *asset;
+		if (AcquireAsset(path, SPRITE, &asset))
+			return &asset->sprite;
+		if (not asset)
+			return NULL;
+
+		asset->sprite = LoadSprite(path);
+		return &asset->sprite;
+	}
 
 	Texture *AcquireTexture(const char *path)
 	{

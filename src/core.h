@@ -303,11 +303,10 @@ void AppendFormatVa(StringBuilder *builder, FORMAT_STRING format, va_list args);
 
 STRUCT(Paragraph)
 {
-	char *speaker; // Index into the string pool.
+	char *speaker;
 	char *text; // [textLength] NOT 0 TERMINATED!
 	int textLength;
 	float duration;
-	List(char *) expressions;
 	List(int) codepoints;
 };
 

@@ -313,9 +313,6 @@ void UnloadScript(Script *script)
 	{
 		Paragraph *paragraph = &script->paragraphs[i];
 		ListDestroy(&paragraph->codepoints);
-		for (int j = 0; j < ListCount(paragraph->expressions); ++j)
-			MemFree(paragraph->expressions[i]);
-		ListDestroy((void **)&paragraph->expressions);
 		MemFree(paragraph->speaker);
 	}
 	ListDestroy(&script->paragraphs);
