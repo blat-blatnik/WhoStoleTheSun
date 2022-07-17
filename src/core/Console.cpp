@@ -69,7 +69,7 @@ enum CmdState
     COMMAND_NOT_FOUND,
     COMMAND_FOUND_BAD_ARGS,
     COMMAND_SUCCEEDED,
-    COMMAND_RESULT_HELP
+    COMMAND_HANDLED_DO_NOTHING
 };
 struct CmdResult
 {
@@ -118,16 +118,19 @@ public:
 
         CmdResult result;
 
-        if (_commandContainer.find(command) == _commandContainer.end())
+        if (command == "help")
         {
-            result.state = CmdState::COMMAND_NOT_FOUND;
+            AddLog("All commands:");
+            for (auto &keyval : _commandContainer)
+                AddLog("  %s", keyval.second->GetHelp());
+
+            result.state = CmdState::COMMAND_HANDLED_DO_NOTHING;
             return result;
         }
 
-        if (words.size() > 0 && words[0] == "help")
+        if (_commandContainer.find(command) == _commandContainer.end())
         {
-            result.state = CmdState::COMMAND_RESULT_HELP;
-            result.cmd = _commandContainer[command];
+            result.state = CmdState::COMMAND_NOT_FOUND;
             return result;
         }
 
@@ -261,7 +264,6 @@ public:
         {
         case CmdState::COMMAND_SUCCEEDED:
             AddLog("Worked :D");
-
             break;
 
         case CmdState::COMMAND_NOT_FOUND:
@@ -269,11 +271,10 @@ public:
             break;
 
         case CmdState::COMMAND_FOUND_BAD_ARGS:
-            AddLog("Command found but wrong arguments, try <%s> help!", cmd->GetName().c_str());
+            AddLog("Wrong arguments. Usage: %s.", cmd->GetHelp());
             break;
-
-        case CmdState::COMMAND_RESULT_HELP:
-            AddLog(cmd->GetHelp());
+        
+        case CmdState::COMMAND_HANDLED_DO_NOTHING:
             break;
         }
     }

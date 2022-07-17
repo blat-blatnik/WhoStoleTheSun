@@ -1300,7 +1300,7 @@ void GameInit(void)
 
 	LoadScene("test.scene");
 
-	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float - Teleport player->");
+	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float - Teleport player");
 	AddCommand("dev", HandleToggleDevModeCommand, "dev [value:bool] - Toggle developer mode.");
 	AddCommand("shake", HandleCameraShakeCommand, "shake [trauma:float] [falloff:float] - Trigger camera shake.");
 	AddCommand("sound", HandleSoundCommand, "sound filename:string [volume:float] [pitch:float] - Play a sound.");
