@@ -766,6 +766,26 @@ void Editor_Render()
 
 								ImGui::DragFloat("Z Offset", &selectedObject->zOffset);
 
+								for (int dir = 0; dir < DIRECTION_ENUM_COUNT; ++dir)
+								{
+									char spritePath[256];
+									CopyString(spritePath, GetAssetPath(selectedObject->sprites[dir]), sizeof spritePath);
+
+									if (ImGui::InputText(TempFormat("Sprite %s", GetDirectionString((Direction)dir)), spritePath, sizeof spritePath, ImGuiInputTextFlags_EnterReturnsTrue))
+									{
+										ReleaseAsset(selectedObject->sprites[dir]);
+										selectedObject->sprites[dir] = AcquireSprite(spritePath);
+									}
+								}
+
+								char collisionMapPath[256];
+								CopyString(collisionMapPath, GetAssetPath(selectedObject->collisionMap), sizeof collisionMapPath);
+								if (ImGui::InputText("Collision map", collisionMapPath, sizeof collisionMapPath, ImGuiInputTextFlags_EnterReturnsTrue))
+								{
+									ReleaseAsset(selectedObject->collisionMap);
+									selectedObject->collisionMap = AcquireCollisionMap(collisionMapPath);
+								}
+
 								char scriptPath[256];
 								CopyString(scriptPath, GetAssetPath(selectedObject->script), sizeof scriptPath);
 								if (ImGui::InputText("Script", scriptPath, sizeof scriptPath, ImGuiInputTextFlags_EnterReturnsTrue))
