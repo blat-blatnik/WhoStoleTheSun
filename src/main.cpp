@@ -69,14 +69,8 @@ STRUCT(MotionMaster)
 		}	
 	}
 
-	void SetSpeed(float speed)
-	{
-		speed = speed;
-	}
-
 	Vector2 GetDirection()
 	{
-		
 		auto subtract = Vector2Subtract(endPoint, startPoint);
 		subtract.y = -subtract.y;
 		return Vector2Normalize(subtract);
@@ -84,8 +78,6 @@ STRUCT(MotionMaster)
 
 	Vector2 currentPoint;
 	bool isMoving = false;
-
-private:
 
 	void Reset()
 	{
