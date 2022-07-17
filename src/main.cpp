@@ -804,10 +804,24 @@ void Editor_Render()
 									for (int i = 0; i < numExpressions; ++i)
 									{
 										ImGui::PushID(i);
-										ImGui::BeginTable("ExpressionTable", 2);
+										ImGui::BeginTable("ExpressionTable", 3, ImGuiTableFlags_SizingStretchProp);
 										ImGui::TableNextRow();
 										{
 											Expression *expression = &selectedObject->expressions[i];
+
+											ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(180, 20, 20, 255));
+											ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(240, 20, 20, 255));
+											ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(150, 20, 20, 255));
+											ImGui::TableNextColumn();
+											if (ImGui::Button("x"))
+											{
+												ReleaseAsset(expression->portrait);
+												CopyBytes(&selectedObject->expressions[i], &selectedObject->expressions[i + 1], (numExpressions - i - 1) * sizeof selectedObject->expressions[i]);
+												--selectedObject->numExpressions;
+												ZeroBytes(&selectedObject->expressions[selectedObject->numExpressions], sizeof selectedObject->expressions[0]);
+											}
+											ImGui::PopStyleColor(3);
+
 											ImGui::TableNextColumn();
 											ImGui::InputText("Name", expression->name, sizeof expression->name);
 
