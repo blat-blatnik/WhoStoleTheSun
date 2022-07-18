@@ -872,6 +872,7 @@ REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talki
 // Editor
 //
 
+bool showGrid = true;
 void Editor_Update()
 {
 	if (input.console.wasPressed)
@@ -885,8 +886,56 @@ void Editor_Update()
 void Editor_Render()
 {
 	CallPreviousGameStateRender();
+
+	//for (int x0 = -2 * WINDOW_WIDTH; x0 < 2 * WINDOW_WIDTH; x0 += 50)
+	//{
+	//	int x1 = x0 + 2 * WINDOW_HEIGHT;
+	//	DrawLine(x0, 0, x1, WINDOW_HEIGHT, ColorAlpha(GRAY, 0.2f));
+	//	DrawLine(x1, 0, x0, WINDOW_HEIGHT, ColorAlpha(GRAY, 0.2f));
+	//}
+
 	BeginMode2D(camera);
 	{
+		if (showGrid)
+		{
+			const float gridResolutionX = 50;
+			const float gridResolutionY = gridResolutionX * Y_SQUISH;
+
+			Vector2 topLeftOnScreen = { 0, 0 };
+			Vector2 topLeftInWorld = GetScreenToWorld2D(topLeftOnScreen, camera);
+			Vector2 bottomRightOnScreen = { WINDOW_WIDTH, WINDOW_HEIGHT };
+			Vector2 bottomRightInWorld = GetScreenToWorld2D(bottomRightOnScreen, camera);
+			
+			Vector2 cell0 = topLeftInWorld;
+			cell0.x -= Wrap(cell0.x, 0, gridResolutionX);
+			cell0.y -= Wrap(cell0.y, 0, gridResolutionY);
+
+			Vector2 cell1 = { cell0.x, bottomRightInWorld.y };
+			cell1.y += gridResolutionY - Wrap(cell1.y, 0, gridResolutionY);
+
+			float dy0 = bottomRightInWorld.y - cell0.y;
+			float xIntercept0 = cell0.x - dy0 / Y_SQUISH;
+			
+			float dy1 = cell1.y - topLeftInWorld.y;
+			float xIntercept1 = cell1.x - dy1 / Y_SQUISH;
+
+			for (float x0 = xIntercept0; x0 <= bottomRightInWorld.x; x0 += gridResolutionX)
+			{
+				float x1 = x0 + dy0 / Y_SQUISH;
+				Vector2 a0 = { x0, bottomRightInWorld.y };
+				Vector2 a1 = { x1, cell0.y };
+				DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
+			}
+
+			for (float x0 = xIntercept1; x0 <= bottomRightInWorld.x; x0 += gridResolutionX)
+			{
+				float x1 = x0 + dy1 / Y_SQUISH;
+				Vector2 a0 = { x0, topLeftInWorld.y };
+				Vector2 a1 = { x1, cell1.y };
+				DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
+			}
+		}
+
 		static Object *pressedObject;
 		static Object *selectedObject;
 		static Object *draggedObject;
@@ -1170,6 +1219,8 @@ void Editor_Render()
 				SaveScene(lastSavedOrLoadedScene);
 			if (IsKeyPressed(KEY_R) and (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL)))
 				LoadScene(lastSavedOrLoadedScene);
+			if (IsKeyPressed(KEY_G) and (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL)))
+				showGrid = not showGrid;
 		}
 	}
 	EndMode2D();
