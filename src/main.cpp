@@ -1173,6 +1173,7 @@ REGISTER_GAME_STATE(GAMESTATE_PAUSED, NULL, NULL, Paused_Update, Paused_Render);
 
 void GameInit(void)
 {
+	SetConfigFlags(FLAG_MSAA_4X_HINT);
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
 
 	InitAudioDevice();
