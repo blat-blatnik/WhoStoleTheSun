@@ -48,15 +48,17 @@ static std::unordered_map<const char *, Asset *, Hash, Equal> table;
 
 static long GetDirectoryModTime(const char *path)
 {
-	FilePathList files = LoadDirectoryFiles(path);
-
 	long result = LONG_MIN;
-	for (int i = 0; i < (int)files.count; ++i)
+	FilePathList files = LoadDirectoryFiles(path);
 	{
-		long modTime = GetFileModTime(files.paths[i]);
-		if (result < modTime)
-			result = modTime;
+		for (int i = 0; i < (int)files.count; ++i)
+		{
+			long modTime = GetFileModTime(files.paths[i]);
+			if (result < modTime)
+				result = modTime;
+		}
 	}
+	UnloadDirectoryFiles(files);
 	return result;
 }
 static long GetFileOrDirectoryModTime(const char *path)

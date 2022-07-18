@@ -719,7 +719,7 @@ void Playing_Update()
 void Playing_Render()
 {
 	ClearBackground(BLACK);
-	
+
 	float shake = Clamp01(cameraTrauma);
 	shake *= shake;
 
