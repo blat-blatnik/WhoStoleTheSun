@@ -855,10 +855,6 @@ REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talki
 
 void Editor_Update()
 {
-	// prevent console to close when still typing (even special characters)
-	if (ImGui::GetIO().WantCaptureKeyboard)
-		return;
-
 	if (input.console.wasPressed)
 	{
 		// resets the "FocusOnLoad" bool
@@ -1206,7 +1202,7 @@ void GameInit(void)
 		MapKeyToInputButton(KEY_ESCAPE, &input.pause);
 		MapGamepadButtonToInputButton(GAMEPAD_BUTTON_MIDDLE_RIGHT, &input.pause);
 		
-		MapKeyToInputButton(KEY_GRAVE, &input.console);
+		MapKeyToInputButton(KEY_F1, &input.console);
 	}
 
 	roboto = LoadFontAscii("roboto.ttf", 32);
