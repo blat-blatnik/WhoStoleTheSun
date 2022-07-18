@@ -11,6 +11,8 @@
 #define SCENE_MAGIC "KEKW"
 #define SCENE_VERSION 2 // You need to increase this every time the scene binary format changes!
 #define Y_SQUISH 0.5f
+#define GRID_RESOLUTION_X 50.0f
+#define GRID_RESOLUTION_Y (GRID_RESOLUTION_X * Y_SQUISH)
 
 ENUM(GameState)
 {
@@ -485,6 +487,35 @@ void SaveScene(const char *path)
 		LogInfo("Couldn't save current scene to '%s'.", path);
 }
 
+Vector2 RoundToNearestGridCell(Vector2 position)
+{
+	float ex = Wrap(position.x, 0, GRID_RESOLUTION_X);
+	if (ex <= 0.5f * GRID_RESOLUTION_X)
+		position.x -= ex;
+	else
+		position.x += GRID_RESOLUTION_X - ex;
+
+	float ey = Wrap(position.y, 0, GRID_RESOLUTION_Y);
+	if (ey <= 0.5f * GRID_RESOLUTION_Y)
+		position.y -= ey;
+	else
+		position.y += GRID_RESOLUTION_Y - ey;
+
+	return position;
+}
+Vector2 RoundDownToGridCell(Vector2 position)
+{
+	position.x -= Wrap(position.x, 0, GRID_RESOLUTION_X);
+	position.y -= Wrap(position.y, 0, GRID_RESOLUTION_Y);
+	return position;
+}
+Vector2 RoundUpToGridCell(Vector2 position)
+{
+	position.x += GRID_RESOLUTION_X - Wrap(position.x, 0, GRID_RESOLUTION_X);
+	position.y += GRID_RESOLUTION_Y - Wrap(position.y, 0, GRID_RESOLUTION_Y);
+	return position;
+}
+
 // Motion
 void MoveToPoint(Object* object, Vector2 point)
 {
@@ -873,6 +904,7 @@ REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talki
 //
 
 bool showGrid = true;
+
 void Editor_Update()
 {
 	if (input.console.wasPressed)
@@ -898,28 +930,18 @@ void Editor_Render()
 	{
 		if (showGrid)
 		{
-			const float gridResolutionX = 50;
-			const float gridResolutionY = gridResolutionX * Y_SQUISH;
-
 			Vector2 topLeftOnScreen = { 0, 0 };
 			Vector2 topLeftInWorld = GetScreenToWorld2D(topLeftOnScreen, camera);
 			Vector2 bottomRightOnScreen = { WINDOW_WIDTH, WINDOW_HEIGHT };
 			Vector2 bottomRightInWorld = GetScreenToWorld2D(bottomRightOnScreen, camera);
 			
-			Vector2 cell0 = topLeftInWorld;
-			cell0.x -= Wrap(cell0.x, 0, gridResolutionX);
-			cell0.y -= Wrap(cell0.y, 0, gridResolutionY);
-
+			Vector2 cell0 = RoundDownToGridCell(topLeftInWorld);
 			Vector2 cell1 = { cell0.x, bottomRightInWorld.y };
-			cell1.y += gridResolutionY - Wrap(cell1.y, 0, gridResolutionY);
+			cell1.y += GRID_RESOLUTION_Y - Wrap(cell1.y, 0, GRID_RESOLUTION_Y);
 
 			float dy0 = bottomRightInWorld.y - cell0.y;
 			float xIntercept0 = cell0.x - dy0 / Y_SQUISH;
-			
-			float dy1 = cell1.y - topLeftInWorld.y;
-			float xIntercept1 = cell1.x - dy1 / Y_SQUISH;
-
-			for (float x0 = xIntercept0; x0 <= bottomRightInWorld.x; x0 += gridResolutionX)
+			for (float x0 = xIntercept0; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
 			{
 				float x1 = x0 + dy0 / Y_SQUISH;
 				Vector2 a0 = { x0, bottomRightInWorld.y };
@@ -927,7 +949,9 @@ void Editor_Render()
 				DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
 			}
 
-			for (float x0 = xIntercept1; x0 <= bottomRightInWorld.x; x0 += gridResolutionX)
+			float dy1 = cell1.y - topLeftInWorld.y;
+			float xIntercept1 = cell1.x - dy1 / Y_SQUISH;
+			for (float x0 = xIntercept1; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
 			{
 				float x1 = x0 + dy1 / Y_SQUISH;
 				Vector2 a0 = { x0, topLeftInWorld.y };
