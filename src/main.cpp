@@ -488,8 +488,7 @@ void SaveScene(const char *path)
 // Motion
 void MoveToPoint(Object* object, Vector2 point)
 {
-	Vector2 end = Vector2Add(object->position, point);
-	object->motionMaster.MoveToPoint(object->position, end);
+	object->motionMaster.MoveToPoint(object->position, point);
 }
 
 // Console commands.
@@ -575,22 +574,42 @@ bool HandleSoundCommand(List(const char *) args)
 
 	return true;
 }
-bool HandleMoveTo(List(const char*) args)
+bool HandleMoveBy(List(const char*) args)
 {
 	if (ListCount(args) != 2)
 		return false;
-	Vector2 pos;
+	
 	bool success1 = true;
 	bool success2 = true;
-
-	pos.x = ParseCommandFloatArg(args[0], &success1);
-
-	pos.y = ParseCommandFloatArg(args[1], &success2);
-
+	Vector2 delta = {
+		ParseCommandFloatArg(args[0], &success1),
+		ParseCommandFloatArg(args[1], &success2)
+	};
 	if (not success1 or not success2)
 		return false;
 
-	MoveToPoint(&objects[0], pos);
+	Object *object = player;
+	Vector2 target = object->position + delta;
+	MoveToPoint(object, target);
+
+	return true;
+}
+bool HandleMoveTo(List(const char *) args)
+{
+	if (ListCount(args) != 2)
+		return false;
+
+	bool success1 = true;
+	bool success2 = true;
+	Vector2 target = {
+		ParseCommandFloatArg(args[0], &success1),
+		ParseCommandFloatArg(args[1], &success2)
+	};
+	if (not success1 or not success2)
+		return false;
+
+	Object *object = player;
+	MoveToPoint(object, target);
 
 	return true;
 }
@@ -868,8 +887,9 @@ void Editor_Render()
 	CallPreviousGameStateRender();
 	BeginMode2D(camera);
 	{
-		static Object *selectedObject = NULL;
-		static Object *draggedObject = NULL;
+		static Object *pressedObject;
+		static Object *selectedObject;
+		static Object *draggedObject;
 
 		bool isInObjectsTab = false;
 		if (ImGui::Begin("Editor"))
@@ -1101,11 +1121,16 @@ void Editor_Render()
 			{
 				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 				{
-					selectedObject = hoveredObject;
-					draggedObject = hoveredObject;
+					pressedObject = hoveredObject;
+					if (pressedObject == selectedObject)
+						draggedObject = hoveredObject;
 				}
 				if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+				{
+					if (hoveredObject == pressedObject)
+						selectedObject = hoveredObject;
 					draggedObject = NULL;
+				}
 
 				if (draggedObject)
 				{
@@ -1303,13 +1328,14 @@ void GameInit(void)
 
 	LoadScene("test.scene");
 
-	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float - Teleport player");
-	AddCommand("dev", HandleToggleDevModeCommand, "dev [value:bool] - Toggle developer mode.");
-	AddCommand("shake", HandleCameraShakeCommand, "shake [trauma:float] [falloff:float] - Trigger camera shake.");
-	AddCommand("sound", HandleSoundCommand, "sound filename:string [volume:float] [pitch:float] - Play a sound.");
-	AddCommand("move", HandleMoveTo, "help pls");
-	AddCommand("save", HandleSaveCommand, "save [filename:string] - Saves current scene to a file.");
-	AddCommand("load", HandleLoadCommand, "load [filename:string] - Load a scene file.");
+	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float  -  Teleport player");
+	AddCommand("dev", HandleToggleDevModeCommand, "dev [value:bool]  -  Toggle developer mode.");
+	AddCommand("shake", HandleCameraShakeCommand, "shake [trauma:float] [falloff:float]  -  Trigger camera shake.");
+	AddCommand("sound", HandleSoundCommand,       "sound filename:string [volume:float] [pitch:float]  -  Play a sound.");
+	AddCommand("moveto", HandleMoveTo, "moveto dx:float dy:float  -  Start moving the player to a position.");
+	AddCommand("moveby", HandleMoveBy, "moveby dx:float dy:float  -  Start moving the player by a relative amount.");
+	AddCommand("save", HandleSaveCommand, "save [filename:string]  -  Saves current scene to a file.");
+	AddCommand("load", HandleLoadCommand, "load [filename:string]  -  Load a scene file.");
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
 }

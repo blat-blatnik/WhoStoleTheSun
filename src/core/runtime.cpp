@@ -45,8 +45,6 @@ int main()
 		while (not DirectoryExists("res"))
 		{
 			char *newDir = TempFormat("%s/..", GetWorkingDirectory());
-			ReplaceChar(newDir, '\\', '/'); // This isn't necessary - but on windows it makes the log message look nicer :)
-			LogWarning("Couldn't find 'res' in the working directory. Switching working directory to '%s'.", newDir);
 			ChangeDirectory(newDir);
 			TempFree(newDir);
 		}
