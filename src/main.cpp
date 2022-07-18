@@ -1233,19 +1233,21 @@ void Editor_Render()
 		}
 		else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
+		bool controlIsDown = IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL);
 		if (not ImGui::GetIO().WantCaptureKeyboard)
 		{
-			if (IsKeyPressed(KEY_D) and (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL)))
-				selectedObject = NULL;
 			if (IsKeyPressed(KEY_C))
 				CenterCameraOn(player);
-			if (IsKeyPressed(KEY_S) and (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL)))
-				SaveScene(lastSavedOrLoadedScene);
-			if (IsKeyPressed(KEY_R) and (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL)))
-				LoadScene(lastSavedOrLoadedScene);
-			if (IsKeyPressed(KEY_G) and (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL)))
-				showGrid = not showGrid;
 		}
+
+		if (IsKeyPressed(KEY_D) and controlIsDown)
+			selectedObject = NULL;
+		if (IsKeyPressed(KEY_S) and controlIsDown)
+			SaveScene(lastSavedOrLoadedScene);
+		if (IsKeyPressed(KEY_R) and controlIsDown)
+			LoadScene(lastSavedOrLoadedScene);
+		if (IsKeyPressed(KEY_G) and controlIsDown)
+			showGrid = not showGrid;
 	}
 	EndMode2D();
 }
