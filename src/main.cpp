@@ -9,7 +9,7 @@
 #define DEFAULT_CAMERA_SHAKE_TRAUMA 0.5f
 #define DEFAULT_CAMERA_SHAKE_FALLOFF (0.7f * FRAME_TIME)
 #define SCENE_MAGIC "KEKW"
-#define SCENE_VERSION 1 // You need to increase this every time the scene binary format changes!
+#define SCENE_VERSION 2 // You need to increase this every time the scene binary format changes!
 #define Y_SQUISH 0.5f
 
 ENUM(GameState)
@@ -424,6 +424,7 @@ void LoadScene(const char *path)
 		object->position.y = ReadFloat(&stream);
 		object->zOffset = ReadFloat(&stream);
 		object->animationFps = ReadFloat(&stream);
+		object->direction = (Direction)ReadInt(&stream);
 		object->script = AcquireScript(ReadString(&stream), roboto, robotoBold, robotoItalic, robotoBoldItalic);
 		object->collisionMap = AcquireCollisionMap(ReadString(&stream));
 		for (int dir = 0; dir < DIRECTION_ENUM_COUNT; ++dir)
@@ -462,6 +463,7 @@ void SaveScene(const char *path)
 		WriteFloat(&stream, object->position.y);
 		WriteFloat(&stream, object->zOffset);
 		WriteFloat(&stream, object->animationFps);
+		WriteInt(&stream, object->direction);
 		WriteString(&stream, GetAssetPath(object->script));
 		WriteString(&stream, GetAssetPath(object->collisionMap));
 		for (int dir = 0; dir < DIRECTION_ENUM_COUNT; ++dir)
