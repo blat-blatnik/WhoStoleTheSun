@@ -228,16 +228,42 @@ extern "C"
 			if (not FileExists(asset->path))
 				continue;
 
-			long modTime = GetFileModTime(asset->path);
+			long modTime = GetFileOrDirectoryModTime(asset->path);
 			if (modTime == asset->lastModTime)
 				continue;
 
 			// Sometimes it takes while before the file being updated is completely written.
 			// Until it's completely written, the program that's changing the file holds a lock on the file, so we can't open it.
 			// If that happens, we just skip it for now, eventually it will release the lock and we will be able to open it.
-			FILE *f = fopen(asset->path, "rb");
-			if (!f)
+			List(FILE *) files = NULL;
+			ListSetAllocator((void **)&files, TempRealloc, TempFree);
+
+			if (not IsPathFile(asset->path))
+			{
+				FilePathList contents = LoadDirectoryFiles(asset->path);
+				for (unsigned i = 0; i < contents.count; ++i)
+					ListAdd(&files, fopen(contents.paths[i], "rb"));
+				UnloadDirectoryFiles(contents);
+			}
+			else ListAdd(&files, fopen(asset->path, "rb"));
+
+			bool allOpenSuccessfully = true;
+			for (int i = 0; i < ListCount(files); ++i)
+			{
+				if (not files[i])
+				{
+					allOpenSuccessfully = false;
+					break;
+				}
+			}
+
+			if (not allOpenSuccessfully)
+			{
+				for (int i = 0; i < ListCount(files); ++i)
+					if (files[i])
+						fclose(files[i]);
 				continue;
+			}
 
 			switch (asset->kind)
 			{
@@ -253,6 +279,12 @@ extern "C"
 					asset->texture = LoadTexture(asset->path);
 				} break;
 
+				case SPRITE:
+				{
+					UnloadSprite(asset->sprite);
+					asset->sprite = LoadSprite(asset->path);
+				} break;
+
 				case SCRIPT:
 				{
 					Font regular    = asset->script.font;
@@ -264,7 +296,9 @@ extern "C"
 				} break;
 			}
 
-			fclose(f); // Aparently if you don't keep a file handle open the whole time we sometimes fail to load.. I have no clue why.
+			// Aparently if you don't keep a file handle open the whole time we sometimes fail to load.. I have no clue why.
+			for (int i = 0; i < ListCount(files); ++i)
+				fclose(files[i]);
 			asset->lastModTime = modTime;
 		}
 	}
