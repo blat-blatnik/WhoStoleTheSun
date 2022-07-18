@@ -1141,6 +1141,10 @@ void Editor_Render()
 				selectedObject = NULL;
 			if (IsKeyPressed(KEY_C))
 				CenterCameraOn(player);
+			if (IsKeyPressed(KEY_S) and (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL)))
+				SaveScene(lastSavedOrLoadedScene);
+			if (IsKeyPressed(KEY_R) and (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL)))
+				LoadScene(lastSavedOrLoadedScene);
 		}
 	}
 	EndMode2D();
