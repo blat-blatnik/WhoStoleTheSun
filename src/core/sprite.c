@@ -36,7 +36,10 @@ Sprite LoadSprite(const char *path)
 	}
 
 	for (int i = 0; i < s.numFrames; ++i)
+	{
+		SetTextureWrap(s.frames[i], TEXTURE_WRAP_CLAMP);
 		SetTextureFilter(s.frames[i], TEXTURE_FILTER_BILINEAR);
+	}
 
 	return s;
 }
