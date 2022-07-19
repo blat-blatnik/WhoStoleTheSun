@@ -10,7 +10,7 @@
 #define DEFAULT_CAMERA_SHAKE_FALLOFF (0.7f * FRAME_TIME)
 #define SCENE_MAGIC "KEKW"
 #define SCENE_VERSION 2 // You need to increase this every time the scene binary format changes!
-#define Y_SQUISH 0.5f
+#define Y_SQUISH 0.5773502691896258f // 1 / (2 * cos(30 degrees)) = 1 / sqrt(3)
 #define GRID_RESOLUTION_X 50.0f
 #define GRID_RESOLUTION_Y (GRID_RESOLUTION_X * Y_SQUISH)
 
@@ -919,13 +919,6 @@ void Editor_Render()
 {
 	CallPreviousGameStateRender();
 
-	//for (int x0 = -2 * WINDOW_WIDTH; x0 < 2 * WINDOW_WIDTH; x0 += 50)
-	//{
-	//	int x1 = x0 + 2 * WINDOW_HEIGHT;
-	//	DrawLine(x0, 0, x1, WINDOW_HEIGHT, ColorAlpha(GRAY, 0.2f));
-	//	DrawLine(x1, 0, x0, WINDOW_HEIGHT, ColorAlpha(GRAY, 0.2f));
-	//}
-
 	BeginMode2D(camera);
 	{
 		if (showGrid)
@@ -1233,13 +1226,13 @@ void Editor_Render()
 		}
 		else SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 
-		bool controlIsDown = IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL);
 		if (not ImGui::GetIO().WantCaptureKeyboard)
 		{
 			if (IsKeyPressed(KEY_C))
 				CenterCameraOn(player);
 		}
 
+		bool controlIsDown = IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL);
 		if (IsKeyPressed(KEY_D) and controlIsDown)
 			selectedObject = NULL;
 		if (IsKeyPressed(KEY_S) and controlIsDown)
@@ -1315,93 +1308,6 @@ void GameInit(void)
 	robotoBold = LoadFontAscii("roboto-bold.ttf", 32);
 	robotoItalic = LoadFontAscii("roboto-italic.ttf", 32);
 	robotoBoldItalic = LoadFontAscii("roboto-bold-italic.ttf", 32);
-
-	/* Backup of the test scene. Just in case...
-	player = &objects[numObjects++];
-	CopyString(player->name, "Player", sizeof player->name);
-	player->position.x = 1280 / 2;
-	player->position.y = 720 / 2;
-	player->direction = DIRECTION_DOWN;
-	player->sprites[DIRECTION_RIGHT     ] = AcquireSprite("player_right");
-	player->sprites[DIRECTION_UP_RIGHT  ] = AcquireSprite("player_up_right");
-	player->sprites[DIRECTION_UP        ] = AcquireSprite("player_up");
-	player->sprites[DIRECTION_UP_LEFT   ] = AcquireSprite("player_up_left");
-	player->sprites[DIRECTION_LEFT      ] = AcquireSprite("player_left");
-	player->sprites[DIRECTION_DOWN_LEFT ] = AcquireSprite("player_down_left");
-	player->sprites[DIRECTION_DOWN      ] = AcquireSprite("player_down");
-	player->sprites[DIRECTION_DOWN_RIGHT] = AcquireSprite("player_down_right");
-	player->expressions[0].portrait = AcquireTexture("player-neutral.png");
-	CopyString(player->expressions[0].name, "neutral", sizeof player->expressions[0].name);
-	player->numExpressions = 1;
-	
-	Object *background = &objects[numObjects++];
-	CopyString(background->name, "Background", sizeof background->name);
-	background->sprites[0] = AcquireSprite("background.png");
-	background->collisionMap = AcquireCollisionMap("background-collision.png");
-	background->position.x = 0.5f * background->sprites[0]->frames[0].width;
-	background->position.y = 0.5f * background->sprites[0]->frames[0].height;
-	background->zOffset = -1080;
-
-	Object *vase1 = &objects[numObjects++];
-	CopyString(vase1->name, "Vase1", sizeof vase1->name);
-	vase1->sprites[0] = AcquireSprite("vase.png");
-	vase1->collisionMap = AcquireCollisionMap("vase-collision.png");
-	vase1->position.x = 800;
-	vase1->position.y = 560;
-	vase1->zOffset = -34;
-
-	Object *vase2 = &objects[numObjects++];
-	CopyString(vase2->name, "Vase2", sizeof vase2->name);
-	vase2->sprites[0] = AcquireSprite("vase.png");
-	vase2->collisionMap = AcquireCollisionMap("vase-collision.png");
-	vase2->position.x = 960;
-	vase2->position.y = 490;
-	vase2->zOffset = -34;
-
-	Object *vase3 = &objects[numObjects++];
-	CopyString(vase3->name, "Vase3", sizeof vase3->name);
-	vase3->sprites[0] = AcquireSprite("vase.png");
-	vase3->collisionMap = AcquireCollisionMap("vase-collision.png");
-	vase3->position.x = 1120;
-	vase3->position.y = 420;
-	vase3->zOffset = -34;
-
-	Object *pinkGuy = &objects[numObjects++];
-	CopyString(pinkGuy->name, "Pink guy", sizeof pinkGuy->name);
-	pinkGuy->sprites[0] = AcquireSprite("pink-guy.png");
-	pinkGuy->position.x = 700;
-	pinkGuy->position.y = 250;
-	pinkGuy->script = AcquireScript("example-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-	pinkGuy->expressions[0].portrait = AcquireTexture("pink-guy-neutral.png");
-	pinkGuy->expressions[1].portrait = AcquireTexture("pink-guy-happy.png");
-	pinkGuy->expressions[2].portrait = AcquireTexture("pink-guy-sad.png");
-	CopyString(pinkGuy->expressions[0].name, "neutral", sizeof pinkGuy->expressions[0].name);
-	CopyString(pinkGuy->expressions[1].name, "happy", sizeof pinkGuy->expressions[1].name);
-	CopyString(pinkGuy->expressions[2].name, "sad", sizeof pinkGuy->expressions[2].name);
-	pinkGuy->numExpressions = 3;
-
-	Object *greenGuy = &objects[numObjects++];
-	CopyString(greenGuy->name, "Green guy", sizeof greenGuy->name);
-	greenGuy->sprites[0] = AcquireSprite("green-guy.png");
-	greenGuy->position.x = 1000;
-	greenGuy->position.y = 250;
-	greenGuy->script = AcquireScript("green-guy-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-	greenGuy->expressions[0].portrait = AcquireTexture("green-guy-neutral.png");
-	CopyString(greenGuy->expressions[0].name, "neutral", sizeof greenGuy->expressions[0].name);
-	greenGuy->numExpressions = 1;
-
-	Object *alex = &objects[numObjects++];
-	CopyString(alex->name, "Alex", sizeof alex->name);
-	alex->sprites[0] = AcquireSprite("alex");
-	alex->position.x = 915;
-	alex->position.y = 120;
-	alex->animationFps = 15;
-	alex->direction = DIRECTION_LEFT;
-	alex->script = AcquireScript("alex-script.txt", roboto, robotoBold, robotoItalic, robotoBoldItalic);
-	alex->expressions[0].portrait = AcquireTexture("alex-neutral.png");
-	CopyString(alex->expressions[0].name, "neutral", sizeof alex->expressions[0].name);
-	alex->numExpressions = 1;
-	*/
 
 	LoadScene("test.scene");
 
