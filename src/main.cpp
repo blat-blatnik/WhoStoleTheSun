@@ -486,19 +486,19 @@ void SaveScene(const char *path)
 		LogInfo("Couldn't save current scene to '%s'.", path);
 }
 
-Vector2 RoundToNearestGridCell(Vector2 position)
+Vector2 SnapToGrid(Vector2 position)
 {
-	float ex = Wrap(position.x, 0, GRID_RESOLUTION_X);
-	if (ex <= 0.5f * GRID_RESOLUTION_X)
+	float ex = Wrap(position.x, 0, GRID_RESOLUTION_X / 2);
+	if (ex <= 0.25f * GRID_RESOLUTION_X)
 		position.x -= ex;
 	else
-		position.x += GRID_RESOLUTION_X - ex;
+		position.x += 0.5f * GRID_RESOLUTION_X - ex;
 
-	float ey = Wrap(position.y, 0, GRID_RESOLUTION_Y);
-	if (ey <= 0.5f * GRID_RESOLUTION_Y)
+	float ey = Wrap(position.y, 0, GRID_RESOLUTION_Y / 2);
+	if (ey <= 0.25f * GRID_RESOLUTION_Y)
 		position.y -= ey;
 	else
-		position.y += GRID_RESOLUTION_Y - ey;
+		position.y += 0.5f * GRID_RESOLUTION_Y - ey;
 
 	return position;
 }
@@ -923,6 +923,7 @@ void Editor_Render()
 		static Object *pressedObject;
 		static Object *selectedObject;
 		static Object *draggedObject;
+		static Vector2 draggedObjectFreeformPosition;
 
 		bool isInObjectsTab = false;
 		if (ImGui::Begin("Editor"))
@@ -1175,7 +1176,10 @@ void Editor_Render()
 				{
 					pressedObject = hoveredObject;
 					if (pressedObject == selectedObject)
+					{
 						draggedObject = hoveredObject;
+						draggedObjectFreeformPosition = draggedObject->position;
+					}
 				}
 				if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
 				{
@@ -1187,8 +1191,9 @@ void Editor_Render()
 				if (draggedObject)
 				{
 					Vector2 delta = GetMouseDelta();
-					draggedObject->position.x += delta.x / camera.zoom;
-					draggedObject->position.y += delta.y / camera.zoom;
+					draggedObjectFreeformPosition.x += delta.x / camera.zoom;
+					draggedObjectFreeformPosition.y += delta.y / camera.zoom;
+					draggedObject->position = SnapToGrid(draggedObjectFreeformPosition);
 				}
 			}
 
