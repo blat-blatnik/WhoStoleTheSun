@@ -115,6 +115,13 @@ STRUCT(Object)
 	MotionMaster motionMaster;
 };
 
+STRUCT(Stair)
+{
+	int gridX;
+	int gridY;
+	int elevation;
+};
+
 bool devMode = true; // @TODO @SHIP: Disable this for release.
 Input input;
 Font roboto;
@@ -130,6 +137,8 @@ float cameraTraumaFalloff; // How quickly the camera shake stops.
 float cameraOffsetFactor = 25; // How far ahead the camera goes in the direction of player movement.
 float cameraAcceleration = 0.03f; // How quickly the camera converges on it's desired offset.
 Vector2 cameraOffset;
+int numStairs;
+Stair stairs[10];
 
 bool CheckCollisionMap(Image map, Vector2 position)
 {
@@ -318,6 +327,16 @@ Vector2 ScreenToGrid(Vector2 screenPoint)
 {
 	return WorldToGrid(GetScreenToWorld2D(screenPoint, camera));
 }
+Stair *GetStairAt(Vector2 gridPoint)
+{
+	int x = (int)floorf(gridPoint.x);
+	int y = (int)floorf(gridPoint.y);
+	for (int i = 0; i < numStairs; ++i)
+		if (stairs[i].gridX == x and stairs[i].gridY == y)
+			return &stairs[i];
+	return NULL;
+}
+
 void CenterCameraOn(Object *object)
 {
 	camera.target = object->position;
@@ -396,10 +415,16 @@ void Render(Object *object)
 	if (not sprite)
 		return;
 
+	Vector2 position = object->position;
+	Vector2 feet = GetFootPositionInScreenSpace(object);
+	Stair *stair = GetStairAt(WorldToGrid(feet));
+	if (stair)
+		position.y -= 20 * stair->elevation;
+
 	if (sprite == object->sprites[object->direction])
-		DrawTextureCentered(sprite->frames[object->animationFrame], object->position, WHITE);
+		DrawTextureCentered(sprite->frames[object->animationFrame], position, WHITE);
 	else
-		DrawTextureCenteredAndFlippedVertically(sprite->frames[object->animationFrame], object->position, WHITE);
+		DrawTextureCenteredAndFlippedVertically(sprite->frames[object->animationFrame], position, WHITE);
 }
 
 char lastSavedOrLoadedScene[256];
@@ -961,6 +986,30 @@ void DrawGrid()
 		DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
 	}
 }
+void DrawGridCell(Vector2 gridPoint, Color color)
+{
+	gridPoint.x = floorf(gridPoint.x);
+	gridPoint.y = floorf(gridPoint.y);
+	Vector2 g00 = { gridPoint.x + 0, gridPoint.y + 0 };
+	Vector2 g01 = { gridPoint.x + 1, gridPoint.y + 0 };
+	Vector2 g10 = { gridPoint.x + 0, gridPoint.y + 1 };
+	Vector2 g11 = { gridPoint.x + 1, gridPoint.y + 1 };
+	Vector2 s00 = GridToWorld(g00);
+	Vector2 s01 = GridToWorld(g01);
+	Vector2 s10 = GridToWorld(g10);
+	Vector2 s11 = GridToWorld(g11);
+	rlDrawRenderBatchActive();
+	rlBegin(RL_QUADS);
+	{
+		rlColor4ub(color.r, color.g, color.b, color.a);
+		rlVertex2f(s00.x, s00.y);
+		rlVertex2f(s10.x, s10.y);
+		rlVertex2f(s11.x, s11.y);
+		rlVertex2f(s01.x, s01.y);
+	}
+	rlEnd();
+	rlDrawRenderBatchActive();
+}
 void Editor_Update()
 {
 	if (input.console.wasPressed)
@@ -1206,31 +1255,14 @@ void Editor_Render()
 		if (isInStairsTab)
 		{
 			DrawGrid();
-			{
-				Vector2 mousePos = GetMousePosition();
-				Vector2 gridPos = ScreenToGrid(mousePos);
-				gridPos.x = floorf(gridPos.x);
-				gridPos.y = floorf(gridPos.y);
-				Vector2 g00 = { gridPos.x + 0, gridPos.y + 0 };
-				Vector2 g01 = { gridPos.x + 1, gridPos.y + 0 };
-				Vector2 g10 = { gridPos.x + 0, gridPos.y + 1 };
-				Vector2 g11 = { gridPos.x + 1, gridPos.y + 1 };
-				Vector2 s00 = GridToWorld(g00);
-				Vector2 s01 = GridToWorld(g01);
-				Vector2 s10 = GridToWorld(g10);
-				Vector2 s11 = GridToWorld(g11);
-				rlDrawRenderBatchActive();
-				{
-					rlBegin(RL_QUADS);
-					rlColor3f(0.5f, 0.5f, 0.5f);
-					rlVertex2f(s00.x, s00.y);
-					rlVertex2f(s10.x, s10.y);
-					rlVertex2f(s11.x, s11.y);
-					rlVertex2f(s01.x, s01.y);
-					rlEnd();
-				}
-				rlDrawRenderBatchActive();
-			}
+			DrawGridCell(ScreenToGrid(GetMousePosition()), GRAY);
+		}
+
+		for (int i = 0; i < numStairs; ++i)
+		{
+			Stair stair = stairs[i];
+			Vector2 gridPoint = { (float)stair.gridX, (float)stair.gridY };
+			DrawGridCell(gridPoint, YELLOW);
 		}
 
 		if (not ImGui::GetIO().WantCaptureMouse)
@@ -1262,6 +1294,25 @@ void Editor_Render()
 					draggedObject->position = draggedObjectFreeformPosition;
 					if (showGrid)
 						draggedObject->position = SnapToGrid(draggedObjectFreeformPosition);
+				}
+			}
+			else if (isInStairsTab)
+			{
+				int deltaElevation = 
+					(int)IsMouseButtonPressed(MOUSE_BUTTON_LEFT) -
+					(int)IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);
+				if (deltaElevation != 0)
+				{
+					Vector2 gridPoint = ScreenToGrid(GetMousePosition());
+					Stair *stair = GetStairAt(gridPoint);
+					if (not stair and numStairs < COUNTOF(stairs))
+						stair = &stairs[numStairs++];
+					if (stair)
+					{
+						stair->gridX = (int)floorf(gridPoint.x);
+						stair->gridY = (int)floorf(gridPoint.y);
+						stair->elevation += deltaElevation;
+					}
 				}
 			}
 
