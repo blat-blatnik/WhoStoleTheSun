@@ -146,6 +146,8 @@ extern "C"
 			return NULL;
 
 		asset->texture = LoadTexture(path);
+		SetTextureFilter(asset->texture, TEXTURE_FILTER_BILINEAR);
+		SetTextureWrap(asset->texture, TEXTURE_WRAP_CLAMP);
 		return &asset->texture;
 	}
 

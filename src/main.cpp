@@ -292,6 +292,32 @@ Vector2 GetMousePositionInWorld(void)
 {
 	return GetScreenToWorld2D(GetMousePosition(), camera);
 }
+Vector2 GridToWorld(Vector2 gridPoint)
+{
+	Vector2 worldPoint = {
+		(gridPoint.x - gridPoint.y) * GRID_RESOLUTION_X / 2,
+		(gridPoint.x + gridPoint.y) * GRID_RESOLUTION_Y / 2
+	};
+	return worldPoint;
+}
+Vector2 GridToScreen(Vector2 gridPoint)
+{
+	return GetWorldToScreen2D(GridToWorld(gridPoint), camera);
+}
+Vector2 WorldToGrid(Vector2 worldPoint)
+{
+	float worldX = 2 * worldPoint.x / GRID_RESOLUTION_X; // wx = gx - gy
+	float worldY = 2 * worldPoint.y / GRID_RESOLUTION_Y; // wy = gx + gy
+	Vector2 gridPoint = {
+		0.5f * (worldX + worldY),
+		0.5f * (worldY - worldX)
+	};
+	return gridPoint;
+}
+Vector2 ScreenToGrid(Vector2 screenPoint)
+{
+	return WorldToGrid(GetScreenToWorld2D(screenPoint, camera));
+}
 void CenterCameraOn(Object *object)
 {
 	camera.target = object->position;
@@ -904,6 +930,37 @@ REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talki
 
 bool showGrid = true;
 
+void DrawGrid()
+{
+	Vector2 topLeftOnScreen = { 0, 0 };
+	Vector2 topLeftInWorld = GetScreenToWorld2D(topLeftOnScreen, camera);
+	Vector2 bottomRightOnScreen = { WINDOW_WIDTH, WINDOW_HEIGHT };
+	Vector2 bottomRightInWorld = GetScreenToWorld2D(bottomRightOnScreen, camera);
+
+	Vector2 cell0 = RoundDownToGridCell(topLeftInWorld);
+	Vector2 cell1 = { cell0.x, bottomRightInWorld.y };
+	cell1.y += GRID_RESOLUTION_Y - Wrap(cell1.y, 0, GRID_RESOLUTION_Y);
+
+	float dy0 = bottomRightInWorld.y - cell0.y;
+	float xIntercept0 = cell0.x - dy0 / Y_SQUISH;
+	for (float x0 = xIntercept0; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
+	{
+		float x1 = x0 + dy0 / Y_SQUISH;
+		Vector2 a0 = { x0, bottomRightInWorld.y };
+		Vector2 a1 = { x1, cell0.y };
+		DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
+	}
+
+	float dy1 = cell1.y - topLeftInWorld.y;
+	float xIntercept1 = cell1.x - dy1 / Y_SQUISH;
+	for (float x0 = xIntercept1; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
+	{
+		float x1 = x0 + dy1 / Y_SQUISH;
+		Vector2 a0 = { x0, topLeftInWorld.y };
+		Vector2 a1 = { x1, cell1.y };
+		DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
+	}
+}
 void Editor_Update()
 {
 	if (input.console.wasPressed)
@@ -926,6 +983,7 @@ void Editor_Render()
 		static Vector2 draggedObjectFreeformPosition;
 
 		bool isInObjectsTab = false;
+		bool isInStairsTab = false;
 		if (ImGui::Begin("Editor"))
 		{
 			ImGui::BeginTabBar("Tabs");
@@ -1106,6 +1164,11 @@ void Editor_Render()
 					ImGui::EndTable();
 					ImGui::EndTabItem();
 				}
+				if (ImGui::BeginTabItem("Stairs"))
+				{
+					isInStairsTab = true;
+					ImGui::EndTabItem();
+				}
 			}
 			ImGui::EndTabBar();
 		}
@@ -1138,34 +1201,35 @@ void Editor_Render()
 		}
 
 		if (showGrid and draggedObject)
+			DrawGrid();
+
+		if (isInStairsTab)
 		{
-			Vector2 topLeftOnScreen = { 0, 0 };
-			Vector2 topLeftInWorld = GetScreenToWorld2D(topLeftOnScreen, camera);
-			Vector2 bottomRightOnScreen = { WINDOW_WIDTH, WINDOW_HEIGHT };
-			Vector2 bottomRightInWorld = GetScreenToWorld2D(bottomRightOnScreen, camera);
-
-			Vector2 cell0 = RoundDownToGridCell(topLeftInWorld);
-			Vector2 cell1 = { cell0.x, bottomRightInWorld.y };
-			cell1.y += GRID_RESOLUTION_Y - Wrap(cell1.y, 0, GRID_RESOLUTION_Y);
-
-			float dy0 = bottomRightInWorld.y - cell0.y;
-			float xIntercept0 = cell0.x - dy0 / Y_SQUISH;
-			for (float x0 = xIntercept0; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
+			DrawGrid();
 			{
-				float x1 = x0 + dy0 / Y_SQUISH;
-				Vector2 a0 = { x0, bottomRightInWorld.y };
-				Vector2 a1 = { x1, cell0.y };
-				DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
-			}
-
-			float dy1 = cell1.y - topLeftInWorld.y;
-			float xIntercept1 = cell1.x - dy1 / Y_SQUISH;
-			for (float x0 = xIntercept1; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
-			{
-				float x1 = x0 + dy1 / Y_SQUISH;
-				Vector2 a0 = { x0, topLeftInWorld.y };
-				Vector2 a1 = { x1, cell1.y };
-				DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
+				Vector2 mousePos = GetMousePosition();
+				Vector2 gridPos = ScreenToGrid(mousePos);
+				gridPos.x = floorf(gridPos.x);
+				gridPos.y = floorf(gridPos.y);
+				Vector2 g00 = { gridPos.x + 0, gridPos.y + 0 };
+				Vector2 g01 = { gridPos.x + 1, gridPos.y + 0 };
+				Vector2 g10 = { gridPos.x + 0, gridPos.y + 1 };
+				Vector2 g11 = { gridPos.x + 1, gridPos.y + 1 };
+				Vector2 s00 = GridToWorld(g00);
+				Vector2 s01 = GridToWorld(g01);
+				Vector2 s10 = GridToWorld(g10);
+				Vector2 s11 = GridToWorld(g11);
+				rlDrawRenderBatchActive();
+				{
+					rlBegin(RL_QUADS);
+					rlColor3f(0.5f, 0.5f, 0.5f);
+					rlVertex2f(s00.x, s00.y);
+					rlVertex2f(s10.x, s10.y);
+					rlVertex2f(s11.x, s11.y);
+					rlVertex2f(s01.x, s01.y);
+					rlEnd();
+				}
+				rlDrawRenderBatchActive();
 			}
 		}
 
@@ -1208,7 +1272,7 @@ void Editor_Render()
 				camera.target.y -= delta.y / camera.zoom;
 			}
 
-			if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) or selectedObject == hoveredObject or draggedObject)
+			if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) or (selectedObject and selectedObject == hoveredObject) or draggedObject)
 				SetMouseCursor(MOUSE_CURSOR_RESIZE_ALL);
 			else
 				SetMouseCursor(MOUSE_CURSOR_DEFAULT);
