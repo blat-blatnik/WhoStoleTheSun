@@ -916,42 +916,10 @@ void Editor_Update()
 }
 void Editor_Render()
 {
-	CallPreviousGameStateRender();
+	ClearBackground(BLACK);
 
 	BeginMode2D(camera);
 	{
-		if (showGrid)
-		{
-			Vector2 topLeftOnScreen = { 0, 0 };
-			Vector2 topLeftInWorld = GetScreenToWorld2D(topLeftOnScreen, camera);
-			Vector2 bottomRightOnScreen = { WINDOW_WIDTH, WINDOW_HEIGHT };
-			Vector2 bottomRightInWorld = GetScreenToWorld2D(bottomRightOnScreen, camera);
-			
-			Vector2 cell0 = RoundDownToGridCell(topLeftInWorld);
-			Vector2 cell1 = { cell0.x, bottomRightInWorld.y };
-			cell1.y += GRID_RESOLUTION_Y - Wrap(cell1.y, 0, GRID_RESOLUTION_Y);
-
-			float dy0 = bottomRightInWorld.y - cell0.y;
-			float xIntercept0 = cell0.x - dy0 / Y_SQUISH;
-			for (float x0 = xIntercept0; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
-			{
-				float x1 = x0 + dy0 / Y_SQUISH;
-				Vector2 a0 = { x0, bottomRightInWorld.y };
-				Vector2 a1 = { x1, cell0.y };
-				DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
-			}
-
-			float dy1 = cell1.y - topLeftInWorld.y;
-			float xIntercept1 = cell1.x - dy1 / Y_SQUISH;
-			for (float x0 = xIntercept1; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
-			{
-				float x1 = x0 + dy1 / Y_SQUISH;
-				Vector2 a0 = { x0, topLeftInWorld.y };
-				Vector2 a1 = { x1, cell1.y };
-				DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
-			}
-		}
-
 		static Object *pressedObject;
 		static Object *selectedObject;
 		static Object *draggedObject;
@@ -1033,24 +1001,6 @@ void Editor_Render()
 												Clone(&objects[i], &objects[i + 1]);
 											}
 										}
-
-										// Draw an outline around the object.
-										Rectangle outline = GetOutline(object);
-
-										Color outlineColor = GrayscaleAlpha(0.5f, 0.5f);
-										float outlineThickness = 2;
-										if (selected)
-										{
-											outlineThickness = 3;
-											outlineColor = ColorAlpha(GREEN, 0.5f);
-										}
-										outline = ExpandRectangle(outline, outlineThickness);
-										DrawRectangleLinesEx(outline, outlineThickness, outlineColor);
-
-										float z = GetFootPositionInScreenSpace(object).y + object->zOffset;
-										Vector2 zLinePos0 = { outline.x, z };
-										Vector2 zLinePos1 = { outline.x + outline.width, z };
-										DrawLineEx(zLinePos0, zLinePos1, 2, YELLOW);
 									}
 									ImGui::PopID();
 								}
@@ -1158,6 +1108,63 @@ void Editor_Render()
 			ImGui::EndTabBar();
 		}
 		ImGui::End();
+
+		List(Object *) sorted = GetZSortedObjects();
+		for (int i = ListCount(sorted) - 1; i >= 0; --i)
+		{
+			Object *object = sorted[i];
+			Render(object);
+
+			// Draw an outline around the object.
+			Rectangle outline = GetOutline(object);
+
+			Color outlineColor = GrayscaleAlpha(0.5f, 0.5f);
+			float outlineThickness = 2;
+			if (object == selectedObject)
+			{
+				outlineThickness = 3;
+				outlineColor = ColorAlpha(GREEN, 0.5f);
+			}
+			outline = ExpandRectangle(outline, outlineThickness);
+			DrawRectangleLinesEx(outline, outlineThickness, outlineColor);
+
+			float z = GetFootPositionInScreenSpace(object).y + object->zOffset;
+			Vector2 zLinePos0 = { outline.x, z };
+			Vector2 zLinePos1 = { outline.x + outline.width, z };
+			DrawLineEx(zLinePos0, zLinePos1, 2, YELLOW);
+		}
+
+		if (showGrid)
+		{
+			Vector2 topLeftOnScreen = { 0, 0 };
+			Vector2 topLeftInWorld = GetScreenToWorld2D(topLeftOnScreen, camera);
+			Vector2 bottomRightOnScreen = { WINDOW_WIDTH, WINDOW_HEIGHT };
+			Vector2 bottomRightInWorld = GetScreenToWorld2D(bottomRightOnScreen, camera);
+
+			Vector2 cell0 = RoundDownToGridCell(topLeftInWorld);
+			Vector2 cell1 = { cell0.x, bottomRightInWorld.y };
+			cell1.y += GRID_RESOLUTION_Y - Wrap(cell1.y, 0, GRID_RESOLUTION_Y);
+
+			float dy0 = bottomRightInWorld.y - cell0.y;
+			float xIntercept0 = cell0.x - dy0 / Y_SQUISH;
+			for (float x0 = xIntercept0; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
+			{
+				float x1 = x0 + dy0 / Y_SQUISH;
+				Vector2 a0 = { x0, bottomRightInWorld.y };
+				Vector2 a1 = { x1, cell0.y };
+				DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
+			}
+
+			float dy1 = cell1.y - topLeftInWorld.y;
+			float xIntercept1 = cell1.x - dy1 / Y_SQUISH;
+			for (float x0 = xIntercept1; x0 <= bottomRightInWorld.x; x0 += GRID_RESOLUTION_X)
+			{
+				float x1 = x0 + dy1 / Y_SQUISH;
+				Vector2 a0 = { x0, topLeftInWorld.y };
+				Vector2 a1 = { x1, cell1.y };
+				DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
+			}
+		}
 
 		if (not ImGui::GetIO().WantCaptureMouse)
 		{
