@@ -111,7 +111,6 @@ STRUCT(Object)
 	int animationFrame;
 	Image *collisionMap;
 	Script *script;
-	int numExpressions;
 	Expression expressions[10]; // We might want more, but this should generally be a very small number.
 	MotionMaster motionMaster;
 };
@@ -189,7 +188,7 @@ Object *FindObjectByName(const char *name)
 }
 Texture GetCharacterPortrait(const Object *object, const char *name)
 {
-	for (int i = 0; i < object->numExpressions; ++i)
+	for (int i = 0; i < COUNTOF(object->expressions); ++i)
 		if (StringsEqualNocase(object->expressions[i].name, name))
 			return *object->expressions[i].portrait;
 	return *object->expressions[0].portrait;
@@ -324,7 +323,7 @@ void Clone(Object *from, Object *to)
 	CopyBytes(to, from, sizeof to[0]);
 	to->script = (Script *)CloneAsset(from->script);
 	to->collisionMap = (Image *)CloneAsset(from->collisionMap);
-	for (int i = 0; i < from->numExpressions; ++i)
+	for (int i = 0; i < COUNTOF(from->expressions); ++i)
 		to->expressions[i].portrait = (Texture *)CloneAsset(from->expressions[i].portrait);
 	for (int direction = 0; direction < DIRECTION_ENUM_COUNT; ++direction)
 		to->sprites[direction] = (Sprite *)CloneAsset(from->sprites[direction]);
@@ -333,7 +332,7 @@ void Destroy(Object *object)
 {
 	ReleaseAsset(object->script);
 	ReleaseAsset(object->collisionMap);
-	for (int i = 0; i < object->numExpressions; ++i)
+	for (int i = 0; i < COUNTOF(object->expressions); ++i)
 		ReleaseAsset(object->expressions[i].portrait);
 	for (int direction = 0; direction < DIRECTION_ENUM_COUNT; ++direction)
 		ReleaseAsset(object->sprites[direction]);
@@ -1123,30 +1122,15 @@ void Editor_Render()
 									}
 								}
 
-								int numExpressions = selectedObject->numExpressions;
-								int maxExpressions = COUNTOF(selectedObject->expressions);
-								if (ImGui::CollapsingHeader(TempFormat("Expressions %d/%d###Expressions", numExpressions, maxExpressions)))
+								if (ImGui::CollapsingHeader("Expressions"))
 								{
-									for (int i = 0; i < numExpressions; ++i)
+									for (int i = 0; i < COUNTOF(selectedObject->expressions); ++i)
 									{
 										ImGui::PushID(i);
-										ImGui::BeginTable("ExpressionTable", 3, ImGuiTableFlags_SizingStretchProp);
+										ImGui::BeginTable("ExpressionTable", 2, ImGuiTableFlags_SizingStretchProp);
 										ImGui::TableNextRow();
 										{
 											Expression *expression = &selectedObject->expressions[i];
-
-											ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(180, 20, 20, 255));
-											ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(240, 20, 20, 255));
-											ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(150, 20, 20, 255));
-											ImGui::TableNextColumn();
-											if (ImGui::Button("x"))
-											{
-												ReleaseAsset(expression->portrait);
-												CopyBytes(&selectedObject->expressions[i], &selectedObject->expressions[i + 1], (numExpressions - i - 1) * sizeof selectedObject->expressions[i]);
-												--selectedObject->numExpressions;
-												ZeroBytes(&selectedObject->expressions[selectedObject->numExpressions], sizeof selectedObject->expressions[0]);
-											}
-											ImGui::PopStyleColor(3);
 
 											ImGui::TableNextColumn();
 											ImGui::InputText("Name", expression->name, sizeof expression->name);
@@ -1162,11 +1146,6 @@ void Editor_Render()
 										}
 										ImGui::EndTable();
 										ImGui::PopID();
-									}
-
-									if (numExpressions < maxExpressions and ImGui::Button("+"))
-									{
-										++selectedObject->numExpressions;
 									}
 								}
 							}
