@@ -1123,8 +1123,9 @@ void Editor_Render()
 			float outlineThickness = 2;
 			if (object == selectedObject)
 			{
+				float blend = (float)(0.5 * (1 + cos(10 * GetTime())));
 				outlineThickness = 3;
-				outlineColor = ColorAlpha(GREEN, 0.5f);
+				outlineColor = ColorAlpha(BlendColors(GREEN, DARKGREEN, blend), 0.5f);
 			}
 			outline = ExpandRectangle(outline, outlineThickness);
 			DrawRectangleLinesEx(outline, outlineThickness, outlineColor);
@@ -1135,7 +1136,7 @@ void Editor_Render()
 			DrawLineEx(zLinePos0, zLinePos1, 2, YELLOW);
 		}
 
-		if (showGrid)
+		if (showGrid and draggedObject)
 		{
 			Vector2 topLeftOnScreen = { 0, 0 };
 			Vector2 topLeftInWorld = GetScreenToWorld2D(topLeftOnScreen, camera);
@@ -1193,7 +1194,9 @@ void Editor_Render()
 					Vector2 delta = GetMouseDelta();
 					draggedObjectFreeformPosition.x += delta.x / camera.zoom;
 					draggedObjectFreeformPosition.y += delta.y / camera.zoom;
-					draggedObject->position = SnapToGrid(draggedObjectFreeformPosition);
+					draggedObject->position = draggedObjectFreeformPosition;
+					if (showGrid)
+						draggedObject->position = SnapToGrid(draggedObjectFreeformPosition);
 				}
 			}
 

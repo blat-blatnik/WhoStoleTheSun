@@ -785,6 +785,7 @@ void ExecuteCommand(const char *command);
 void ShowConsoleGui(void);
 
 void ResetConsole(void);
+
 //
 // Runtime
 //

@@ -14,4 +14,4 @@
 - `C` Center the camera on the player and reset zoom.
 - `CTRL + S` Save the scene.
 - `CTRL + R` Reload the scene.
-- `CTRL + G` Toggle grid overlay.
+- `CTRL + G` Toggle snap to grid.
