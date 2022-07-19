@@ -1000,6 +1000,7 @@ void Editor_Render()
 												CopyBytes(&objects[i + 2], &objects[i + 1], (numObjects - i - 1) * sizeof objects[i]);
 												++numObjects;
 												Clone(&objects[i], &objects[i + 1]);
+												CopyString(objects[i + 1].name, cloneName, sizeof objects[i + 1].name);
 											}
 										}
 									}
