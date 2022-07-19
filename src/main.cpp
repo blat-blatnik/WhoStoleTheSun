@@ -1265,7 +1265,6 @@ void GameInit(void)
 {
 	SetConfigFlags(FLAG_MSAA_4X_HINT);
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
-
 	InitAudioDevice();
 	SetTargetFPS(FPS);
 

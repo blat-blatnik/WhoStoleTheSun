@@ -35,6 +35,9 @@ Sprite LoadSprite(const char *path)
 		UnloadDirectoryFiles(contents);
 	}
 
+	for (int i = 0; i < s.numFrames; ++i)
+		SetTextureFilter(s.frames[i], TEXTURE_FILTER_BILINEAR);
+
 	return s;
 }
 
