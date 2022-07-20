@@ -1010,6 +1010,11 @@ void DrawGridCell(Vector2 gridPoint, Color color)
 	rlEnd();
 	rlDrawRenderBatchActive();
 }
+void DrawStair(Stair stair)
+{
+	Vector2 gridPoint = { (float)stair.gridX, (float)stair.gridY };
+	DrawGridCell(gridPoint, ColorAlpha(YELLOW, 0.5f));
+}
 void Editor_Update()
 {
 	if (input.console.wasPressed)
@@ -1259,11 +1264,7 @@ void Editor_Render()
 		}
 
 		for (int i = 0; i < numStairs; ++i)
-		{
-			Stair stair = stairs[i];
-			Vector2 gridPoint = { (float)stair.gridX, (float)stair.gridY };
-			DrawGridCell(gridPoint, ColorAlpha(YELLOW, 0.5f));
-		}
+			DrawStair(stairs[i]);
 
 		if (not ImGui::GetIO().WantCaptureMouse)
 		{
