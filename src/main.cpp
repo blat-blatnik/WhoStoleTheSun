@@ -1255,14 +1255,14 @@ void Editor_Render()
 		if (isInStairsTab)
 		{
 			DrawGrid();
-			DrawGridCell(ScreenToGrid(GetMousePosition()), GRAY);
+			DrawGridCell(ScreenToGrid(GetMousePosition()), ColorAlpha(GRAY, 0.5f));
 		}
 
 		for (int i = 0; i < numStairs; ++i)
 		{
 			Stair stair = stairs[i];
 			Vector2 gridPoint = { (float)stair.gridX, (float)stair.gridY };
-			DrawGridCell(gridPoint, YELLOW);
+			DrawGridCell(gridPoint, ColorAlpha(YELLOW, 0.5f));
 		}
 
 		if (not ImGui::GetIO().WantCaptureMouse)
@@ -1312,6 +1312,11 @@ void Editor_Render()
 						stair->gridX = (int)floorf(gridPoint.x);
 						stair->gridY = (int)floorf(gridPoint.y);
 						stair->elevation += deltaElevation;
+						if (stair->elevation == 0 and numStairs > 0)
+						{
+							int i = (int)(stair - stairs);
+							SwapBytes(&stairs[i], &stairs[--numStairs], sizeof stairs[0]);
+						}
 					}
 				}
 			}
