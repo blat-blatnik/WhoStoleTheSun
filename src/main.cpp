@@ -1005,7 +1005,7 @@ void DrawGridCell(Vector2 gridPoint, Color color)
 	Vector2 s11 = GridToWorld(g11);
 	DrawQuad(s00, s10, s11, s01, color);
 }
-void DrawStair(Stair stair)
+void DrawStair(Stair stair, bool isSelected)
 {
 	Vector2 gridPoint = { (float)stair.gridX, (float)stair.gridY };
 	Vector2 g00 = { gridPoint.x + 0, gridPoint.y + 0 };
@@ -1021,8 +1021,18 @@ void DrawStair(Stair stair)
 	Vector2 s101 = { s100.x, s100.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
 	Vector2 s111 = { s110.x, s110.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
 
-	Color color0 = ColorAlpha(HeatmapPalette(0), 0.5f);
-	Color color1 = ColorAlpha(HeatmapPalette(stair.elevation / 8.0f), 0.5f);
+	Color color0 = HeatmapPalette(0);
+	Color color1 = HeatmapPalette(stair.elevation / 8.0f);
+
+	if (isSelected)
+	{
+		float blend = (float)(0.25 * (1 + cos(10 * GetTime())));
+		color0 = BlendColors(color0, WHITE, blend);
+		color1 = BlendColors(color1, WHITE, blend);
+	}
+
+	color0 = ColorAlpha(color0, 0.5f);
+	color1 = ColorAlpha(color1, 0.5f);
 
 	if (stair.elevation > 0)
 		DrawQuad(s000, s100, s110, s010, color0);
@@ -1276,11 +1286,22 @@ void Editor_Render()
 		if (isInStairsTab)
 		{
 			DrawGrid();
-			DrawGridCell(ScreenToGrid(GetMousePosition()), ColorAlpha(GRAY, 0.5f));
+			Vector2 mouseGridPosition = ScreenToGrid(GetMousePosition());
+			mouseGridPosition.x = floorf(mouseGridPosition.x);
+			mouseGridPosition.y = floorf(mouseGridPosition.y);
+			DrawGridCell(mouseGridPosition, ColorAlpha(GRAY, 0.5f));
+			for (int i = 0; i < numStairs; ++i)
+			{
+				Stair stair = stairs[i];
+				DrawStair(stairs[i], stair.gridX == (int)mouseGridPosition.x and stair.gridY == (int)mouseGridPosition.y);
+			}
+		}
+		else
+		{
+			for (int i = 0; i < numStairs; ++i)
+				DrawStair(stairs[i], false);
 		}
 
-		for (int i = 0; i < numStairs; ++i)
-			DrawStair(stairs[i]);
 
 		if (not ImGui::GetIO().WantCaptureMouse)
 		{
