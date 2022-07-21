@@ -320,6 +320,9 @@ const char *ReadString(BinaryStream *stream);
 // Reads a fixed number of bytes from the stream and returns a pointer to them, then advances the cursor by that many bytes.
 const void *ReadBytes(BinaryStream *stream, int numBytesToRead);
 
+// Copies a fixed number of bytes from the stream into a buffer, then advances the cursor by the number of bytes read.
+void ReadBytesInto(BinaryStream *stream, void *buffer, int numBytesToRead);
+
 // Writes a 32-bit integer to the stream and advances the cursor by 4 bytes.
 void WriteInt(BinaryStream *stream, int i);
 

@@ -9,7 +9,7 @@
 #define DEFAULT_CAMERA_SHAKE_TRAUMA 0.5f
 #define DEFAULT_CAMERA_SHAKE_FALLOFF (0.7f * FRAME_TIME)
 #define SCENE_MAGIC "KEKW"
-#define SCENE_VERSION 2 // You need to increase this every time the scene binary format changes!
+#define SCENE_VERSION 3 // You need to increase this every time the scene binary format changes!
 #define Y_SQUISH 0.5773502691896258f // 1 / (2 * cos(30 degrees)) = 1 / sqrt(3)
 #define GRID_RESOLUTION_X 50.0f
 #define GRID_RESOLUTION_Y (GRID_RESOLUTION_X * Y_SQUISH)
@@ -490,6 +490,8 @@ void LoadScene(const char *path)
 			expression->portrait = AcquireTexture(ReadString(&stream));
 		}
 	}
+	numStairs = ReadInt(&stream);
+	ReadBytesInto(&stream, stairs, numStairs * sizeof stairs[0]);
 
 	UnloadFileData(data);
 	LogInfo("Successfully loaded scene '%s'.", path);
@@ -528,6 +530,8 @@ void SaveScene(const char *path)
 			WriteString(&stream, GetAssetPath(expression->portrait));
 		}
 	}
+	WriteInt(&stream, numStairs);
+	WriteBytes(&stream, stairs, numStairs * sizeof stairs[0]);
 
 	if (SaveFileData(path, stream.buffer, (unsigned)stream.cursor))
 	{

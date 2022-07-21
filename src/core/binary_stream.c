@@ -54,6 +54,20 @@ const void *ReadBytes(BinaryStream *stream, int numBytesToRead)
 	return result;
 }
 
+void ReadBytesInto(BinaryStream *stream, void *buffer, int numBytesToRead)
+{
+	int bytesRemaining = stream->size - stream->cursor;
+	if (bytesRemaining < numBytesToRead)
+	{
+		ZeroBytes(buffer, numBytesToRead);
+		return;
+	}
+
+	const void *result = (char *)stream->buffer + stream->cursor;
+	stream->cursor += numBytesToRead;
+	CopyBytes(buffer, result, numBytesToRead);
+}
+
 void WriteInt(BinaryStream *stream, int i)
 {
 	WriteBytes(stream, &i, sizeof i);
