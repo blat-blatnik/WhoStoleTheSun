@@ -13,6 +13,7 @@
 #define Y_SQUISH 0.5773502691896258f // 1 / (2 * cos(30 degrees)) = 1 / sqrt(3)
 #define GRID_RESOLUTION_X 50.0f
 #define GRID_RESOLUTION_Y (GRID_RESOLUTION_X * Y_SQUISH)
+#define ELEVATION_TO_Y_OFFSET (-GRID_RESOLUTION_Y / 2)
 
 ENUM(GameState)
 {
@@ -138,7 +139,7 @@ float cameraOffsetFactor = 25; // How far ahead the camera goes in the direction
 float cameraAcceleration = 0.03f; // How quickly the camera converges on it's desired offset.
 Vector2 cameraOffset;
 int numStairs;
-Stair stairs[10];
+Stair stairs[100];
 
 bool CheckCollisionMap(Image map, Vector2 position)
 {
@@ -998,22 +999,33 @@ void DrawGridCell(Vector2 gridPoint, Color color)
 	Vector2 s01 = GridToWorld(g01);
 	Vector2 s10 = GridToWorld(g10);
 	Vector2 s11 = GridToWorld(g11);
-	rlDrawRenderBatchActive();
-	rlBegin(RL_QUADS);
-	{
-		rlColor4ub(color.r, color.g, color.b, color.a);
-		rlVertex2f(s00.x, s00.y);
-		rlVertex2f(s10.x, s10.y);
-		rlVertex2f(s11.x, s11.y);
-		rlVertex2f(s01.x, s01.y);
-	}
-	rlEnd();
-	rlDrawRenderBatchActive();
+	DrawQuad(s00, s10, s11, s01, color);
 }
 void DrawStair(Stair stair)
 {
 	Vector2 gridPoint = { (float)stair.gridX, (float)stair.gridY };
-	DrawGridCell(gridPoint, ColorAlpha(YELLOW, 0.5f));
+	Vector2 g00 = { gridPoint.x + 0, gridPoint.y + 0 };
+	Vector2 g01 = { gridPoint.x + 1, gridPoint.y + 0 };
+	Vector2 g10 = { gridPoint.x + 0, gridPoint.y + 1 };
+	Vector2 g11 = { gridPoint.x + 1, gridPoint.y + 1 };
+	Vector2 s000 = GridToWorld(g00);
+	Vector2 s010 = GridToWorld(g01);
+	Vector2 s100 = GridToWorld(g10);
+	Vector2 s110 = GridToWorld(g11);
+	Vector2 s001 = { s000.x, s000.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
+	Vector2 s011 = { s010.x, s010.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
+	Vector2 s101 = { s100.x, s100.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
+	Vector2 s111 = { s110.x, s110.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
+
+	Color color0 = ColorAlpha(HeatmapPalette(0), 0.5f);
+	Color color1 = ColorAlpha(HeatmapPalette(stair.elevation / 8.0f), 0.5f);
+
+	if (stair.elevation > 0)
+		DrawQuad(s000, s100, s110, s010, color0);
+	DrawQuadGradient(s000, s100, s101, s001, color0, color0, color1, color1);
+	DrawQuadGradient(s000, s010, s011, s001, color0, color0, color1, color1);
+	if (stair.elevation < 0)
+		DrawQuad(s001, s101, s111, s011, color1);
 }
 void Editor_Update()
 {

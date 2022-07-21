@@ -608,9 +608,24 @@ Color FloatRGBA(float red, float green, float blue, float alpha);
 // Linearly interpolates between c0 and c1.
 Color BlendColors(Color c0, Color c1, float t);
 
+// Samples a heatmap color palette with x in [-1, +1]. Negative x gives colder colors, positive x gives warmer colors.
+Color HeatmapPalette(float x);
+
 //
 // Drawing
 //
+
+// Sets the current rlgl color.
+void rlColor(Color color);
+
+// Emits an rlgl vertex position.
+void rlVertex2v(Vector2 p);
+
+// Draws a single colored quad.
+void DrawQuad(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, Color color);
+
+// Draws a quad with a gradient.
+void DrawQuadGradient(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, Color color0, Color color1, Color color2, Color color3);
 
 // Draws a texture centered at the given point.
 void DrawTextureCentered(Texture texture, Vector2 position, Color tint);

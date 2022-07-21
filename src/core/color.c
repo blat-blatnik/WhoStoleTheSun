@@ -77,3 +77,16 @@ Color BlendColors(Color c0, Color c1, float t)
 		.a = (uint8_t)(a),
 	};
 }
+
+Color HeatmapPalette(float x)
+{
+	// https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html
+	static const Color cp = { 252, 230, 47, 255 }; // Bright yellow.
+	static const Color c0 = { 30, 149, 138, 255 }; // Cyan.
+	static const Color cn = { 68, 13, 82, 255 };   // Dark purple.
+	x = Clamp(x, -1, +1);
+	if (x >= 0)
+		return BlendColors(c0, cp, x);
+	else
+		return BlendColors(c0, cn, -x);
+}

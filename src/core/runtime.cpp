@@ -20,6 +20,7 @@ static void DoOneFrame()
 	UpdateInputMappings();
 	ImGui_ImplRaylib_NewFrame();
 	ImGui::NewFrame();
+	rlDisableBackfaceCulling();
 	{
 		UpdateCurrentGameState();
 		RenderCurrentGameState();
