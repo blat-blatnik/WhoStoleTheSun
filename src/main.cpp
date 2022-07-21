@@ -420,7 +420,7 @@ void Render(Object *object)
 	Vector2 feet = GetFootPositionInScreenSpace(object);
 	Stair *stair = GetStairAt(WorldToGrid(feet));
 	if (stair)
-		position.y -= 20 * stair->elevation;
+		position.y += ELEVATION_TO_Y_OFFSET * stair->elevation;
 
 	if (sprite == object->sprites[object->direction])
 		DrawTextureCentered(sprite->frames[object->animationFrame], position, WHITE);
