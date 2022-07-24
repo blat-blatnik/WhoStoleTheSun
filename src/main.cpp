@@ -1385,7 +1385,7 @@ void Editor_Render()
 				CenterCameraOn(player);
 		}
 
-		bool controlIsDown = IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL);
+		bool controlIsDown = IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL) or IsKeyDown(KEY_LEFT_SUPER) or IsKeyDown(KEY_RIGHT_SUPER);
 		if (IsKeyPressed(KEY_D) and controlIsDown)
 			selectedObject = NULL;
 		if (IsKeyPressed(KEY_S) and controlIsDown)
