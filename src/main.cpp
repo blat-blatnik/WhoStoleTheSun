@@ -959,6 +959,7 @@ REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talki
 //
 
 bool showGrid = true;
+Color gridColor = ColorAlpha(GRAY, 0.2f);
 
 void DrawGrid()
 {
@@ -978,7 +979,7 @@ void DrawGrid()
 		float x1 = x0 + dy0 / Y_SQUISH;
 		Vector2 a0 = { x0, bottomRightInWorld.y };
 		Vector2 a1 = { x1, cell0.y };
-		DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
+		DrawLineV(a0, a1, gridColor);
 	}
 
 	float dy1 = cell1.y - topLeftInWorld.y;
@@ -988,7 +989,7 @@ void DrawGrid()
 		float x1 = x0 + dy1 / Y_SQUISH;
 		Vector2 a0 = { x0, topLeftInWorld.y };
 		Vector2 a1 = { x1, cell1.y };
-		DrawLineV(a0, a1, ColorAlpha(GRAY, 0.2f));
+		DrawLineV(a0, a1, gridColor);
 	}
 }
 void DrawGridCell(Vector2 gridPoint, Color color)
@@ -1247,6 +1248,20 @@ void Editor_Render()
 				if (ImGui::BeginTabItem("Stairs"))
 				{
 					isInStairsTab = true;
+
+					Vector4 c = ColorNormalize(gridColor);
+					ImGui::ColorEdit4("Grid color", &c.x);
+					gridColor = ColorFromNormalized(c);
+
+					Vector2 gridPoint = ScreenToGrid(GetMousePosition());
+					Stair *hoveredStair = GetStairAt(gridPoint);
+
+					int elevation = 0;
+					if (hoveredStair)
+						elevation = hoveredStair->elevation;
+
+					ImGui::Text("Elevation: %d", elevation);
+						
 					ImGui::EndTabItem();
 				}
 			}
