@@ -135,9 +135,11 @@ int numObjects;
 Camera2D camera;
 float cameraTrauma; // Amount of camera shake. Will slowly decrease over time.
 float cameraTraumaFalloff; // How quickly the camera shake stops.
-float cameraOffsetFactor = 25; // How far ahead the camera goes in the direction of player movement.
-float cameraAcceleration = 0.03f; // How quickly the camera converges on it's desired offset.
-Vector2 cameraOffset;
+float cameraOffset = 25; // How far ahead the camera goes in the direction of player movement.
+float cameraSpeed = 0.03f;
+float cameraAcceleration = 0.03f;
+Vector2 cameraOffset1;
+Vector2 cameraOffset2;
 int numStairs;
 Stair stairs[100];
 
@@ -786,9 +788,10 @@ void Playing_Update()
 	for (int i = 0; i < numObjects; i++)
 		Update(&objects[i]);
 
-	Vector2 targetCameraOffset = cameraOffsetFactor * playerVelocity;
-	cameraOffset = Vector2Lerp(cameraOffset, targetCameraOffset, cameraAcceleration);
-	camera.target = player->position + cameraOffset;
+	Vector2 targetCameraOffset = cameraOffset * playerVelocity;
+	cameraOffset1 = Vector2Lerp(cameraOffset1, targetCameraOffset, cameraAcceleration);
+	cameraOffset2 = Vector2Lerp(cameraOffset2, cameraOffset1, cameraSpeed);
+	camera.target = player->position + cameraOffset2;
 	camera.offset.x = WINDOW_CENTER_X;
 	camera.offset.y = WINDOW_CENTER_Y;
 	camera.zoom = 1;
@@ -798,7 +801,8 @@ void Playing_Update()
 	{
 		ImGui::SliderFloat("trauma", &cameraTrauma, 0, 1);
 		ImGui::SliderFloat("acceleration", &cameraAcceleration, 0, 0.2f);
-		ImGui::SliderFloat("offset", &cameraOffsetFactor, 10, 50);
+		ImGui::SliderFloat("speed", &cameraSpeed, 0, 0.2f);
+		ImGui::SliderFloat("offset", &cameraOffset, 10, 50);
 	}
 	ImGui::End();
 }
@@ -1400,7 +1404,7 @@ void Editor_Render()
 				CenterCameraOn(player);
 		}
 
-		bool controlIsDown = IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL);
+		bool controlIsDown = IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL) or IsKeyDown(KEY_LEFT_SUPER) or IsKeyDown(KEY_RIGHT_SUPER);
 		if (IsKeyPressed(KEY_D) and controlIsDown)
 			selectedObject = NULL;
 		if (IsKeyPressed(KEY_S) and controlIsDown)
