@@ -132,6 +132,8 @@ STRUCT(Options)
 	float cameraSpeed = 0.03f;
 	float cameraAcceleration = 0.03f;
 	char scene[256] = "test.scene";
+	bool showGrid = true;
+	Color gridColor = ColorAlpha(GRAY, 0.2f);
 };
 
 Options options;
@@ -980,9 +982,6 @@ REGISTER_GAME_STATE(GAMESTATE_TALKING, Talking_Init, NULL, Talking_Update, Talki
 // Editor
 //
 
-bool showGrid = true;
-Color gridColor = ColorAlpha(GRAY, 0.2f);
-
 void DrawGrid()
 {
 	Vector2 topLeftOnScreen = { 0, 0 };
@@ -1001,7 +1000,7 @@ void DrawGrid()
 		float x1 = x0 + dy0 / Y_SQUISH;
 		Vector2 a0 = { x0, bottomRightInWorld.y };
 		Vector2 a1 = { x1, cell0.y };
-		DrawLineV(a0, a1, gridColor);
+		DrawLineV(a0, a1, options.gridColor);
 	}
 
 	float dy1 = cell1.y - topLeftInWorld.y;
@@ -1011,7 +1010,7 @@ void DrawGrid()
 		float x1 = x0 + dy1 / Y_SQUISH;
 		Vector2 a0 = { x0, topLeftInWorld.y };
 		Vector2 a1 = { x1, cell1.y };
-		DrawLineV(a0, a1, gridColor);
+		DrawLineV(a0, a1, options.gridColor);
 	}
 }
 void DrawGridCell(Vector2 gridPoint, Color color)
@@ -1270,9 +1269,9 @@ void Editor_Render()
 				{
 					isInStairsTab = true;
 
-					Vector4 c = ColorNormalize(gridColor);
+					Vector4 c = ColorNormalize(options.gridColor);
 					ImGui::ColorEdit4("Grid color", &c.x);
-					gridColor = ColorFromNormalized(c);
+					options.gridColor = ColorFromNormalized(c);
 
 					Vector2 gridPoint = ScreenToGrid(GetMousePosition());
 					Stair *hoveredStair = GetStairAt(gridPoint);
@@ -1316,7 +1315,7 @@ void Editor_Render()
 			DrawLineEx(zLinePos0, zLinePos1, 2, YELLOW);
 		}
 
-		if (showGrid and draggedObject)
+		if (options.showGrid and draggedObject)
 			DrawGrid();
 
 		if (isInStairsTab)
@@ -1367,7 +1366,7 @@ void Editor_Render()
 					draggedObjectFreeformPosition.x += delta.x / camera.zoom;
 					draggedObjectFreeformPosition.y += delta.y / camera.zoom;
 					draggedObject->position = draggedObjectFreeformPosition;
-					if (showGrid)
+					if (options.showGrid)
 						draggedObject->position = SnapToGrid(draggedObjectFreeformPosition);
 				}
 			}
@@ -1432,7 +1431,7 @@ void Editor_Render()
 		if (IsKeyPressed(KEY_R) and controlIsDown)
 			LoadScene(options.scene);
 		if (IsKeyPressed(KEY_G) and controlIsDown)
-			showGrid = not showGrid;
+			options.showGrid = not options.showGrid;
 	}
 	EndMode2D();
 }
