@@ -123,7 +123,15 @@ STRUCT(Stair)
 	int elevation;
 };
 
-bool devMode = true; // @TODO @SHIP: Disable this for release.
+STRUCT(Options)
+{
+	bool devMode = false;
+	float cameraOffset = 25;
+	float cameraSpeed = 0.03f;
+	float cameraAcceleration = 0.03f;
+};
+
+Options options;
 Input input;
 Font roboto;
 Font robotoBold;
@@ -135,9 +143,6 @@ int numObjects;
 Camera2D camera;
 float cameraTrauma; // Amount of camera shake. Will slowly decrease over time.
 float cameraTraumaFalloff; // How quickly the camera shake stops.
-float cameraOffset = 25; // How far ahead the camera goes in the direction of player movement.
-float cameraSpeed = 0.03f;
-float cameraAcceleration = 0.03f;
 Vector2 cameraOffset1;
 Vector2 cameraOffset2;
 int numStairs;
@@ -603,7 +608,8 @@ bool HandleToggleDevModeCommand(List(const char *) args)
 	// dev [bool]
 	if (ListCount(args) == 0)
 	{
-		devMode = not devMode;
+		options.devMode = not options.devMode;
+		LogInfo("Dev mode turned %s.", options.devMode ? "on" : "off");
 		return true;
 	}
 
@@ -612,7 +618,8 @@ bool HandleToggleDevModeCommand(List(const char *) args)
 	if (!success)
 		return false;
 
-	devMode = arg;
+	options.devMode = arg;
+	LogInfo("Dev mode turned %s.", options.devMode ? "on" : "off");
 	return true;
 }
 bool HandleCameraShakeCommand(List(const char *) args)
@@ -788,9 +795,9 @@ void Playing_Update()
 	for (int i = 0; i < numObjects; i++)
 		Update(&objects[i]);
 
-	Vector2 targetCameraOffset = cameraOffset * playerVelocity;
-	cameraOffset1 = Vector2Lerp(cameraOffset1, targetCameraOffset, cameraAcceleration);
-	cameraOffset2 = Vector2Lerp(cameraOffset2, cameraOffset1, cameraSpeed);
+	Vector2 targetCameraOffset = options.cameraOffset * playerVelocity;
+	cameraOffset1 = Vector2Lerp(cameraOffset1, targetCameraOffset, options.cameraAcceleration);
+	cameraOffset2 = Vector2Lerp(cameraOffset2, cameraOffset1, options.cameraSpeed);
 	camera.target = player->position + cameraOffset2;
 	camera.offset.x = WINDOW_CENTER_X;
 	camera.offset.y = WINDOW_CENTER_Y;
@@ -800,9 +807,9 @@ void Playing_Update()
 	ImGui::Begin("Camera");
 	{
 		ImGui::SliderFloat("trauma", &cameraTrauma, 0, 1);
-		ImGui::SliderFloat("acceleration", &cameraAcceleration, 0, 0.2f);
-		ImGui::SliderFloat("speed", &cameraSpeed, 0, 0.2f);
-		ImGui::SliderFloat("offset", &cameraOffset, 10, 50);
+		ImGui::SliderFloat("acceleration", &options.cameraAcceleration, 0, 0.2f);
+		ImGui::SliderFloat("speed", &options.cameraSpeed, 0, 0.2f);
+		ImGui::SliderFloat("offset", &options.cameraOffset, 10, 50);
 	}
 	ImGui::End();
 }
@@ -856,12 +863,12 @@ void Talking_Update()
 	if (paragraphIndex >= numParagraphs)
 		paragraphIndex = numParagraphs - 1;
 
-	if (devMode and IsKeyPressed(KEY_LEFT))
+	if (options.devMode and IsKeyPressed(KEY_LEFT))
 	{
 		paragraphIndex = ClampInt(paragraphIndex - 1, 0, numParagraphs - 1);
 		SetFrameNumberInCurrentGameState(0);
 	}
-	if (devMode and IsKeyPressed(KEY_RIGHT))
+	if (options.devMode and IsKeyPressed(KEY_RIGHT))
 	{
 		if (paragraphIndex == numParagraphs - 1)
 			SetFrameNumberInCurrentGameState(99999); // Should be enough to skip over to the end of the dialog.
@@ -1444,6 +1451,16 @@ void GameInit(void)
 	InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Who Stole The Sun");
 	InitAudioDevice();
 	SetTargetFPS(FPS);
+	
+	// Options
+	{
+		unsigned bytesRead = 0;
+		unsigned char *data = LoadFileData(".options", &bytesRead);
+		int bytesToCopy = (int)bytesRead;
+		if (bytesToCopy > sizeof options)
+			bytesToCopy = sizeof options;
+		CopyBytes(&options, data, bytesToCopy);
+	}
 
 	// Input mapping
 	{
@@ -1492,4 +1509,8 @@ void GameInit(void)
 	AddCommand("load", HandleLoadCommand, "load [filename:string]  -  Load a scene file.");
 
 	SetCurrentGameState(GAMESTATE_PLAYING, NULL);
+}
+void GameDeinit(void)
+{
+	SaveFileData(".options", &options, sizeof options);
 }

@@ -811,6 +811,9 @@ void ResetConsole(void);
 // Initialize the game. This is used in runtime.cpp, but should actually be defined by the game.
 void GameInit(void);
 
+// Deinitialize the game. This is used in runtime.cpp, but should actually be defined by the game. CALLED ON DESKTOP PLATFORMS ONLY.
+void GameDeinit(void);
+
 #ifdef __cplusplus
 }
 inline Vector2 operator +(Vector2 v) { return v; }

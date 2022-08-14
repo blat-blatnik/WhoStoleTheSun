@@ -74,6 +74,7 @@ int main()
 	{
 		while (not WindowShouldClose())
 			DoOneFrame();
+		GameDeinit();
 	}
 	#endif
 }

@@ -5,3 +5,4 @@ bin/**/*.lib
 *.exp
 .DS_Store
 imgui.ini
+res/.options
