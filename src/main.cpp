@@ -118,10 +118,10 @@ STRUCT(Object)
 
 STRUCT(Stair)
 {
-	int gridMinX;
-	int gridMinY;
-	int gridMaxX;
-	int gridMaxY;
+	int x0;
+	int y0;
+	int x1;
+	int y1;
 	int elevation;
 };
 
@@ -347,10 +347,10 @@ Stair *GetStairAt(Vector2 gridPoint)
 	for (int i = 0; i < numStairs; ++i)
 	{
 		Stair *stair = &stairs[i];
-		if (x >= stair->gridMinX and
-			y >= stair->gridMinY and
-			x < stair->gridMaxX and
-			y < stair->gridMaxY)
+		if (x >= stair->x0 and
+			y >= stair->y0 and
+			x < stair->x1 and
+			y < stair->y1)
 		{
 			return stair;
 		}
@@ -1033,10 +1033,10 @@ void DrawStair(Stair stair, bool isSelected)
 	if (not elevation)
 		elevation = 0.01f;
 
-	Vector2 g00 = { (float)stair.gridMinX, (float)stair.gridMinY };
-	Vector2 g01 = { (float)stair.gridMaxX, (float)stair.gridMinY };
-	Vector2 g10 = { (float)stair.gridMinX, (float)stair.gridMaxY };
-	Vector2 g11 = { (float)stair.gridMaxX, (float)stair.gridMaxY };
+	Vector2 g00 = { (float)stair.x0, (float)stair.y0 };
+	Vector2 g01 = { (float)stair.x1, (float)stair.y0 };
+	Vector2 g10 = { (float)stair.x0, (float)stair.y1 };
+	Vector2 g11 = { (float)stair.x1, (float)stair.y1 };
 	Vector2 s000 = GridToWorld(g00);
 	Vector2 s010 = GridToWorld(g01);
 	Vector2 s100 = GridToWorld(g10);
@@ -1386,8 +1386,8 @@ void Editor_Render()
 					stair->elevation += deltaElevation;
 				else if (not stair and numStairs < COUNTOF(stairs))
 				{
-					int x = (int)roundf(gridPoint.x);
-					int y = (int)roundf(gridPoint.y);
+					int x = (int)floorf(gridPoint.x);
+					int y = (int)floorf(gridPoint.y);
 					static int minX;
 					static int minY;
 					if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -1397,15 +1397,15 @@ void Editor_Render()
 					}
 					if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
 					{
-						float x0 = fminf(minX, x + 1);
-						float x1 = fmaxf(minX, x + 1);
-						float y0 = fminf(minY, y + 1);
-						float y1 = fmaxf(minY, y + 1);
+						float x0 = fminf(minX, x);
+						float x1 = fmaxf(minX, x);
+						float y0 = fminf(minY, y);
+						float y1 = fmaxf(minY, y);
 						stair = &stairs[numStairs++];
-						stair->gridMinX = x0;
-						stair->gridMinY = y0;
-						stair->gridMaxX = x1;
-						stair->gridMaxY = y1;
+						stair->x0 = x0;
+						stair->y0 = y0;
+						stair->x1 = x1 + 1;
+						stair->y1 = y1 + 1;
 						stair->elevation = 0;
 					}
 				}

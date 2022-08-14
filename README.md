@@ -17,5 +17,7 @@
 	- `DELETE` Deletes the selected object.
 	- `CTRL/COMMAND + G` Toggle snap to grid.
 - In the _Stairs_ tab
-	- `LEFT-CLICK` Increase elevation.
-	- `RIGHT-CLICK` Decrease elevation.
+	- `LEFT-CLICK + DRAG` Create a stair.
+	- `LEFT-CLICK stair` Increase elevation.
+	- `RIGHT-CLICK stair` Decrease elevation.
+	- `DELETE/BACKSPACE` Delete hovered stair.
