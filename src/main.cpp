@@ -1029,6 +1029,10 @@ void DrawGridCell(Vector2 gridPoint, Color color)
 }
 void DrawStair(Stair stair, bool isSelected)
 {
+	float elevation = stair.elevation;
+	if (not elevation)
+		elevation = 0.01f;
+
 	Vector2 g00 = { (float)stair.gridMinX, (float)stair.gridMinY };
 	Vector2 g01 = { (float)stair.gridMaxX, (float)stair.gridMinY };
 	Vector2 g10 = { (float)stair.gridMinX, (float)stair.gridMaxY };
@@ -1037,13 +1041,13 @@ void DrawStair(Stair stair, bool isSelected)
 	Vector2 s010 = GridToWorld(g01);
 	Vector2 s100 = GridToWorld(g10);
 	Vector2 s110 = GridToWorld(g11);
-	Vector2 s001 = { s000.x, s000.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
-	Vector2 s011 = { s010.x, s010.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
-	Vector2 s101 = { s100.x, s100.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
-	Vector2 s111 = { s110.x, s110.y + ELEVATION_TO_Y_OFFSET * stair.elevation };
+	Vector2 s001 = { s000.x, s000.y + ELEVATION_TO_Y_OFFSET * elevation };
+	Vector2 s011 = { s010.x, s010.y + ELEVATION_TO_Y_OFFSET * elevation };
+	Vector2 s101 = { s100.x, s100.y + ELEVATION_TO_Y_OFFSET * elevation };
+	Vector2 s111 = { s110.x, s110.y + ELEVATION_TO_Y_OFFSET * elevation };
 
 	Color color0 = HeatmapPalette(0);
-	Color color1 = HeatmapPalette(stair.elevation / 8.0f);
+	Color color1 = HeatmapPalette(elevation / 8.0f);
 
 	if (isSelected)
 	{
@@ -1055,11 +1059,11 @@ void DrawStair(Stair stair, bool isSelected)
 	color0 = ColorAlpha(color0, 0.5f);
 	color1 = ColorAlpha(color1, 0.5f);
 
-	if (stair.elevation > 0)
+	if (elevation > 0)
 		DrawQuad(s000, s100, s110, s010, color0);
 	DrawQuadGradient(s000, s100, s101, s001, color0, color0, color1, color1);
 	DrawQuadGradient(s000, s010, s011, s001, color0, color0, color1, color1);
-	if (stair.elevation < 0)
+	if (elevation < 0)
 		DrawQuad(s001, s101, s111, s011, color1);
 }
 void Editor_Update()
@@ -1372,27 +1376,37 @@ void Editor_Render()
 			}
 			else if (isInStairsTab)
 			{
+				Vector2 gridPoint = ScreenToGrid(GetMousePosition());
+				Stair *stair = GetStairAt(gridPoint);
 				int deltaElevation = 
 					(int)IsMouseButtonPressed(MOUSE_BUTTON_LEFT) -
 					(int)IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);
-				if (deltaElevation != 0)
+				
+				if (stair and deltaElevation != 0)
+					stair->elevation += deltaElevation;
+				else if (not stair and numStairs < COUNTOF(stairs))
 				{
-					Vector2 gridPoint = ScreenToGrid(GetMousePosition());
-					Stair *stair = GetStairAt(gridPoint);
-					if (not stair and numStairs < COUNTOF(stairs))
-						stair = &stairs[numStairs++];
-					if (stair)
+					int x = (int)roundf(gridPoint.x);
+					int y = (int)roundf(gridPoint.y);
+					static int minX;
+					static int minY;
+					if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 					{
-						stair->gridMinX = (int)floorf(gridPoint.x);
-						stair->gridMinY = (int)floorf(gridPoint.y);
-						stair->gridMaxX = (int)floorf(gridPoint.x) + 1;
-						stair->gridMaxY = (int)floorf(gridPoint.y) + 1;
-						stair->elevation += deltaElevation;
-						if (stair->elevation == 0 and numStairs > 0)
-						{
-							int i = (int)(stair - stairs);
-							SwapBytes(&stairs[i], &stairs[--numStairs], sizeof stairs[0]);
-						}
+						minX = x;
+						minY = y;
+					}
+					if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+					{
+						float x0 = fminf(minX, x + 1);
+						float x1 = fmaxf(minX, x + 1);
+						float y0 = fminf(minY, y + 1);
+						float y1 = fmaxf(minY, y + 1);
+						stair = &stairs[numStairs++];
+						stair->gridMinX = x0;
+						stair->gridMinY = y0;
+						stair->gridMaxX = x1;
+						stair->gridMaxY = y1;
+						stair->elevation = 0;
 					}
 				}
 			}
@@ -1421,6 +1435,18 @@ void Editor_Render()
 		{
 			if (IsKeyPressed(KEY_C))
 				CenterCameraOn(player);
+			
+			bool deletePressed = IsKeyPressed(KEY_DELETE) or IsKeyPressed(KEY_BACKSPACE);
+			if (isInStairsTab and deletePressed)
+			{
+				Vector2 gridPoint = ScreenToGrid(GetMousePosition());
+				Stair *stair = GetStairAt(gridPoint);
+				if (stair)
+				{
+					int i = (int)(stair - stairs);
+					SwapBytes(&stairs[i], &stairs[--numStairs], sizeof stairs[0]);
+				}
+			}
 		}
 
 		bool controlIsDown = IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL) or IsKeyDown(KEY_LEFT_SUPER) or IsKeyDown(KEY_RIGHT_SUPER);
