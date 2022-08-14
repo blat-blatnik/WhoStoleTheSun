@@ -129,6 +129,7 @@ STRUCT(Options)
 	float cameraOffset = 25;
 	float cameraSpeed = 0.03f;
 	float cameraAcceleration = 0.03f;
+	char scene[256] = "test.scene";
 };
 
 Options options;
@@ -435,7 +436,6 @@ void Render(Object *object)
 		DrawTextureCenteredAndFlippedVertically(sprite->frames[object->animationFrame], position, WHITE);
 }
 
-char lastSavedOrLoadedScene[256];
 void LoadScene(const char *path)
 {
 	unsigned dataSize;
@@ -502,7 +502,7 @@ void LoadScene(const char *path)
 
 	UnloadFileData(data);
 	LogInfo("Successfully loaded scene '%s'.", path);
-	CopyString(lastSavedOrLoadedScene, path, sizeof lastSavedOrLoadedScene);
+	CopyString(options.scene, path, sizeof options.scene);
 }
 void SaveScene(const char *path)
 {
@@ -543,7 +543,7 @@ void SaveScene(const char *path)
 	if (SaveFileData(path, stream.buffer, (unsigned)stream.cursor))
 	{
 		LogInfo("Successfully saved current scene to '%s'.", path);
-		CopyString(lastSavedOrLoadedScene, path, sizeof lastSavedOrLoadedScene);
+		CopyString(options.scene, path, sizeof options.scene);
 	}
 	else
 		LogInfo("Couldn't save current scene to '%s'.", path);
@@ -714,7 +714,7 @@ bool HandleSaveCommand(List(const char *) args)
 	if (ListCount(args) > 1)
 		return false;
 
-	const char *path = lastSavedOrLoadedScene;
+	const char *path = options.scene;
 	if (ListCount(args) == 1)
 		path = args[0];
 	SaveScene(path);
@@ -726,7 +726,7 @@ bool HandleLoadCommand(List(const char *) args)
 	if (ListCount(args) > 1)
 		return false;
 
-	const char *path = lastSavedOrLoadedScene;
+	const char *path = options.scene;
 	if (ListCount(args) == 1)
 		path = args[0];
 	LoadScene(path);
@@ -1415,9 +1415,9 @@ void Editor_Render()
 		if (IsKeyPressed(KEY_D) and controlIsDown)
 			selectedObject = NULL;
 		if (IsKeyPressed(KEY_S) and controlIsDown)
-			SaveScene(lastSavedOrLoadedScene);
+			SaveScene(options.scene);
 		if (IsKeyPressed(KEY_R) and controlIsDown)
-			LoadScene(lastSavedOrLoadedScene);
+			LoadScene(options.scene);
 		if (IsKeyPressed(KEY_G) and controlIsDown)
 			showGrid = not showGrid;
 	}
@@ -1497,7 +1497,7 @@ void GameInit(void)
 	robotoItalic = LoadFontAscii("roboto-italic.ttf", 32);
 	robotoBoldItalic = LoadFontAscii("roboto-bold-italic.ttf", 32);
 
-	LoadScene("test.scene");
+	LoadScene(options.scene);
 
 	AddCommand("tp", HandlePlayerTeleportCommand, "tp x:float y:float  -  Teleport player");
 	AddCommand("dev", HandleToggleDevModeCommand, "dev [value:bool]  -  Toggle developer mode.");
