@@ -9,7 +9,7 @@
 #define DEFAULT_CAMERA_SHAKE_TRAUMA 0.5f
 #define DEFAULT_CAMERA_SHAKE_FALLOFF (0.7f * FRAME_TIME)
 #define SCENE_MAGIC "KEKW"
-#define SCENE_VERSION 3 // You need to increase this every time the scene binary format changes!
+#define SCENE_VERSION 4 // You need to increase this every time the scene binary format changes!
 #define Y_SQUISH 0.5773502691896258f // 1 / (2 * cos(30 degrees)) = 1 / sqrt(3)
 #define GRID_RESOLUTION_X 50.0f
 #define GRID_RESOLUTION_Y (GRID_RESOLUTION_X * Y_SQUISH)
@@ -118,8 +118,10 @@ STRUCT(Object)
 
 STRUCT(Stair)
 {
-	int gridX;
-	int gridY;
+	int gridMinX;
+	int gridMinY;
+	int gridMaxX;
+	int gridMaxY;
 	int elevation;
 };
 
@@ -341,8 +343,16 @@ Stair *GetStairAt(Vector2 gridPoint)
 	int x = (int)floorf(gridPoint.x);
 	int y = (int)floorf(gridPoint.y);
 	for (int i = 0; i < numStairs; ++i)
-		if (stairs[i].gridX == x and stairs[i].gridY == y)
-			return &stairs[i];
+	{
+		Stair *stair = &stairs[i];
+		if (x >= stair->gridMinX and
+			y >= stair->gridMinY and
+			x < stair->gridMaxX and
+			y < stair->gridMaxY)
+		{
+			return stair;
+		}
+	}
 	return NULL;
 }
 
@@ -497,6 +507,7 @@ void LoadScene(const char *path)
 			expression->portrait = AcquireTexture(ReadString(&stream));
 		}
 	}
+
 	numStairs = ReadInt(&stream);
 	ReadBytesInto(&stream, stairs, numStairs * sizeof stairs[0]);
 
@@ -1019,11 +1030,10 @@ void DrawGridCell(Vector2 gridPoint, Color color)
 }
 void DrawStair(Stair stair, bool isSelected)
 {
-	Vector2 gridPoint = { (float)stair.gridX, (float)stair.gridY };
-	Vector2 g00 = { gridPoint.x + 0, gridPoint.y + 0 };
-	Vector2 g01 = { gridPoint.x + 1, gridPoint.y + 0 };
-	Vector2 g10 = { gridPoint.x + 0, gridPoint.y + 1 };
-	Vector2 g11 = { gridPoint.x + 1, gridPoint.y + 1 };
+	Vector2 g00 = { (float)stair.gridMinX, (float)stair.gridMinY };
+	Vector2 g01 = { (float)stair.gridMaxX, (float)stair.gridMinY };
+	Vector2 g10 = { (float)stair.gridMinX, (float)stair.gridMaxY };
+	Vector2 g11 = { (float)stair.gridMaxX, (float)stair.gridMaxY };
 	Vector2 s000 = GridToWorld(g00);
 	Vector2 s010 = GridToWorld(g01);
 	Vector2 s100 = GridToWorld(g10);
@@ -1316,10 +1326,11 @@ void Editor_Render()
 			mouseGridPosition.x = floorf(mouseGridPosition.x);
 			mouseGridPosition.y = floorf(mouseGridPosition.y);
 			DrawGridCell(mouseGridPosition, ColorAlpha(GRAY, 0.5f));
+			Stair *hoveredStair = GetStairAt(mouseGridPosition);
 			for (int i = 0; i < numStairs; ++i)
 			{
-				Stair stair = stairs[i];
-				DrawStair(stairs[i], stair.gridX == (int)mouseGridPosition.x and stair.gridY == (int)mouseGridPosition.y);
+				Stair *stair = &stairs[i];
+				DrawStair(*stair, stair == hoveredStair);
 			}
 		}
 		else
@@ -1373,8 +1384,10 @@ void Editor_Render()
 						stair = &stairs[numStairs++];
 					if (stair)
 					{
-						stair->gridX = (int)floorf(gridPoint.x);
-						stair->gridY = (int)floorf(gridPoint.y);
+						stair->gridMinX = (int)floorf(gridPoint.x);
+						stair->gridMinY = (int)floorf(gridPoint.y);
+						stair->gridMaxX = (int)floorf(gridPoint.x) + 1;
+						stair->gridMaxY = (int)floorf(gridPoint.y) + 1;
 						stair->elevation += deltaElevation;
 						if (stair->elevation == 0 and numStairs > 0)
 						{
