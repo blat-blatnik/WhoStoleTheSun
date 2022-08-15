@@ -2,26 +2,23 @@
 
 int ReadInt(BinaryStream *stream)
 {
-	int result = 0;
-	int bytesRemaining = stream->size - stream->cursor;
-	if (bytesRemaining < sizeof result)
-		return 0;
-
-	CopyBytes(&result, (char *)stream->buffer + stream->cursor, sizeof result);
-	stream->cursor += 4;
+	int result;
+	ReadBytesInto(stream, &result, sizeof result);
 	return result;
 }
 
 float ReadFloat(BinaryStream *stream)
 {
-	float result = 0;
-	int bytesRemaining = stream->size - stream->cursor;
-	if (bytesRemaining < sizeof result)
-		return 0;
-
-	CopyBytes(&result, (char *)stream->buffer + stream->cursor, sizeof result);
-	stream->cursor += 4;
+	float result;
+	ReadBytesInto(stream, &result, sizeof result);
 	return result;
+}
+
+bool ReadBool(BinaryStream *stream)
+{
+	unsigned char result;
+	ReadBytesInto(stream, &result, sizeof result);
+	return result != 0;
 }
 
 const char *ReadString(BinaryStream *stream)
@@ -76,6 +73,12 @@ void WriteInt(BinaryStream *stream, int i)
 void WriteFloat(BinaryStream *stream, float f)
 {
 	WriteBytes(stream, &f, sizeof f);
+}
+
+void WriteBool(BinaryStream *stream, bool b)
+{
+	unsigned char byte = b ? true : false;
+	WriteBytes(stream, &byte, sizeof byte);
 }
 
 void WriteString(BinaryStream *stream, const char *s)

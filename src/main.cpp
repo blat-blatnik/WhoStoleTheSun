@@ -9,7 +9,7 @@
 #define DEFAULT_CAMERA_SHAKE_TRAUMA 0.5f
 #define DEFAULT_CAMERA_SHAKE_FALLOFF (0.7f * FRAME_TIME)
 #define SCENE_MAGIC "KEKW"
-#define SCENE_VERSION 4 // You need to increase this every time the scene binary format changes!
+#define SCENE_VERSION 5 // You need to increase this every time the scene binary format changes!
 #define Y_SQUISH 0.5773502691896258f // 1 / (2 * cos(30 degrees)) = 1 / sqrt(3)
 #define GRID_RESOLUTION_X 50.0f
 #define GRID_RESOLUTION_Y (GRID_RESOLUTION_X * Y_SQUISH)
@@ -109,6 +109,8 @@ STRUCT(Object)
 	Sprite *sprites[DIRECTION_ENUM_COUNT];
 	float animationFps;
 	float animationTimeAccumulator;
+	float talkRange;
+	bool autoTalkInRange;
 	int animationFrame;
 	Image *collisionMap;
 	Script *script;
@@ -482,13 +484,13 @@ void LoadScene(const char *path)
 		return;
 	}
 
-	for (int i = 0; i < numObjects; ++i)
-		Destroy(&objects[i]);
+	Object newObjects[COUNTOF(objects)];
+	ZeroBytes(newObjects, sizeof newObjects);
 
-	numObjects = ReadInt(&stream);
-	for (int i = 0; i < numObjects; ++i)
+	int newNumObjects = ReadInt(&stream);
+	for (int i = 0; i < newNumObjects; ++i)
 	{
-		Object *object = &objects[i];
+		Object *object = &newObjects[i];
 		const char *name = ReadString(&stream);
 		CopyString(object->name, name, sizeof object->name);
 		
@@ -496,6 +498,8 @@ void LoadScene(const char *path)
 		object->position.y = ReadFloat(&stream);
 		object->zOffset = ReadFloat(&stream);
 		object->animationFps = ReadFloat(&stream);
+		object->talkRange = ReadFloat(&stream);
+		object->autoTalkInRange = ReadBool(&stream);
 		object->direction = (Direction)ReadInt(&stream);
 		object->script = AcquireScript(ReadString(&stream), roboto, robotoBold, robotoItalic, robotoBoldItalic);
 		object->collisionMap = AcquireCollisionMap(ReadString(&stream));
@@ -510,12 +514,22 @@ void LoadScene(const char *path)
 		}
 	}
 
+	for (int i = 0; i < numObjects; ++i)
+		Destroy(&objects[i]);
+
+	numObjects = newNumObjects;
+	CopyBytes(objects, newObjects, newNumObjects * sizeof objects[0]);
 	numStairs = ReadInt(&stream);
 	ReadBytesInto(&stream, stairs, numStairs * sizeof stairs[0]);
 
 	UnloadFileData(data);
 	LogInfo("Successfully loaded scene '%s'.", path);
 	CopyString(options.scene, path, sizeof options.scene);
+	
+	if (GetCurrentGameState() == GAMESTATE_TALKING)
+		PopGameState();
+	
+	CenterCameraOn(&objects[0]);
 }
 void SaveScene(const char *path)
 {
@@ -538,6 +552,8 @@ void SaveScene(const char *path)
 		WriteFloat(&stream, object->position.y);
 		WriteFloat(&stream, object->zOffset);
 		WriteFloat(&stream, object->animationFps);
+		WriteFloat(&stream, object->talkRange);
+		WriteBool(&stream, object->autoTalkInRange);
 		WriteInt(&stream, object->direction);
 		WriteString(&stream, GetAssetPath(object->script));
 		WriteString(&stream, GetAssetPath(object->collisionMap));
@@ -763,15 +779,16 @@ void Playing_Update()
 		return;
 	}
 
-	if (input.interact.wasPressed)
+	for (int i = 1; i < numObjects; ++i)
 	{
-		for (int i = 0; i < numObjects; ++i)
+		Object *object = &objects[i];
+		if (not object->script)
+			continue;
+		if (DistanceBetween(player, object) < object->talkRange)
 		{
-			Object *object = &objects[i];
-			if (not object->script)
-				continue;
-			if (DistanceBetween(player, object) < 50)
+			if (input.interact.wasPressed or object->autoTalkInRange)
 			{
+
 				PushGameState(GAMESTATE_TALKING, object);
 				return;
 			}
@@ -799,10 +816,14 @@ void Playing_Update()
 		playerVelocity = deltaPos;
 
 		// In the isometric perspective, the y direction is squished down a little bit.
-		Vector2 feetPos = player->position;
-		feetPos.y += 0.5f * GetCurrentTexture(player)->height;
-		Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
-		player->position = player->position + (newFeetPos - feetPos);
+		Texture *texture = GetCurrentTexture(player);
+		if (texture)
+		{
+			Vector2 feetPos = player->position;
+			feetPos.y += 0.5f * GetCurrentTexture(player)->height;
+			Vector2 newFeetPos = MovePointWithCollisions(feetPos, deltaPos);
+			player->position = player->position + (newFeetPos - feetPos);
+		}
 	}
 
 	for (int i = 0; i < numObjects; i++)
@@ -1217,6 +1238,9 @@ void Editor_Render()
 									ReleaseAsset(selectedObject->script);
 									selectedObject->script = AcquireScript(scriptPath, roboto, robotoBold, robotoItalic, robotoBoldItalic);
 								}
+
+								ImGui::SliderFloat("Talk range", &selectedObject->talkRange, 1, 1000);
+								ImGui::Checkbox("Auto talk when in range", &selectedObject->autoTalkInRange);
 
 								char collisionMapPath[256];
 								CopyString(collisionMapPath, GetAssetPath(selectedObject->collisionMap), sizeof collisionMapPath);

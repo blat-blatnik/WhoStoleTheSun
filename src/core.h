@@ -314,6 +314,9 @@ int ReadInt(BinaryStream *stream);
 // Reads a 32-bit float from the stream and advances the cursor by 4 bytes.
 float ReadFloat(BinaryStream *stream);
 
+// Reads an 1 byte bool from the stream and advances the cursor by 1 byte.
+bool ReadBool(BinaryStream *stream);
+
 // Reads a 0-terminated string from the stream and returns a pointer to it, then advances the cursor by however many bytes were read.
 const char *ReadString(BinaryStream *stream);
 
@@ -325,6 +328,9 @@ void ReadBytesInto(BinaryStream *stream, void *buffer, int numBytesToRead);
 
 // Writes a 32-bit integer to the stream and advances the cursor by 4 bytes.
 void WriteInt(BinaryStream *stream, int i);
+
+// Writes a 8-bit bool to the stream and advances the cursor by 1 byte.
+void WriteBool(BinaryStream *stream, bool b);
 
 // Writes a 32-bit float to the stream and advances the cursor by 4 bytes.
 void WriteFloat(BinaryStream *stream, float f);
