@@ -208,12 +208,12 @@ Object *FindObjectByName(const char *name)
 
 	return NULL;
 }
-Texture GetCharacterPortrait(const Object *object, const char *name)
+Texture *GetCharacterPortrait(const Object *object, const char *name)
 {
 	for (int i = 0; i < COUNTOF(object->expressions); ++i)
 		if (StringsEqualNocase(object->expressions[i].name, name))
-			return *object->expressions[i].portrait;
-	return *object->expressions[0].portrait;
+			return object->expressions[i].portrait;
+	return object->expressions[0].portrait;
 }
 Sprite *GetCurrentSprite(const Object *object)
 {
@@ -936,25 +936,29 @@ void Talking_Render()
 		600,
 		320
 	};
-	Rectangle portraitBox = textbox;
-	portraitBox.x = 30;
-	portraitBox.width = 300;
-
+	
 	// Portrait
 	{
-		Rectangle indented = ExpandRectangle(portraitBox, -5);
-		Rectangle textArea = ExpandRectangle(portraitBox, -15);
-		Rectangle dropShadow = { portraitBox.x + 10, portraitBox.y + 10, portraitBox.width, portraitBox.height };
-
-		DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
-		DrawRectangleRounded(portraitBox, 0.1f, 5, WHITE);
-		DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
-
 		Object *speakerObject = FindObjectByName(speaker);
 		if (speakerObject)
 		{
-			Texture portrait = GetCharacterPortrait(speakerObject, expression);
-			DrawTextureCentered(portrait, RectangleCenter(portraitBox), WHITE);
+			Texture *portrait = GetCharacterPortrait(speakerObject, expression);
+			if (portrait)
+			{
+				Rectangle portraitBox = textbox;
+				portraitBox.x = 30;
+				portraitBox.width = 300;
+
+				Rectangle indented = ExpandRectangle(portraitBox, -5);
+				Rectangle textArea = ExpandRectangle(portraitBox, -15);
+				Rectangle dropShadow = { portraitBox.x + 10, portraitBox.y + 10, portraitBox.width, portraitBox.height };
+
+				DrawRectangleRounded(dropShadow, 0.1f, 5, BLACK);
+				DrawRectangleRounded(portraitBox, 0.1f, 5, WHITE);
+				DrawRectangleRounded(indented, 0.1f, 5, Darken(WHITE, 2));
+
+				DrawTextureCentered(*portrait, RectangleCenter(portraitBox), WHITE);
+			}
 		}
 	}
 
@@ -1029,7 +1033,7 @@ void DrawGridCell(Vector2 gridPoint, Color color)
 }
 void DrawStair(Stair stair, bool isSelected)
 {
-	float elevation = stair.elevation;
+	float elevation = (float)stair.elevation;
 	if (not elevation)
 		elevation = 0.01f;
 
@@ -1397,10 +1401,10 @@ void Editor_Render()
 					}
 					if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
 					{
-						float x0 = fminf(minX, x);
-						float x1 = fmaxf(minX, x);
-						float y0 = fminf(minY, y);
-						float y1 = fmaxf(minY, y);
+						int x0 = (int)fminf((float)minX, (float)x);
+						int x1 = (int)fmaxf((float)minX, (float)x);
+						int y0 = (int)fminf((float)minY, (float)y);
+						int y1 = (int)fmaxf((float)minY, (float)y);
 						stair = &stairs[numStairs++];
 						stair->x0 = x0;
 						stair->y0 = y0;
