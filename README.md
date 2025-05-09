@@ -1,6 +1,22 @@
 # Who stole the sun?
 
+Unfinished isometric adventure game. The game's engine was almost complete. We had a pretty cool dialog system. The dialog below was produced by this [script file](res/example-script.txt) used for testing.
 
+<p align="center">
+  <img width="600" src="res/dialogue.gif">
+</p>
+
+The script system syntax was designed to be easy to use but very powerful.
+| syntax       | meaning                                                  |
+| ------------ | -------------------------------------------------------- |
+| (empty line) | start a new paragraph                                    |
+| `` ` ``      | short invisible pause                                    |
+| `∣group∣`     | show the entire word at once instead of letter-by-letter |
+| `*bold*`     | **bold** text                                            |
+| `_italic_`   | _italic_ text                                            |
+| `[NPC Name]` | switches the active NPC                                  |
+| `[portrait]` | switches between the active NPC's portraits              |
+| `{command}`  | execute commands (screen shake, sound effects, etc)      |
 
 ## Editor controls
 
